@@ -72,3 +72,7 @@ model.save('Model Path')
 Пример генерации цифры 3: 
 
 ![Alt Text](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)
+
+### В планах:
+1) Оптимизация и рефакторинг кода
+2) Написание версии с поддержкой numba для высокоскоростных вычислений
