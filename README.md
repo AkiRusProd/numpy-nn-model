@@ -16,7 +16,7 @@
 4) minimax loss `(Для GAN)`
 
 #### Встроенные оптимизаторы:
-1) BGD
+1) MBGD
 2) Momentum
 3) RMSProp
 4) Adam
