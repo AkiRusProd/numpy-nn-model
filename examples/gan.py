@@ -64,8 +64,9 @@ gen_loss, discr_loss = gan_model.train(inputs, epochs = 15, loss_function_name =
 
 
 
-'''Create set of images'''
+
 def get_images_set(images):
+    '''Create set of images'''
     images_array = np.full((x_num * (margin + image_size), y_num * (margin + image_size)), 255, dtype=np.uint8)
     num = 0
     for i in range(y_num):
@@ -81,8 +82,9 @@ def get_images_set(images):
     return Image.fromarray(images_array).convert("L")
 
 
-'''Generate list of images from noise'''
+
 def generate_images(noise_vectors):
+    '''Generate list of images from noise'''
     generated_images = []
     for i in range(len(noise_vectors)):
         generated_images.append(np.reshape(gan_model.predict(noise_vectors[i]), (image_size, image_size)))
@@ -102,8 +104,9 @@ images.save(f'examples/generated images/set of images.jpeg')
 
 
 
-'''Create gif between sets of images'''
+
 def create_gif(images):
+    '''Create gif between sets of images'''
     set_of_images=[]
 
     for one_epoch_images in images:
@@ -112,8 +115,9 @@ def create_gif(images):
     imageio.mimsave(f'examples/generated images/training process.gif', set_of_images)
 
 
-'''Get set of images from each epoсhs and put them into list'''
+
 def get_each_epoch_images():
+    '''Get set of images from each epoсhs and put them into list'''
     images_per_epoch = gan_model.all_outputs_per_epochs#
     for i in range(len(images_per_epoch)):
         for j in range(len(images_per_epoch[i])):
@@ -130,30 +134,32 @@ create_gif(images_per_epoch)
 
 
 
-'''Create latent dimension between two sets of noise vectors'''
-def create_latent_dim_gif():
+def create_vectors_interpolation():
+    '''Create vectors create_vectors_interpolation between two sets of noise vectors'''
     steps = 10
     interval = 15
     images=[]
-    noise_vectors_interp = []
+    
 
     noise_vectors_1 = np.random.normal(0, 1, (x_num * y_num, noise_vector_size))
 
     for step in range(steps):
         noise_vectors_2 = np.random.normal(0, 1, (x_num * y_num, noise_vector_size))
 
-        noise_vectors_interp.append(np.linspace(noise_vectors_1, noise_vectors_2, interval))
+        noise_vectors_interp = (np.linspace(noise_vectors_1, noise_vectors_2, interval))
 
         noise_vectors_1 = noise_vectors_2
 
-        for vectors in noise_vectors_interp[step]:
+        for vectors in noise_vectors_interp:  
             generated_images = generate_images(vectors)
 
-        images.append(get_images_set(generated_images))
+            images.append(get_images_set(generated_images))
     
     imageio.mimsave(f'examples/generated images/images latent dim.gif', images)
 
-create_latent_dim_gif()
+create_vectors_interpolation()
+
+
 
 
 
