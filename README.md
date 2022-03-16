@@ -16,7 +16,7 @@
 4) minimax loss `(Для GAN)`
 
 #### Встроенные оптимизаторы:
-1) BGD
+1) MBGD
 2) Momentum
 3) RMSProp
 4) Adam
@@ -68,3 +68,11 @@ model.save('Model Path')
 #### Автоэнкодер (will be uploaded later)
 #### Аппроксиматор частей функций (will be uploaded later)
 #### Генеративно-состязательная сеть (GAN)
+
+Пример генерации цифры 3: 
+
+![Alt Text](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)
+
+### В планах:
+1) Оптимизация и рефакторинг кода
+2) Написание версии с поддержкой numba для высокоскоростных вычислений
