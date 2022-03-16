@@ -69,9 +69,11 @@ model.save('Model Path')
 #### Аппроксиматор частей функций (will be uploaded later)
 #### Генеративно-состязательная сеть (GAN)
 
-Пример генерации цифры 3: 
 
-![Alt Text](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)
+Пример генерации цифры 3   |  Пример интерполяции между изображениями
+:-------------------------:|:-------------------------:
+![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/images%20latent%20dim.gif)
+
 
 ### В планах:
 1) Оптимизация и рефакторинг кода
