@@ -135,7 +135,7 @@ create_gif(images_per_epoch)
 
 
 def create_vectors_interpolation():
-    '''Create vectors create_vectors_interpolation between two sets of noise vectors'''
+    '''Create vectors create interpolation  in the latent space between two sets of noise vectors'''
     steps = 10
     interval = 15
     images=[]
