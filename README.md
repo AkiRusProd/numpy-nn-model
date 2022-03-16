@@ -58,7 +58,7 @@ test_acc = model.test(inputs, targets)
 ```python
 model.summary()
 ```
-#### Открытие и сохранение Модели:
+#### Загрузка и сохранение Модели:
 ```python
 model.load('Model Path')
 model.save('Model Path')
