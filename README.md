@@ -68,3 +68,7 @@ model.save('Model Path')
 #### Автоэнкодер (will be uploaded later)
 #### Аппроксиматор частей функций (will be uploaded later)
 #### Генеративно-состязательная сеть (GAN)
+
+Пример генерации цифры 3: 
+
+![Alt Text](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)
