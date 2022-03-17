@@ -49,7 +49,7 @@ class Model:
         elif name == None:
             return output
         else:
-            raise SystemExit(f'Activation function with name "{name}" is not found')
+            raise SystemExit(f'Activation function with name "{name}" not found')
 
     def act_func_der(self, output, name): #derivatives for gradient computation
 
@@ -77,7 +77,7 @@ class Model:
     #     elif name == None:
     #         return output
     #     else:
-    #         raise SystemExit(f'Loss function with name "{name}" is not found')
+    #         raise SystemExit(f'Loss function with name "{name}" not found')
 
     def summary(self):
 
