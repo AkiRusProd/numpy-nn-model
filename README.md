@@ -63,7 +63,7 @@ model.summary()
 model.load('Model Path')
 model.save('Model Path')
 ```
-### Примеры использования Моделей с использованием датасета Mnist:
+### Примеры этой Модели с использованием датасета Mnist:
 #### Классификатор цифр (will be uploaded later)
 #### Автоэнкодер (will be uploaded later)
 #### Аппроксиматор частей функций (will be uploaded later)
