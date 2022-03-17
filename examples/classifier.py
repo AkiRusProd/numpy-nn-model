@@ -48,9 +48,9 @@ loss, acc = model.train(training_inputs, training_targets, epochs = 5, loss_func
 acc = model.test(test_inputs, test_targets)
 
 
-model.save('Simple Classifier')
+model.save('models/Simple Classifier')
 
-#model.load('Simple Classifier')
+#model.load('models/Simple Classifier')
 
 #Tkiner graphical interface methods
 def recognize():
