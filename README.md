@@ -65,10 +65,14 @@ model.save('Model Path')
 ```
 ### Примеры этой Модели с использованием датасета Mnist:
 #### Классификатор цифр
-#### Автоэнкодер, устраняющий шумы (will be uploaded later)
+#### Автоэнкодер, устраняющий шумы
+
+Пример исходных зашумленных данных |  Пример данных, с удаленным шумом
+:-------------------------:|:-------------------------:
+![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/noised%20set%20of%20images.jpeg)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/denoised%20set%20of%20images.jpeg)
+
 #### Аппроксиматор частей функций
 #### Генеративно-состязательная сеть (GAN)
-
 
 Пример генерации цифры 3   |  Пример интерполяции между изображениями
 :-------------------------:|:-------------------------:
