@@ -40,7 +40,7 @@ class GAN():
             self.fake_targets *= -1
 
     
-    def save(self, name):#TODO
+    def save(self, name):
         
         try:
             os.mkdir(name)
@@ -51,7 +51,7 @@ class GAN():
 
 
 
-    def load(self, name):#TODO
+    def load(self, name):
         self.generator = Model()
         self.discriminator = Model()
 
@@ -60,7 +60,7 @@ class GAN():
         
 
 
-    def forward_prop_generator(self, noise_vectors):
+    def generator_forward_prop(self, noise_vectors):
         batch_layers_outputs = []
         fake_images = []
 
@@ -73,7 +73,7 @@ class GAN():
             
         return batch_layers_outputs, fake_images
 
-    def forward_prop_discriminator(self, inputs):
+    def discriminator_forward_prop(self, inputs):
         batch_layers_outputs = []
         last_outputs = []
 
@@ -87,7 +87,7 @@ class GAN():
         return batch_layers_outputs, np.asarray(last_outputs)
         
 
-    def backward_prop_generator(self, batch_layers_outputs):
+    def generator_backward_prop(self, batch_layers_outputs):
         batch_layers_losses = []
 
         for k in range(len(batch_layers_outputs)):
@@ -103,7 +103,7 @@ class GAN():
 
 
     
-    def backward_prop_discriminator(self, real_discr_outs, fake_discr_outs):
+    def discriminator_backward_prop(self, real_discr_outs, fake_discr_outs):
         batch_layers_losses = []
         batch_layers_outputs = []
 
@@ -160,9 +160,9 @@ class GAN():
 
                 # noise_vectors = np.random.normal(0, 1, (len(batches[j]), self.generator.topology[0]['inputs num']))
                 
-                generator_outputs, fake_images = self.forward_prop_generator(noises[j])
-                real_discriminator_outputs, real_last_outputs = self.forward_prop_discriminator(batches[j])
-                fake_discriminator_outputs, fake_last_outputs = self.forward_prop_discriminator(fake_images)
+                generator_outputs, fake_images = self.generator_forward_prop(noises[j])
+                real_discriminator_outputs, real_last_outputs = self.discriminator_forward_prop(batches[j])
+                fake_discriminator_outputs, fake_last_outputs = self.discriminator_forward_prop(fake_images)
                 
 
                 discriminator_loss = (-np.log(real_last_outputs) - np.log(1 - fake_last_outputs)).mean()
@@ -171,8 +171,8 @@ class GAN():
                 generator_loss = -np.log(real_last_outputs).mean()
                 self.generator_loss_metric.append(generator_loss)
 
-                self.backward_prop_discriminator(real_discriminator_outputs, fake_discriminator_outputs)
-                self.backward_prop_generator(generator_outputs)
+                self.discriminator_backward_prop(real_discriminator_outputs, fake_discriminator_outputs)
+                self.generator_backward_prop(generator_outputs)
 
                 tqdm_range.set_description(f'GAN training | optimizer: {optimizer_name} | G loss: {generator_loss:.4f} | D loss: {discriminator_loss:.4f} | epoch {i + 1}/{epochs}')
 

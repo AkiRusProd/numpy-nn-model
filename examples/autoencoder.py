@@ -1,6 +1,6 @@
 from nn_model import Model
 from tqdm import tqdm
-from PIL import Image, ImageTk
+from PIL import Image
 import numpy as np
 
 
@@ -91,6 +91,15 @@ for i in range(x_num * y_num):
     noised_images.append(np.reshape(noisy_inputs[rand_i], (image_size, image_size)) * 255)
     denoised_images.append(np.reshape(outputs, (image_size, image_size)) * 255)
 
-get_images_set(noised_images).save(f'examples/autoencoder images/noised set of images.jpeg')
-get_images_set(denoised_images).save(f'examples/autoencoder images/denoised set of images.jpeg')
+get_images_set(noised_images).save(f'examples/autoencoder images/ae noised set of images.jpeg')
+get_images_set(denoised_images).save(f'examples/autoencoder images/ae denoised set of images.jpeg')
+
+
+
+
+
+
+# plot_2d_latent_space(15)
+
+# def plot_2d_distribution(one_axis_samples_num = 15): NotImplementedYet
 

@@ -66,19 +66,6 @@ class Model:
 
 
 
-
-    # def loss_function(self, output, target, name): #derivatives for gradient computation
-    #     if name == 'MSE':
-    #         return -(target-output)
-    #     elif name == 'binary_crossentropy':
-    #         return -target/output + (1 - target)/(1 - output)
-    #     elif name == 'log_loss':
-    #         return output - target
-    #     elif name == None:
-    #         return output
-    #     else:
-    #         raise SystemExit(f'Loss function with name "{name}" not found')
-
     def summary(self):
 
         print('----------------------------------------------------------------')
@@ -197,7 +184,7 @@ class Model:
 
         if not( input_type == '1d' or input_type == '2d'): raise SystemExit('Please input "1d" or "2d" input types')
         
-        self.topology.append({f'type': 'Input','inputs num': inputs_number, 'input type': input_type, 'dropout rate': None})
+        self.topology.append({f'type': 'Input','inputs num': inputs_number, 'input type': input_type, 'dropout rate': None, 'activation func': None, })
 
 
     def add_dense_layer(self, neurons_number, activation_func = None, bias = 0):
@@ -230,9 +217,9 @@ class Model:
 
 
         if previous_kernels_number <= kernels_number:
-            kernel_per_input = kernels_number//previous_kernels_number
+            kernel_per_input = kernels_number // previous_kernels_number
         else:
-            kernel_per_input = previous_kernels_number//kernels_number
+            kernel_per_input = previous_kernels_number // kernels_number
 
         pad_conv_size = None
         if padding != 0:
@@ -347,7 +334,7 @@ class Model:
 
 
 
-    def conv_gradient_calc(self, index, input_layer, conv_layer_error):
+    def compute_conv_gradients(self, index, input_layer, conv_layer_error):
         kernel_per_input = self.topology[index]['kernel per input']
         
         l = 0
@@ -536,7 +523,7 @@ class Model:
 
                     input_layer = outputs[l][k-1].reshape(self.topology[k]['previous kernels num'],self.topology[k]['input size'],self.topology[k]['input size'])
 
-                    gradient += self.conv_gradient_calc(k, input_layer, losses[l][k])
+                    gradient += self.compute_conv_gradients(k, input_layer, losses[l][k])
 
             # print(gradient.shape)
             # gradients[k] = gradient
@@ -593,7 +580,7 @@ class Model:
             for k in range(self.topology[index]['previous kernels num'],):
                 for s in range(l, r):
             
-                    pooling_layer_error[k] += pl_error_wrong_count[s] * self.act_func_der(pooling_layer[k], self.topology[index]['activation func'])
+                    pooling_layer_error[k] += pl_error_wrong_count[s] * self.act_func_der(pooling_layer[k], self.topology[index - 1]['activation func']) #index
 
                 l = r
                 r += kernel_per_input
@@ -601,7 +588,7 @@ class Model:
             for k in range(self.topology[index]['kernels num']):
                 for s in range(l, r):
             
-                    pooling_layer_error[s] = pl_error_wrong_count[k]  * self.act_func_der(pooling_layer[s], self.topology[index]['activation func'])
+                    pooling_layer_error[s] = pl_error_wrong_count[k]  * self.act_func_der(pooling_layer[s], self.topology[index - 1]['activation func']) #index
 
                 l = r
                 r += kernel_per_input
