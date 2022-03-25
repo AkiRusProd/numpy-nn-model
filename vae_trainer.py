@@ -102,11 +102,9 @@ class VAE():
 
             loss_mu = rec_mu_loss + dkl_mu
             loss_log_var = rec_log_var_loss +  dkl_logvar
-            # print(loss_mu.shape, loss_log_var.shape)
 
             loss = np.concatenate((loss_mu, loss_log_var), axis = 1)
 
-            # loss = np.concatenate((rec_mu_loss, rec_log_var_loss), axis = 1)
 
             losses = self.encoder.backward_prop(batch_layers_outputs[k], loss)
             batch_layers_losses.append(losses)
@@ -128,7 +126,7 @@ class VAE():
 
 
     def train(self, inputs, targets, epochs, optimizer_name, loss_function_name,  batch_size = 10, **optimizer_params):
-        self.latent_dim_size = self.encoder.topology[-1]['neurons num']//2
+        self.latent_dim_size = self.encoder.topology[-1]['neurons num'] // 2
 
         inputs = np.asfarray(inputs)
         targets = np.asfarray(targets)
@@ -154,9 +152,7 @@ class VAE():
 
 
         for i in range(epochs):
-            
             tqdm_range = tqdm(range(batch_num))
-            # tqdm_range = (range(batch_num))
             for j in tqdm_range:
                 
                 

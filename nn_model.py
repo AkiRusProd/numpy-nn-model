@@ -93,15 +93,10 @@ class Model:
 
                     total_weights += self.topology[k]['neurons num'] * self.topology[k+1]['neurons num']
 
-                elif self.topology[k]['pooling type'] == 'MaxPooling':
+                elif self.topology[k]['pooling type'] == 'MaxPooling' or self.topology[k]['pooling type'] == 'AvgPooling':
                     weights_shapes.append(f"({self.topology[k]['kernels num'] * self.topology[k]['pool size'] * self.topology[k]['pool size']}x{self.topology[k+1]['neurons num']})")
 
                     total_weights += self.topology[k]['kernels num'] * self.topology[k]['pool size'] * self.topology[k]['pool size'] * self.topology[k+1]['neurons num']
-
-                elif self.topology[k]['padding'] != 0:
-                    weights_shapes.append(f"({self.topology[k]['kernels num'] * self.topology[k]['pad conv size'] * self.topology[k]['pad conv size']}x{self.topology[k+1]['neurons num']})")
-
-                    total_weights += self.topology[k]['kernels num'] * self.topology[k]['pad conv size'] * self.topology[k]['pad conv size'] * self.topology[k+1]['neurons num']
                                                                   
                 elif self.topology[k]['type'] == 'Conv2d':
                     weights_shapes.append(f"({self.topology[k]['kernels num'] * self.topology[k]['conv size'] * self.topology[k]['conv size']}x{self.topology[k+1]['neurons num']})")
@@ -120,7 +115,7 @@ class Model:
 
                 if self.topology[k+1]['type'] == 'Conv2d':
                     if self.topology[k]['input type'] == '2d':
-                        print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['inputs num']}x{self.topology[k+1]['input size']}x{self.topology[k+1]['input size']})", '-', '-'))
+                        print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['inputs num']}x{self.topology[k+1]['input size'] - 2 * self.topology[k+1]['padding']}x{self.topology[k+1]['input size'] - 2 * self.topology[k+1]['padding']})", '-', '-'))
                     elif self.topology[k]['input type'] == '1d':
                         print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['inputs num']})", '-', '-'))
 
@@ -137,10 +132,7 @@ class Model:
                 i += 1
 
             if self.topology[k]['type'] == 'Conv2d':
-                if self.topology[k]['padding'] != 0: 
-                    print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['kernels num']}x{self.topology[k]['pad conv size']}x{self.topology[k]['pad conv size']})", self.topology[k]['activation func'], weights_shapes[i]))
-                else:
-                    print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['kernels num']}x{self.topology[k]['conv size']}x{self.topology[k]['conv size']})", self.topology[k]['activation func'], weights_shapes[i]))
+                print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['kernels num']}x{self.topology[k]['conv size']}x{self.topology[k]['conv size']})", self.topology[k]['activation func'], weights_shapes[i]))
 
                 if self.topology[k]['pooling type'] != None: 
                     print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['pooling type'], f"({self.topology[k]['kernels num']}x{self.topology[k]['pool size']}x{self.topology[k]['pool size']})", '-', '-' ))
@@ -202,7 +194,6 @@ class Model:
 
 
     def add_conv2d_layer(self,kernels_number, kernels_size, input_size, activation_func = None, padding = 0, bias = 0):
-        conv_size = input_size - kernels_size + 1
 
         previous_kernels_number = None
 
@@ -221,13 +212,12 @@ class Model:
         else:
             kernel_per_input = previous_kernels_number // kernels_number
 
-        pad_conv_size = None
-        if padding != 0:
-            pad_conv_size = 2 * padding + conv_size
+        input_size = 2 * padding + input_size
+        conv_size = input_size - kernels_size + 1
 
         self.topology.append({'type': 'Conv2d', 'kernels num': kernels_number, 'previous kernels num': previous_kernels_number,  
                               'kernels size': kernels_size, 'kernel per input':kernel_per_input, 'conv size': conv_size, 'input size': input_size, 
-                              'activation func': activation_func, 'bias': bias, 'padding': padding, 'pad conv size': pad_conv_size,
+                              'activation func': activation_func, 'bias': bias, 'padding': padding,
                               
                               'pooling type': None, 'block size': None, 'pool size': None,'pool inds': None})
         
@@ -243,7 +233,6 @@ class Model:
             self.topology[-1]['pooling type'] = pooling_type
             self.topology[-1]['block size'] = block_size
             self.topology[-1]['pool size'] = self.topology[-1]['conv size'] // block_size
-            if self.topology[-1]['pad conv size'] != None: self.topology[-1]['pool size'] = self.topology[-1]['pad conv size'] // block_size
         else:
             raise SystemExit('Pooling layer must come after Convolutional layer')
 
@@ -307,15 +296,14 @@ class Model:
                 elif self.topology[i]['pooling type'] == 'MaxPooling':
                     self.weights.append(np.random.normal(0.0, pow(self.topology[i]['kernels num'] * self.topology[i]['pool size'] * self.topology[i]['pool size'], -0.5), (self.topology[i]['kernels num'] * self.topology[i]['pool size'] * self.topology[i]['pool size'], 
                                                                   self.topology[i+1]['neurons num'])))
-                elif self.topology[i]['padding'] != 0:
-                    self.weights.append(np.random.normal(0.0, pow(self.topology[i]['kernels num'] * self.topology[i]['pad conv size'] * self.topology[i]['pad conv size'], -0.5), (self.topology[i]['kernels num'] * self.topology[i]['pad conv size'] * self.topology[i]['pad conv size'], 
-                                                                  self.topology[i+1]['neurons num'])))
                 elif self.topology[i]['type'] == 'Conv2d':
                     self.weights.append(np.random.normal(0.0, pow(self.topology[i]['kernels num'] * self.topology[i]['conv size'] * self.topology[i]['conv size'], -0.5) , (self.topology[i]['kernels num'] * self.topology[i]['conv size'] * self.topology[i]['conv size'], 
                                                                   self.topology[i+1]['neurons num'])))
             elif self.topology[i+1]['type'] == 'Conv2d':
                 self.weights.append(np.random.normal(0.0, pow( self.topology[i+1]['kernels size'] * self.topology[i+1]['kernels size'], -0.5) , (self.topology[i+1]['kernels num'], self.topology[i+1]['kernels size'], 
                                                               self.topology[i+1]['kernels size'])))
+
+                
 
     def conv_weights_updating(self, index, gradient, optimizer):
         
@@ -499,6 +487,18 @@ class Model:
 
 
 
+    def make_padding(self, layer, padding_size):
+        padded_layer = np.pad(layer, ((0, 0), (padding_size, padding_size), (padding_size, padding_size)), constant_values = 0)
+
+        return padded_layer
+
+    def reshape_layer(self, layer, num, size, mode):
+        if mode == '2d':
+            reshaped_layer = np.reshape(layer, (num, size, size))
+        elif mode == '1d':
+            reshaped_layer = np.reshape(layer, (num, size * size))
+
+        return reshaped_layer
 
 
     
@@ -521,8 +521,11 @@ class Model:
                     
                 elif self.topology[k]['type'] == 'Conv2d':
 
-                    input_layer = outputs[l][k-1].reshape(self.topology[k]['previous kernels num'],self.topology[k]['input size'],self.topology[k]['input size'])
-
+                    input_layer = self.make_padding(self.reshape_layer(outputs[l][k-1], 
+                                                        num = self.topology[k]['previous kernels num'], 
+                                                        size = self.topology[k]['input size'] - 2 * self.topology[k]['padding'],
+                                                        mode = '2d'), 
+                                                    self.topology[k]['padding'])
                     gradient += self.compute_conv_gradients(k, input_layer, losses[l][k])
 
             # print(gradient.shape)
@@ -599,9 +602,6 @@ class Model:
     def pooling_error_expansion(self,index, pooling_layer_error):
         conv_size = self.topology[index]['conv size']
 
-        if self.topology[index]['padding'] != 0:
-            conv_size = self.topology[index]['pad conv size']
-
         conv_layer_error = np.zeros((self.topology[index]['kernels num'], conv_size, conv_size))
 
         pooling_layer_ind = self.topology[index]['pool inds']
@@ -618,9 +618,6 @@ class Model:
 
     def pooling(self, index, conv_layer):
         conv_size = self.topology[index]['conv size']
-
-        if self.topology[index]['padding'] != 0:
-            conv_size = self.topology[index]['pad conv size']
 
         pooling_layer = np.zeros((self.topology[index]['kernels num'], self.topology[index]['pool size'], self.topology[index]['pool size']))
         pooling_layer_ind = np.zeros((self.topology[index]['kernels num'], conv_size, conv_size))
@@ -722,15 +719,16 @@ class Model:
             elif self.topology[k+1]['type'] == 'Conv2d':
 
                 if self.topology[k]['type']=='Dense' or self.topology[k]['type']=='Input':
-                    input_layer = outputs[k].reshape(self.topology[k+1]['previous kernels num'], self.topology[k+1]['input size'],self.topology[k+1]['input size'])
+                    input_layer = self.reshape_layer(outputs[k], num = self.topology[k+1]['previous kernels num'], size = self.topology[k+1]['input size'] - 2 * self.topology[k+1]['padding'], mode = '2d')
 
                 elif self.topology[k]['type']=='Conv2d' or self.topology[k]['pooling type'] != None:
                     input_layer = outputs[k]
 
+                if self.topology[k+1]['padding'] != 0:
+                    input_layer = self.make_padding(input_layer, self.topology[k+1]['padding'])
+
                 outputs.append(self.activation_func(self.convolution(k+1, input_layer), self.topology[k+1]['activation func']))
 
-                if self.topology[k+1]['padding'] != 0:
-                    outputs[-1] = np.pad(outputs[-1], ((0, 0), (self.topology[k+1]['padding'], self.topology[k+1]['padding']), (self.topology[k+1]['padding'], self.topology[k+1]['padding'])), constant_values = 0)
                     
                 if self.topology[k+1]['pooling type'] != None:
                     outputs[-1], self.topology[k+1]['pool inds'] = self.pooling(k+1, outputs[-1])
@@ -742,19 +740,11 @@ class Model:
     def backward_prop(self, layers_outputs, loss_func):
         losses = [None for _ in range(len(self.topology))]
 
-        # if loss_func_name != None:
-        #     losses[-1] = self.loss_function(layers_outputs[-1], targets_list.reshape(layers_outputs[-1].shape),loss_func_name)
-        # else:
-        #     losses[-1] = layers_outputs[-1]
-        # losses[-1] = loss_func(layers_outputs[-1], targets_list)
         losses[-1] = loss_func * self.act_func_der(layers_outputs[-1], self.topology[-1]['activation func'])
         
         if self.topology[-1]['type']=='Conv2d':
             if self.topology[-1]['pooling type'] != None:
-                losses[-1] = self.pooling_error_expansion(-1, losses[-1].reshape(self.topology[-1]['kernels num'], self.topology[-1]['pool size'] * self.topology[-1]['pool size']))
-                    
-            if self.topology[-1]['padding'] != 0:
-                losses[-1] = losses[-1][...,self.topology[-1]['padding']:-self.topology[-1]['padding'],self.topology[-1]['padding']:-self.topology[-1]['padding']]
+                losses[-1] = self.pooling_error_expansion(-1, self.reshape_layer(losses[-1], num = self.topology[-1]['kernels num'], size = self.topology[-1]['pool size'], mode = '1d'))
 
 
         for k in range(len(self.topology)-2, 0, -1):  
@@ -763,58 +753,54 @@ class Model:
                 losses[k] = (np.dot(losses[k+1],self.weights[k].T)) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func'])
 
             elif (self.topology[k]['type']=='Conv2d') and (self.topology[k]['pooling type'] == None) and (self.topology[k+1]['type'] == 'Dense'):
-
-                if self.topology[k]['padding'] == 0:
-                    losses[k] = (np.dot(losses[k+1],self.weights[k].T,) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func']).flatten() ).reshape(self.topology[k]['kernels num'],self.topology[k]['conv size'],self.topology[k]['conv size'])
-                else:
-                    losses[k] = (np.dot(losses[k+1],self.weights[k].T,) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func']).flatten() ).reshape(self.topology[k]['kernels num'],self.topology[k]['pad conv size'],self.topology[k]['pad conv size'])[...,self.topology[k]['padding']:-self.topology[k]['padding'],self.topology[k]['padding']:-self.topology[k]['padding']]
-
+                losses[k] = self.reshape_layer(np.dot(losses[k+1], self.weights[k].T) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func']).flatten(), num = self.topology[k]['kernels num'], size = self.topology[k]['conv size'], mode = '2d')
+                
             elif (self.topology[k]['type']=='Conv2d') and (self.topology[k]['pooling type'] != None) and (self.topology[k+1]['type'] == 'Dense'):
-                pooling_losses = (np.dot(losses[k+1],self.weights[k].T,) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func']).flatten() ).reshape(self.topology[k]['kernels num'],self.topology[k]['pool size'] * self.topology[k]['pool size'])
+                pooling_losses = self.reshape_layer(np.dot(losses[k+1], self.weights[k].T) * self.act_func_der(layers_outputs[k], self.topology[k]['activation func']).flatten(), num = self.topology[k]['kernels num'], size = self.topology[k]['pool size'], mode = '1d')
 
-                if self.topology[k]['padding'] == 0:
-                    losses[k] = self.pooling_error_expansion(k, pooling_losses) 
-                else:
-                    losses[k] = self.pooling_error_expansion(k, pooling_losses)[...,self.topology[k]['padding']:-self.topology[k]['padding'],self.topology[k]['padding']:-self.topology[k]['padding']]
+                losses[k] = self.pooling_error_expansion(k, pooling_losses) 
 
             elif self.topology[k+1]['type'] == 'Conv2d':
-                    loss_wrg_num = self.conv_backward_prop(k+1, losses[k+1])
+                loss_wrg_num = self.conv_backward_prop(k+1, losses[k+1])
+
+                reshaped_outputs =  self.reshape_layer(layers_outputs[k], num = self.topology[k+1]['previous kernels num'], size = self.topology[k+1]['input size'] - 2 * self.topology[k+1]['padding'], mode = '2d')
+                
+                # print(layers_outputs[k].shape)
+                losses[k] = self.loss_convertation(k+1, loss_wrg_num, self.make_padding(reshaped_outputs, self.topology[k+1]['padding']))
+                
+                if self.topology[k+1]['padding'] != 0:
+                    losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
+
+                if self.topology[k]['type']=='Dense': 
+                    losses[k] = np.array(losses[k].flatten(),ndmin = 2)
+            
+                elif self.topology[k]['type']=='Conv2d':
+                    if self.topology[k]['pooling type'] != None:
+                        losses[k] = self.pooling_error_expansion(k, self.reshape_layer(losses[k], num = self.topology[k]['kernels num'], size = self.topology[k]['pool size'], mode = '1d'))
                     
-                    losses[k] = self.loss_convertation(k+1, loss_wrg_num,
-                    layers_outputs[k].reshape(self.topology[k+1]['previous kernels num'], self.topology[k+1]['input size'], self.topology[k+1]['input size']))
-  
-
-                    if self.topology[k]['type']=='Dense': 
-                        losses[k] = losses[k].flatten()
-
-                    elif self.topology[k]['type']=='Conv2d':
-                        if self.topology[k]['pooling type'] != None:
-                            losses[k] = self.pooling_error_expansion(k, losses[k].reshape(self.topology[k]['kernels num'], self.topology[k]['pool size'] * self.topology[k]['pool size']))
-                        
-                        if self.topology[k]['padding'] != 0:
-                            losses[k] = losses[k][...,self.topology[k]['padding']:-self.topology[k]['padding'],self.topology[k]['padding']:-self.topology[k]['padding']]
         
         if self.topology[1]['type']=='Dense':
             losses[0] = np.dot(losses[1],self.weights[0].T)
         elif self.topology[1]['type']=='Conv2d':
 
             loss_wrg_num = self.conv_backward_prop(1, losses[1])
+            reshaped_outputs =  self.reshape_layer(layers_outputs[0], num = self.topology[1]['previous kernels num'], size = self.topology[1]['input size'] - 2 * self.topology[1]['padding'], mode = '2d')
 
-            losses[0] = self.loss_convertation(1, loss_wrg_num,
-            layers_outputs[0].reshape(self.topology[1]['previous kernels num'], self.topology[1]['input size'], self.topology[1]['input size']))
+            losses[0] = self.loss_convertation(1, loss_wrg_num, self.make_padding(reshaped_outputs, self.topology[1]['padding']))
+
+            if self.topology[1]['padding'] != 0:
+                losses[0] = losses[0][...,self.topology[1]['padding']:-self.topology[1]['padding'],self.topology[1]['padding']:-self.topology[1]['padding']]
 
             if self.topology[0]['input type'] == '1d':
-                losses[0] = losses[0].flatten()
-            elif  self.topology[0]['input type'] == '2d':
-                losses[0] = losses[0].reshape(self.topology[0]['inputs num'], self.topology[1]['input size'], self.topology[1]['input size'])
+                losses[0] = np.array(losses[0].flatten(),ndmin = 2)
+            # elif  self.topology[0]['input type'] == '2d':
+            #     losses[0] = losses[0].reshape(self.topology[0]['inputs num'], self.topology[1]['input size']- 2 * self.topology[1]['padding'], self.topology[1]['input size']- 2 * self.topology[1]['padding'])
+            # print(losses[0].shape)
             
             
         
         return losses 
         
-
-
-    # def check_output()
 
 
 
