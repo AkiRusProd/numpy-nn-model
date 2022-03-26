@@ -34,9 +34,13 @@ model = Model()
 ```python
 model.add_dense_layer(neurons_number = 128, activation_func = 'Sigmoid', bias = 0)
 ```
+Слой заполнения нулями; пример добавления слоя:
+```python
+model.add_zero_padding_layer(padding = 1)
+```
 Сверточный слой; пример добавления слоя:
 ```python
-model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, activation_func = 'Sigmoid', padding = 1, bias = 0)
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, activation_func = 'Sigmoid', bias = 0)
 ```
 Дропаут слой; пример добавления слоя:
 ```python
