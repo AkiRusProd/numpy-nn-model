@@ -213,7 +213,7 @@ class Model:
 
         if self.topology[-1]['type'] == 'Dense':
             previous_kernels_number = self.topology[-1]['neurons num']  // init_input_size ** 2
-        elif self.topology[-1]['type'] == 'Conv2d':
+        elif self.topology[-1]['type'] == 'Conv2d' or self.topology[-1]['type'] == 'Conv2dTranspose':
             previous_kernels_number = self.topology[-1]['kernels num']
         elif self.topology[-1]['type'] == 'Input' and self.topology[-1]['input type']=='2d':
             previous_kernels_number = self.topology[-1]['inputs num']
@@ -255,7 +255,7 @@ class Model:
               
         if self.topology[-1]['type'] == 'Dense':
             previous_kernels_number = self.topology[-1]['neurons num']  // init_input_size ** 2
-        elif self.topology[-1]['type'] == 'Conv2d':
+        elif self.topology[-1]['type'] == 'Conv2d' or self.topology[-1]['type'] == 'Conv2dTranspose':
             previous_kernels_number = self.topology[-1]['kernels num']
         elif self.topology[-1]['type'] == 'Input' and self.topology[-1]['input type']=='2d':
             previous_kernels_number = self.topology[-1]['inputs num']
