@@ -132,6 +132,8 @@ class Model:
                 i += 1
 
             if self.topology[k]['type'] == 'Conv2d':
+                if self.topology[k]['padding'] != 0:
+                    print("{:<13} {:<15} {:<20} {:<20}".format('ZeroPadding', f"(+ 2*{self.topology[k]['padding']} to conv)", '-', '-' ))
                 print("{:<13} {:<15} {:<20} {:<20}".format(self.topology[k]['type'], f"({self.topology[k]['kernels num']}x{self.topology[k]['conv size']}x{self.topology[k]['conv size']})", self.topology[k]['activation func'], weights_shapes[i]))
 
                 if self.topology[k]['pooling type'] != None: 
@@ -192,10 +194,20 @@ class Model:
         else:
             raise SystemExit('Dropout layer must come after Dense layer')
 
+    def add_zero_padding_layer(self, padding = 0):
+        self.topology.append({'type': 'ZeroPadding', 'padding': padding})
 
-    def add_conv2d_layer(self,kernels_number, kernels_size, input_size, activation_func = None, padding = 0, bias = 0):
+
+    def add_conv2d_layer(self,kernels_number, kernels_size, input_size, activation_func = None, bias = 0):
 
         previous_kernels_number = None
+
+        padding = 0
+        if self.topology[-1]['type'] == 'ZeroPadding':
+            padding = self.topology[-1]['padding']
+            
+            self.topology.pop()
+
 
         if self.topology[-1]['type'] == 'Dense':
             previous_kernels_number = self.topology[-1]['neurons num']  // input_size ** 2
@@ -504,8 +516,6 @@ class Model:
     
     def weights_updating(self, outputs, losses, optimizer):
 
-        # gradients = [None for _ in range(len(self.topology))]
-
         for k in range(len(self.topology)-1,0,-1):
             gradient = 0
 
@@ -528,7 +538,6 @@ class Model:
                                                     self.topology[k]['padding'])
                     gradient += self.compute_conv_gradients(k, input_layer, losses[l][k])
 
-            # print(gradient.shape)
             # gradients[k] = gradient
 
             if self.topology[k]['type'] == 'Dense':
@@ -764,8 +773,7 @@ class Model:
                 loss_wrg_num = self.conv_backward_prop(k+1, losses[k+1])
 
                 reshaped_outputs =  self.reshape_layer(layers_outputs[k], num = self.topology[k+1]['previous kernels num'], size = self.topology[k+1]['input size'] - 2 * self.topology[k+1]['padding'], mode = '2d')
-                
-                # print(layers_outputs[k].shape)
+   
                 losses[k] = self.loss_convertation(k+1, loss_wrg_num, self.make_padding(reshaped_outputs, self.topology[k+1]['padding']))
                 
                 if self.topology[k+1]['padding'] != 0:
