@@ -199,9 +199,10 @@ class Model:
         self.topology.append({'type': 'ZeroPadding', 'padding': padding})
 
 
-    def add_conv2d_layer(self,kernels_number, kernels_size, init_input_size, activation_func = None, bias = 0):
+    def add_conv2d_layer(self,kernels_number, kernels_size, input_size, activation_func = None, bias = 0):
 
         previous_kernels_number = None
+        init_input_size = input_size
 
         padding = 0
         if self.topology[-1]['type'] == 'ZeroPadding':
@@ -240,17 +241,18 @@ class Model:
         self.v_hat.append(np.zeros((self.topology[-1]['kernels num'], self.topology[-1]['kernels size'], self.topology[-1]['kernels size'])))
         self.m_hat.append(np.zeros((self.topology[-1]['kernels num'], self.topology[-1]['kernels size'], self.topology[-1]['kernels size'])))
 
-    def add_conv2d_transpose_layer(self,kernels_number, kernels_size, init_input_size, stride = 2, activation_func = None, bias = 0):
+    def add_conv2d_transpose_layer(self,kernels_number, kernels_size, input_size, stride = 2, activation_func = None, bias = 0):
 
         previous_kernels_number = None
+        init_input_size = input_size
 
         padding = 0
         if self.topology[-1]['type'] == 'ZeroPadding':
             padding = self.topology[-1]['padding']
             
             self.topology.pop()
-
-
+            
+              
         if self.topology[-1]['type'] == 'Dense':
             previous_kernels_number = self.topology[-1]['neurons num']  // init_input_size ** 2
         elif self.topology[-1]['type'] == 'Conv2d':
@@ -920,7 +922,6 @@ class Model:
                 losses[0] = np.array(losses[0].flatten(),ndmin = 2)
             
             
-        
         return losses 
         
 
