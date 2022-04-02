@@ -79,16 +79,35 @@ model.summary()
 model.load('Model Path')
 model.save('Model Path')
 ```
-### Примеры этой Модели с использованием датасета Mnist:
+### Примеры этой Модели с использованием датасета Mnist:  
+Скрипты:  
+*[Непосредственно сама Модель](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nn_model.py)*
 #### Классификатор цифр
+
+Скрипты:  
+*[Классификатор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/classifier.py)*  
+
 #### Аппроксиматор частей функций
+
+Скрипты:  
+*[Аппроксиматор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/approximator.py)*  
+
 #### Обычный, а также Вариационный Автоэнкодер, устраняющие шумы (AE and VAE)
+
+Скрипты:  
+*[Обычный Автоэнкодер](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/autoencoder.py)*  
+*[Вариационный Автоэнкодер](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/variational_autoencoder.py)*  
+*[Модуль тренировки Вариационного Автоэнкодера](https://github.com/AkiRusProd/numpy-nn-model/blob/master/vae_trainer.py)*  
 
 Пример зашумленных данных |  Пример данных с удаленным шумом
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/ae%20noised%20set%20of%20images.jpeg)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/ae%20denoised%20set%20of%20images.jpeg)
 
 #### Генеративно-состязательная сеть (GAN)
+
+Скрипты:  
+*[GAN](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/gan.py)*  
+*[Модуль тренировки GAN](https://github.com/AkiRusProd/numpy-nn-model/blob/master/gan_trainer.py)*  
 
 Пример генерации цифры 3   |  Пример интерполяции между изображениями
 :-------------------------:|:-------------------------:
@@ -97,5 +116,5 @@ model.save('Model Path')
 
 ### В планах:
 1) Добавление возможности тренировать VAE (Добавлено)
-2) Оптимизация и рефакторинг кода
-3) Написание версии с поддержкой numba для высокоскоростных вычислений
+2) Оптимизация и рефакторинг кода (Частично)
+3) Написание версии с поддержкой numba для высокоскоростных вычислений (Частично)
