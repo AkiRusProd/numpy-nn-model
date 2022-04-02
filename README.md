@@ -8,6 +8,8 @@
 2) Tanh
 3) ReLU
 4) Leaky ReLU
+5) ELU
+6) GELU
 
 #### Встроенные функции ошибок:
 1) MSE
@@ -34,17 +36,23 @@ model = Model()
 ```python
 model.add_dense_layer(neurons_number = 128, activation_func = 'Sigmoid', bias = 0)
 ```
-Слой заполнения нулями; пример добавления слоя:
-```python
-model.add_zero_padding_layer(padding = 1)
-```
+
 Сверточный слой; пример добавления слоя:
 ```python
 model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, activation_func = 'Sigmoid', bias = 0)
 ```
-Транспонированный Сверточный слой; пример добавления слоя: (Have Bug)
+Сверточный слой с добавленим рамки с нулями к входу; пример добавления слоя:
 ```python
-model.add_conv2d_transpose_layer(kernels_number = 4, kernels_size = 2, input_size = 3, stride = 2, activation_func = 'Sigmoid', bias = 0)
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, padding = 1, activation_func = 'Sigmoid', bias = 0)
+```
+Сверточный слой с транспонированием входа; пример добавления слоя:
+```python
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, transposing_stride = 2, activation_func = 'Sigmoid', bias = 0)
+```
+
+Сверточный слой с повышающей дискретизацией входа; пример добавления слоя:
+```python
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, upsampling_scale_factor = 2, activation_func = 'Sigmoid', bias = 0)
 ```
 Дропаут слой; пример добавления слоя:
 ```python
@@ -71,16 +79,35 @@ model.summary()
 model.load('Model Path')
 model.save('Model Path')
 ```
-### Примеры этой Модели с использованием датасета Mnist:
+### Примеры этой Модели с использованием датасета Mnist:  
+Скрипты:  
+*[Непосредственно сама Модель](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nn_model.py)*
 #### Классификатор цифр
+
+Скрипты:  
+*[Классификатор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/classifier.py)*  
+
 #### Аппроксиматор частей функций
+
+Скрипты:  
+*[Аппроксиматор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/approximator.py)*  
+
 #### Обычный, а также Вариационный Автоэнкодер, устраняющие шумы (AE and VAE)
+
+Скрипты:  
+*[Обычный Автоэнкодер](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/autoencoder.py)*  
+*[Вариационный Автоэнкодер](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/variational_autoencoder.py)*  
+*[Модуль тренировки Вариационного Автоэнкодера](https://github.com/AkiRusProd/numpy-nn-model/blob/master/vae_trainer.py)*  
 
 Пример зашумленных данных |  Пример данных с удаленным шумом
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/ae%20noised%20set%20of%20images.jpeg)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/ae%20denoised%20set%20of%20images.jpeg)
 
 #### Генеративно-состязательная сеть (GAN)
+
+Скрипты:  
+*[GAN](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/gan.py)*  
+*[Модуль тренировки GAN](https://github.com/AkiRusProd/numpy-nn-model/blob/master/gan_trainer.py)*  
 
 Пример генерации цифры 3   |  Пример интерполяции между изображениями
 :-------------------------:|:-------------------------:
@@ -89,5 +116,5 @@ model.save('Model Path')
 
 ### В планах:
 1) Добавление возможности тренировать VAE (Добавлено)
-2) Оптимизация и рефакторинг кода
-3) Написание версии с поддержкой numba для высокоскоростных вычислений
+2) Оптимизация и рефакторинг кода (Частично)
+3) Написание версии с поддержкой numba для высокоскоростных вычислений (Частично)
