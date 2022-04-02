@@ -8,6 +8,8 @@
 2) Tanh
 3) ReLU
 4) Leaky ReLU
+5) ELU
+6) GELU
 
 #### Встроенные функции ошибок:
 1) MSE
@@ -34,17 +36,23 @@ model = Model()
 ```python
 model.add_dense_layer(neurons_number = 128, activation_func = 'Sigmoid', bias = 0)
 ```
-Слой заполнения нулями; пример добавления слоя:
-```python
-model.add_zero_padding_layer(padding = 1)
-```
+
 Сверточный слой; пример добавления слоя:
 ```python
 model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, activation_func = 'Sigmoid', bias = 0)
 ```
-Транспонированный Сверточный слой; пример добавления слоя: (Have Bug)
+Сверточный слой с добавленим рамки с нулями к входу; пример добавления слоя:
 ```python
-model.add_conv2d_transpose_layer(kernels_number = 4, kernels_size = 2, input_size = 3, stride = 2, activation_func = 'Sigmoid', bias = 0)
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, padding = 1, activation_func = 'Sigmoid', bias = 0)
+```
+Сверточный слой с транспонированием входа; пример добавления слоя:
+```python
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, transposing_stride = 2, activation_func = 'Sigmoid', bias = 0)
+```
+
+Сверточный слой с повышающей дискретизацией входа; пример добавления слоя:
+```python
+model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, upsampling_scale_factor = 2, activation_func = 'Sigmoid', bias = 0)
 ```
 Дропаут слой; пример добавления слоя:
 ```python
