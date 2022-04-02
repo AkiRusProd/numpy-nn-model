@@ -1,0 +1,5 @@
+imageio==2.9.0 # create gifs
+numba==0.52.0 # speed up code
+numpy==1.19.5 # work with arrays
+Pillow==7.2.0 # save images
+tqdm==4.58.0 # progress bar

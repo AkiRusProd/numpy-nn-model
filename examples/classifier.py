@@ -1,6 +1,5 @@
 from nn_model import Model
 from tqdm import tqdm
-
 from PIL import ImageDraw, ImageOps
 import PIL
 import numpy as np

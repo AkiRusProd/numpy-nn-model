@@ -1,4 +1,3 @@
-import re
 from tqdm import tqdm
 from numba import njit
 import numpy as np
