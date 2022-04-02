@@ -42,7 +42,7 @@ model.add_zero_padding_layer(padding = 1)
 ```python
 model.add_conv2d_layer(kernels_number = 4, kernels_size = 2, input_size = 3, activation_func = 'Sigmoid', bias = 0)
 ```
-Транспонированный Сверточный слой; пример добавления слоя:
+Транспонированный Сверточный слой; пример добавления слоя: (Have Bug)
 ```python
 model.add_conv2d_transpose_layer(kernels_number = 4, kernels_size = 2, input_size = 3, stride = 2, activation_func = 'Sigmoid', bias = 0)
 ```
