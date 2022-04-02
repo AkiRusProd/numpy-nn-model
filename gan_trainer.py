@@ -96,7 +96,7 @@ class GAN():
 
             discriminator_losses = self.discriminator.backward_prop(discriminator_outputs, self.generator_loss_func(discriminator_outputs[-1], self.real_targets))
         
-            generator_losses = self.generator.backward_prop(batch_layers_outputs[k],  discriminator_losses[0])
+            generator_losses = self.generator.backward_prop(batch_layers_outputs[k],  discriminator_losses[0].reshape(batch_layers_outputs[k][-1].shape)) #reshape input discr layer to last gener shape
             batch_layers_losses.append(generator_losses)
 
         self.generator.weights_updating(batch_layers_outputs, batch_layers_losses, self.generator_optimizer)
@@ -142,8 +142,8 @@ class GAN():
         self.prepare_targets()
         
         
-        self.discriminator.set_params(optimizer_params)
-        self.generator.set_params(optimizer_params)
+        self.discriminator.set_params(optimizer_params, optimizer_name)
+        self.generator.set_params(optimizer_params, optimizer_name)
 
         if len(self.discriminator.weights) == 0:
             self.discriminator.weights_init()

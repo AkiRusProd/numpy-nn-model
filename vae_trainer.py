@@ -37,7 +37,7 @@ class VAE():
 
     def encoder_forward_prop(self, inputs):
         batch_layers_outputs = []
-        last_outputs = []
+        batch_layers_last_outputs = []
         means = []
         log_variances = []
         epsilons = []
@@ -49,14 +49,14 @@ class VAE():
             reparametrized_outputs, mean, log_variance, epsilon = self.reparametrize(outputs[-1][0])
 
             batch_layers_outputs.append(outputs)
-            last_outputs.append(reparametrized_outputs)
+            batch_layers_last_outputs.append(reparametrized_outputs)
 
             means.append(mean)
             log_variances.append(log_variance)
             epsilons.append(epsilon)
 
 
-        return batch_layers_outputs, np.asarray(last_outputs), np.asarray(means), np.asarray(log_variances), np.asarray(epsilons)
+        return batch_layers_outputs, np.asarray(batch_layers_last_outputs), np.asarray(means), np.asarray(log_variances), np.asarray(epsilons)
 
     def reparametrize(self, outputs):
 
@@ -142,8 +142,8 @@ class VAE():
         self.decoder_loss_function = self.decoder.loss_functions[loss_function_name]
         self.decoder_loss_function_metric = self.decoder.loss_functions_metrics[loss_function_name]
 
-        self.encoder.set_params(optimizer_params)
-        self.decoder.set_params(optimizer_params)
+        self.encoder.set_params(optimizer_params, optimizer_name)
+        self.decoder.set_params(optimizer_params, optimizer_name)
 
         if len(self.encoder.weights) == 0:
             self.encoder.weights_init()

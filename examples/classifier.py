@@ -1,7 +1,7 @@
 from nn_model import Model
 from tqdm import tqdm
 
-from PIL import ImageTk, Image, ImageDraw, ImageOps
+from PIL import ImageDraw, ImageOps
 import PIL
 import numpy as np
 from tkinter import *
@@ -39,18 +39,44 @@ model = Model()
 model.add_input_layer(784, input_type = '1d')
 model.add_dense_layer(neurons_number = 256, activation_func = 'Sigmoid', bias = 0)
 model.add_dense_layer(neurons_number = 128, activation_func = 'Sigmoid', bias = 0)
+
+#CNN model example
+# model.add_conv2d_layer(kernels_number = 8, kernels_size = 5, input_size = 28, activation_func = 'Sigmoid', bias = 0)
+# model.add_pooling_layer(2, 'MaxPooling')
+# model.add_conv2d_layer(kernels_number = 32, kernels_size = 3, input_size = 12, activation_func = 'Sigmoid', bias = 0)
+# model.add_pooling_layer(2, 'MaxPooling')
+
 model.add_dense_layer(neurons_number = 10, activation_func = 'Sigmoid', bias = 0)
 
 model.summary()
 
 #Train and test Model
-loss, acc = model.train(training_inputs, training_targets, epochs = 5, loss_function_name = 'MSE', optimizer_name = 'Nadam', batch_size = 65)
-acc = model.test(test_inputs, test_targets)
+loss, acc = model.train(training_inputs, training_targets, epochs = 3, loss_function_name = 'MSE', optimizer_name = 'Nadam', batch_size = 100)
+test_acc = model.test(test_inputs, test_targets)
 
+#Plot loss and accuracy
+# import matplotlib.pyplot as plt
+
+# fig, axs = plt.subplots(2)
+# axs[0].plot(loss)
+# axs[1].plot(acc)
+
+# axs[0].set_ylabel('loss')
+# axs[1].set_ylabel('accuracy')
+# axs[1].set_xlabel('steps')
+# plt.show()
+
+
+# plt.plot(test_acc)
+# plt.title('test accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('steps')
+# plt.legend(['test'], loc='upper left')
+# plt.show()
 
 model.save('models/Simple Classifier')
 
-#model.load('models/Simple Classifier')
+model.load('models/Simple Classifier')
 
 #Tkiner graphical interface methods
 def recognize():

@@ -51,11 +51,22 @@ model = Model()
 # model.add_dense_layer(neurons_number = 784, activation_func = 'Sigmoid', bias = 0)
 
 # #Train model
-# model.train(noisy_inputs, inputs, epochs = 20, loss_function_name = 'MSE', trained_model = 'encoder', batch_size = 65,  optimizer_name = 'Adam')
+# loss, _ = model.train(noisy_inputs, inputs, epochs = 20, loss_function_name = 'MSE', trained_model = 'encoder', batch_size = 65,  optimizer_name = 'Adam')
 
 # model.save('models/Denoising Autoencoder')
 
 model.load('models/Denoising Autoencoder')
+
+#Plot loss
+# import matplotlib.pyplot as plt
+
+# plt.plot(loss)
+# plt.title('loss')
+# plt.ylabel('loss')
+# plt.xlabel('steps')
+# plt.legend(['test'], loc='upper left')
+# plt.show()
+
 
 x_num = 5
 y_num = 5
@@ -94,12 +105,4 @@ for i in range(x_num * y_num):
 get_images_set(noised_images).save(f'examples/autoencoder images/ae noised set of images.jpeg')
 get_images_set(denoised_images).save(f'examples/autoencoder images/ae denoised set of images.jpeg')
 
-
-
-
-
-
-# plot_2d_latent_space(15)
-
-# def plot_2d_distribution(one_axis_samples_num = 15): NotImplementedYet
 
