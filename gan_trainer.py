@@ -21,7 +21,7 @@ class GAN():
     def prepare_loss_functions(self, loss_function_name):
         if loss_function_name == 'minimax crossentropy':
             self.discriminator_real_loss_func = lambda output, targets = None: -1/(output+ 1e-8)    #min -log(D(x))
-            self.discriminator_fake_loss_func = lambda output, targets = None: 1/(1 - output + 1e-8) #max 1 / log(1 - D(G(z)))
+            self.discriminator_fake_loss_func = lambda output, targets = None: 1/(1 - output + 1e-8) #max log(1 - D(G(z)))
             self.generator_loss_func = lambda output, targets = None: -1/(output + 1e-8)  #-log(D(G(z)))
         else:
             self.discriminator_real_loss_func =  self.discriminator.loss_functions[loss_function_name]
