@@ -13,8 +13,8 @@ test_data = open('dataset/mnist_test.csv','r').readlines()
 x_num = 5
 y_num = 5
 margin = 15
-image_size =28
-
+image_size = 28
+channels = 1
 noise_vector_size = 100
 
 
@@ -46,9 +46,9 @@ discriminator = Model()
 generator.add_input_layer(inputs_number = noise_vector_size, input_type = '1d')
 generator.add_dense_layer(neurons_number = 128, activation_func = 'Leaky ReLU', bias = 0)
 generator.add_dense_layer(neurons_number = 512, activation_func = 'Leaky ReLU', bias = 0)
-generator.add_dense_layer(neurons_number = 784, activation_func = 'Tanh', bias = 0)
+generator.add_dense_layer(neurons_number = image_size * image_size * channels, activation_func = 'Tanh', bias = 0)
 
-discriminator.add_input_layer(inputs_number = 784, input_type = '1d')
+discriminator.add_input_layer(inputs_number = image_size * image_size * channels, input_type = '1d')
 discriminator.add_dense_layer(neurons_number = 128, activation_func = 'Leaky ReLU', bias = 0)
 discriminator.add_dense_layer(neurons_number = 64, activation_func = 'Leaky ReLU', bias = 0)
 discriminator.add_dense_layer(neurons_number = 2, activation_func = 'Sigmoid', bias = 0)
@@ -67,7 +67,7 @@ gen_loss, discr_loss = gan_model.train(inputs, epochs = 15, loss_function_name =
 
 def get_images_set(images):
     '''Create set of images'''
-    images_array = np.full((x_num * (margin + image_size), y_num * (margin + image_size)), 255, dtype=np.uint8)
+    images_array = np.full((x_num * (margin + image_size), y_num * (margin + image_size), channels), 255, dtype=np.uint8)
     num = 0
     for i in range(y_num):
         for j in range(x_num):
@@ -79,7 +79,10 @@ def get_images_set(images):
 
     images_array = images_array[: (y_num - 1) * (image_size + margin) + image_size, : (x_num - 1) * (image_size + margin) + image_size]
 
-    return Image.fromarray(images_array).convert("L")
+    if channels == 1:
+        return Image.fromarray(images_array.squeeze(axis = 2)).convert("L")
+    else:
+        return Image.fromarray(images_array)
 
 
 
@@ -87,7 +90,7 @@ def generate_images(noise_vectors):
     '''Generate list of images from noise'''
     generated_images = []
     for i in range(len(noise_vectors)):
-        generated_images.append(np.reshape(gan_model.predict(noise_vectors[i]), (image_size, image_size)))
+        generated_images.append(np.reshape(gan_model.predict(noise_vectors[i]), (image_size, image_size, channels)))
 
     generated_images = np.asfarray(generated_images) * 127.5 + 127.5
 
@@ -121,7 +124,7 @@ def get_each_epoch_images():
     images_per_epoch = gan_model.all_outputs_per_epochs#
     for i in range(len(images_per_epoch)):
         for j in range(len(images_per_epoch[i])):
-            images_per_epoch[i][j] = np.reshape(images_per_epoch[i][j], (image_size, image_size))
+            images_per_epoch[i][j] = np.reshape(images_per_epoch[i][j], (image_size, image_size, channels))
             
     images_per_epoch = np.asarray(images_per_epoch) * 127.5 + 127.5
 
