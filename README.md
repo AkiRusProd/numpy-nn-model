@@ -92,6 +92,8 @@ model.save('Model Path')
 Скрипты:  
 *[Аппроксиматор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/approximator.py)*  
 
+![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/approximator%20func%20examples/parabola.png)
+
 #### Обычный, а также Вариационный Автоэнкодер, устраняющие шумы (AE and VAE)
 
 Скрипты:  
