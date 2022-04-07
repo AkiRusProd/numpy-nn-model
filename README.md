@@ -115,6 +115,8 @@ model.save('Model Path')
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/3%20training%20process.gif)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/images%20latent%20dim.gif)
 
+Пример генерации лица  
+![](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/generated%20images/face%20training%20process.gif)
 
 ### В планах:
 1) Добавление возможности тренировать VAE (Добавлено)
