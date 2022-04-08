@@ -87,6 +87,8 @@ model.save('Model Path')
 Скрипты:  
 *[Классификатор](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/classifier.py)*  
 
+GUI  
+![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/classifier%20gui%20examples/cgui.jpg)
 #### Аппроксиматор частей функций
 
 Скрипты:  
