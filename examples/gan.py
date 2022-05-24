@@ -28,9 +28,9 @@ def prepare_data(data, number_to_generate = None):
 
         if number_to_generate != None:
             if str(line[0]) == number_to_generate:
-                inputs.append(np.asfarray(line[1:])/ 127.5 - 1)
+                inputs.append(np.asfarray(line[1:]) / 127.5 - 1)
         else:
-            inputs.append(np.asfarray(line[1:])/ 127.5 - 1)
+            inputs.append(np.asfarray(line[1:]) / 127.5 - 1)
         
     return inputs
 
