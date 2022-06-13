@@ -9,7 +9,7 @@ class Reshape():
     def forward_prop(self, X):
         self.prev_shape = X.shape
         
-        return X.reshape(self.shape)
+        return X.reshape(self.prev_shape[0], *self.shape)
 
     def backward_prop(self, error):
         
