@@ -283,5 +283,9 @@ layer = Reshape(shape = (3, 1, 16))
 print(layer.forward_prop(X).shape)
 print(layer.backward_prop(X).shape)
 
+from flatten import Flatten
+layer = Flatten()
+print(layer.forward_prop(X).shape)
+print(layer.backward_prop(X).shape)
 
 # print(np.array([1, 2 ,3 ,4, 5, 6, 7, 8, 9]).reshape(1, *(3, 3)))

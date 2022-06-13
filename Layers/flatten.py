@@ -1,4 +1,3 @@
-from matplotlib.pyplot import axis
 import numpy as np
 
 
@@ -9,8 +8,8 @@ class Flatten():
 
     def forward_prop(self, X):
         self.prev_shape = X.shape
-        
-        return X.flatten(axis = 0)
+
+        return X.reshape(self.prev_shape[0], np.prod(self.prev_shape[1:]))
 
     def backward_prop(self, error):
         
