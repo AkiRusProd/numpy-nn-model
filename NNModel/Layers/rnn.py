@@ -59,7 +59,7 @@ class RNN():
         output_error = np.zeros((self.input_data.shape))
 
         for t in reversed(range(self.timesteps)):
-            hidden_delta = (np.dot(next_hidden_delta, self.wh.T) + error[t, :]) *  self.act_func_der(self.states[:, t, :])
+            hidden_delta = (np.dot(next_hidden_delta, self.wh.T) + error[t, :]) *  self.act_func_der(self.states[t, :])
 
             grad_w  -= np.dot(self.input_data[t, :].T, hidden_delta)
             grad_wh -= np.dot(self.states[ t - 1, :].T, hidden_delta)

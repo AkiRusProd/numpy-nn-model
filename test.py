@@ -308,33 +308,40 @@ start_time = time.time()
 
 
 
-input_height, input_width = 4, 5
-batch_size = 1
-channels = 10
-kernels_num = 6
-kernels_height, kernel_width = 3, 4
-X = np.arange(1, batch_size * channels * input_height * input_width + 1).reshape(batch_size, channels, input_height, input_width)
+# input_height, input_width = 4, 5
+# batch_size = 1
+# channels = 10
+# kernels_num = 6
+# kernels_height, kernel_width = 3, 4
+# X = np.arange(1, batch_size * channels * input_height * input_width + 1).reshape(batch_size, channels, input_height, input_width)
 
-print(f'Input X: \n {X.shape}')
+# print(f'Input X: \n {X.shape}')
 
-w0 = np.arange(1,kernels_num * channels * kernels_height * kernel_width + 1).reshape(kernels_num, channels, kernels_height, kernel_width)
+# w0 = np.arange(1,kernels_num * channels * kernels_height * kernel_width + 1).reshape(kernels_num, channels, kernels_height, kernel_width)
 
-print(f'Input W: \n {w0.shape}')
+# print(f'Input W: \n {w0.shape}')
 
-stride = 1
+# stride = 1
 
-# conv_height= (input_height - kernels_size) // (stride) + 1
+# # conv_height= (input_height - kernels_size) // (stride) + 1
 
 
-from conv2d import Conv2D
+# from conv2d import Conv2D
 
-conv = Conv2D(kernels_num, (kernels_height, kernel_width), (channels, input_height, input_width))
-conv.init_weights()
+# conv = Conv2D(kernels_num, (kernels_height, kernel_width), (channels, input_height, input_width))
+# conv.init_weights()
 
-x = conv.forward_prop(X)
-print(x.shape)
-print(x)
-
-x = conv.backward_prop(x)
-print(x.shape)
+# x = conv.forward_prop(X)
+# print(x.shape)
 # print(x)
+
+# x = conv.backward_prop(x)
+# print(x.shape)
+# print(x)
+
+from NNModel.Layers import Dense
+from NNModel import Model
+
+model = Model()
+
+model.fit()
