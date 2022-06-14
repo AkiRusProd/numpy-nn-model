@@ -16,12 +16,12 @@ class Conv2D():
         self.kernel_height, self.kernel_width = kernel_shape
         self.padding = padding
         self.stride = stride
-        self.input_channels, self.input_height, self.input_width = input_shape
+        self.channels_num, self.input_height, self.input_width = input_shape
 
-        self.kernel_per_input = self.kernels_num // self.input_channels
+        self.kernel_per_input = self.kernels_num // self.channels_num
 
-        self.activation = NotImplemented
-        self.activation_der = NotImplemented
+        self.activation = lambda x: x #NotImplemented
+        self.activation_der = lambda x: x#NotImplemented
 
         self.conv_height = (self.input_height + 2 * self.padding[0]  -  self.kernel_height) // self.stride[0]   + 1
         self.conv_width =  (self.input_width + 2 * self.padding[1] - self.kernel_width) // self.stride[1] + 1
@@ -31,46 +31,29 @@ class Conv2D():
        
 
     def init_weights(self):
-        self.w = np.random.normal(0, 1, (self.kernels_num, self.kernel_height, self.kernel_width))
+        self.w = np.random.normal(0, 1, (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
      
 
     def forward_prop(self, X):
         self.input_data = self.make_padding(X, self.padding)
         
-        self.batch_size, self.input_channels, self.input_height, self.input_width = self.input_data.shape
+        self.batch_size, self.channels_num, self.input_height, self.input_width = self.input_data.shape
 
         self.conv_layer = np.zeros((self.batch_size, self.kernels_num, self.conv_height, self.conv_width))
 
-        l, r = 0, self.kernel_per_input
-        if self.input_channels <= self.kernels_num:
-            for b in range(self.batch_size):
-                for c in range(self.input_channels):
-                    for i in range(l, r):
-                        for h in range(self.conv_height):
-                            for w in range(self.conv_width):
+        
+        for b in range(self.batch_size):
+            for k in range(self.kernels_num):
+                for c in range(self.channels_num):
+                    for h in range(self.conv_height):
+                        for w in range(self.conv_width):
 
-                                self.conv_layer[b, i, h, w] = (
-                                    np.sum(self.input_data[b, c, h * self.stride[0] : h * self.stride[0] + self.kernel_height, w * self.stride[1] : w * self.stride[1] + self.kernel_width] *  w[i]
-                                    )
-                                    # + bias
+                            self.conv_layer[b, k, h, w] += (
+                                np.sum(self.input_data[b, c, h * self.stride[0] : h * self.stride[0] + self.kernel_height, w * self.stride[1] : w * self.stride[1] + self.kernel_width] *  self.w[k, c]
                                 )
-                    l = r
-                    r += self.kernel_per_input
+                                # + bias
+                            )
 
-        else:
-            for b in range(self.batch_size):
-                for k in range(self.kernels_num):
-                    for i in range(l, r):
-                        for h in range(self.conv_height):
-                            for w in range(self.conv_width):
-
-                                self.conv_layer[b, k, h, w] += (
-                                    np.sum(self.input_data[b, i, h * self.stride[0] : h * self.stride[0] + self.kernel_height, w * self.stride[1] : w * self.stride[1] + self.kernel_width] * w[k]
-                                    )
-                                    # + bias
-                                )
-                    l = r
-                    r += self.kernel_per_input
 
         return self.activation(self.conv_layer)
 
@@ -86,7 +69,7 @@ class Conv2D():
                         self.input_width + np.max([self.conv_width, self.kernel_width]) - 1
                         ))
 
-        conv_backprop_error = np.zeros((self.batch_size, self.kernels_num, self.input_height, self.input_width))
+        conv_backprop_error = np.zeros((self.batch_size, self.channels_num, self.input_height, self.input_width))
 
         temp_error = np.zeros(
             (
@@ -95,42 +78,41 @@ class Conv2D():
             )
         )
 
-        for i in range(self.kernels_num):
-            temp_error[::self.stride[0], ::self.stride[1]] = error[i]
+        for b in range(self.batch_size):
+            for i in range(self.kernels_num):
+                temp_error[::self.stride[0], ::self.stride[1]]  = error[b, i]
 
-            error_pattern[
-                i,
-                self.kernel_height - 1 : self.conv_height + self.kernel_height - 1,
-                self.kernel_width - 1 : self.conv_width + self.kernel_width - 1,
-            ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
+                error_pattern[
+                    b,
+                    i,
+                    self.kernel_height - 1 : self.conv_height + self.kernel_height - 1,
+                    self.kernel_width - 1 : self.conv_width + self.kernel_width - 1,
+                ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
 
         for s in range(self.kernels_num):
             w_rot_180[s] = np.fliplr(w_rot_180[s])
             w_rot_180[s] = np.flipud(w_rot_180[s])
 
         for b in range(self.batch_size):
-            for s in range(self.kernels_num):
-                for h in range(self.input_height):
-                    for w in range(self.input_width):
+            for c in range(self.channels_num):
+                for k in range(self.kernels_num):
+                    for h in range(self.input_height):
+                        for w in range(self.input_width):
 
-                        conv_backprop_error[b, s, h, w] = np.sum(
-                            error_pattern[b, s, h : h + self.kernel_height, w : w + self.kernel_width] * w_rot_180[s]
-                        )
+                            conv_backprop_error[b, c, h, w] += np.sum(
+                                error_pattern[b, k, h : h + self.kernel_height, w : w + self.kernel_width] * w_rot_180[k, c]
+                            )
 
         self.grad_w = self.compute_gradients(error)
 
         conv_backprop_error = self.make_unpadding(conv_backprop_error, self.padding)
-        conv_backprop_error = self.get_actual_errors_num(conv_backprop_error, self.input_channels, self.kernels_num, self.kernel_per_input)
 
         return conv_backprop_error
 
 
     def compute_gradients(self, error):
 
-        l = 0
-        r = self.kernel_per_input
-
-        gradient = np.zeros((w.shape))
+        gradient = np.zeros((self.w.shape))
 
         temp_error = np.zeros(
             (
@@ -139,74 +121,21 @@ class Conv2D():
             )
         )
 
-        if self.input_channels <= self.kernels_num:
-            for b in range(self.batch_size):
-                for ker in range(self.input_channels):
-                    for i in range(l, r):
-                        for h in range(self.kernel_height):
-                            for w in range(self.kernel_width):
-                                temp_error[::self.stride[0], ::self.stride[1]] = error[i, b]
-
-                                gradient[i][h][w] = np.sum(
-                                    temp_error
-                                    * self.input_data[b, ker, h : h + self.stride[0] * self.conv_height - (self.stride[0] - 1), w : w + self.stride[1] * self.conv_width - (self.stride[1] - 1)]
-                                )
-
-                    l = r
-                    r += self.kernel_per_input
-        else:
-            for b in range(self.batch_size):
-                for ker in range(self.kernels_num):
+        for b in range(self.batch_size):
+            for k in range(self.kernels_num):
+                for c in range(self.channels_num):
                     for h in range(self.kernel_height):
                         for w in range(self.kernel_width):
-                            for i in range(l, r):
-                                temp_error[::self.stride[0], ::self.stride[1]] = error[ker, b]
+                            temp_error[::self.stride[0], ::self.stride[1]] = error[b, k]
 
-                                gradient[ker][h][w] += np.sum(
-                                    temp_error[ker]
-                                    * self.input_data[b, i, h : h + self.stride[0] * self.conv_height - (self.stride[0] - 1), w  : w + self.stride[1] * self.conv_width - (self.stride[1] - 1)]
-                                )
+                            gradient[k, c, h, w] += np.sum(
+                                temp_error
+                                * self.input_data[b, c, h : h + self.stride[0] * self.conv_height - (self.stride[0] - 1), w : w + self.stride[1] * self.conv_width - (self.stride[1] - 1)]
+                            )
 
-                    l = r
-                    r += self.kernel_per_input
 
         return gradient
 
-
-    @staticmethod
-    @njit
-    def get_actual_errors_num(
-        error,
-        prev_kernels_num,
-        kernels_num,
-        kernel_per_input,
-    ):  #
-        pooling_layer_error = np.zeros((prev_kernels_num, error[1], error[2]))
-
-        l = 0
-        r = kernel_per_input
-
-        if prev_kernels_num <= kernels_num:
-            for k in range(
-                prev_kernels_num,
-            ):
-                for s in range(l, r):
-
-                    pooling_layer_error[k] += error[s]
-
-
-                l = r
-                r += kernel_per_input
-        else:
-            for k in range(kernels_num):
-                for s in range(l, r):
-
-                    pooling_layer_error[s] = error[k]
-
-                l = r
-                r += kernel_per_input
-
-        return pooling_layer_error
 
 
 
@@ -228,8 +157,8 @@ class Conv2D():
                 padded_layer[
                     b,
                     i,
-                    padding[0] : layer.shape[1] + padding[0],
-                    padding[1] : layer.shape[2] + padding[1],
+                    padding[0] : layer.shape[2] + padding[0],
+                    padding[1] : layer.shape[3] + padding[1],
                 ] = layer[b, i]
 
         return padded_layer
@@ -251,8 +180,8 @@ class Conv2D():
                 unpadded_layer[b, i] = layer[
                     b,
                     i,
-                    padding[0] : layer.shape[1] - padding[0],
-                    padding[1] : layer.shape[2] - padding[1],
+                    padding[0] : layer.shape[2] - padding[0],
+                    padding[1] : layer.shape[3] - padding[1],
                 ]
 
         return unpadded_layer

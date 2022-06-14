@@ -113,87 +113,102 @@ start_time = time.time()
 start_time = time.time()
 
 
-X_size = 4
-batch_size = 5
-channels = 3
-X = np.arange(1, batch_size * channels * X_size * X_size + 1).reshape(batch_size, channels, X_size, X_size)
+# X_size = 4
+# batch_size = 1
+# channels = 1
+# kernels_num = 6
+# X = np.arange(1, batch_size * channels * X_size * X_size + 1).reshape(batch_size, channels, X_size, X_size)
 
-print(f'Input X: \n {X}')
+# print(f'Input X: \n {X}')
 
-w_size = 2
-w0 = np.arange(1,channels * w_size * w_size + 1).reshape(channels, w_size, w_size)
+# w_size = 2
+# w0 = np.arange(1,kernels_num * w_size * w_size + 1).reshape(kernels_num, w_size, w_size)
 
-print(f'Input W: \n {w0}')
+# print(f'Input W: \n {w0}')
 
-stride = 1
+# stride = 1
 
-conv_size = (X_size - w_size) // (stride) + 1
-
-
-###МОЯ СВЕРТКА БЫСТРЕЙ
-def convolution(
-        input_layer = X,
-        weights = w0,
-        kernels_size = w_size,
-      ):
-
-        conv_layer = np.zeros((batch_size, channels, conv_size, conv_size))
-
-        for b in range(batch_size):
-            for c in range(channels):
-                for h in range(0, conv_size):
-                    for w in range(0, conv_size):
-                        conv_layer[c, h, w] = (
-                            np.sum(input_layer[b, c, h * stride : h * stride + kernels_size, w * stride : w * stride + kernels_size] * weights)
-                        )
-
-        return conv_layer
-
-conv_layer = convolution()
-# print(conv_layer)
-# print(f'T2 {time.time()-start_time}')
-
-temp_error = np.zeros(
-            (
-                stride * conv_size - (stride - 1),
-                stride * conv_size - (stride - 1),
-            )
-        )
+# conv_size = (X_size - w_size) // (stride) + 1
 
 
-gradient = np.zeros((w0.shape))
-error = np.ones((conv_layer.shape))
+# ###МОЯ СВЕРТКА БЫСТРЕЙ
+# def convolution(
+#         input_layer = X,
+#         weights = w0,
+#         kernels_size = w_size,
+#       ):
 
-for b in range(batch_size):
-    for c in range(channels):
-        for h in range(w_size):
-            for w in range(w_size):
-                temp_error[::stride, ::stride] = error[b, c]
+#         conv_layer = np.zeros((batch_size, channels, conv_size, conv_size))
 
-                gradient[h][w] = np.sum(
-                    temp_error * X[b, c, h : h + stride * conv_size - (stride - 1), w  : w + stride * conv_size - (stride - 1)]
-                )
+#         for b in range(batch_size):
+#             for c in range(channels):
+#                 for h in range(0, conv_size):
+#                     for w in range(0, conv_size):
+#                         conv_layer[b, c, h, w] = (
+#                             np.sum(input_layer[b, c, h * stride : h * stride + kernels_size, w * stride : w * stride + kernels_size] * weights)
+#                         )
 
-print(f'{gradient = }')
+#         return conv_layer
+
+# conv_layer = convolution()
+# # print(conv_layer)
+# # print(f'T2 {time.time()-start_time}')
+
+# temp_error = np.zeros(
+#             (
+#                 stride * conv_size - (stride - 1),
+#                 stride * conv_size - (stride - 1),
+#             )
+#         )
+
+
+# gradient = np.zeros((w0.shape))
+# error = np.ones((conv_layer.shape))
+
+# for b in range(batch_size):
+#     for c in range(channels):
+#         for h in range(w_size):
+#             for w in range(w_size):
+#                 temp_error[::stride, ::stride] = error[b, c]
+
+#                 gradient[h][w] = np.sum(
+#                     temp_error * X[b, c, h : h + stride * conv_size - (stride - 1), w  : w + stride * conv_size - (stride - 1)]
+#                 )
+
+# # print(f'{gradient = }')
 
 # import torch
 # import torch.nn as nn
 # import torch.nn.functional as F
 
 
-# conv = nn.Conv2d(1, 1, w_size, stride = stride)
-# t_w = w0.reshape(1, 1, w_size, w_size)
+# conv = nn.Conv2d(1, kernels_num, w_size, stride = stride, bias=False)
+# t_w = w0.reshape(1, kernels_num, w_size, w_size)
 
 
 # conv.weight = nn.Parameter(torch.from_numpy(t_w).float())
 
 
-# t_X = X.reshape(1, 1, X_size, X_size)
+# t_X = X.reshape(1, channels, X_size, X_size)
 
 # x = conv(torch.from_numpy(t_X).float())
 
 
 # print(x)
+
+# conv = nn.Conv2d(4, 7, 3, stride=2)
+# # non-square kernels and unequal stride and with padding
+# conv2 = nn.Conv2d(7, 10, (3, 3), stride=(1, 1), padding=(2, 2))
+# # non-square kernels and unequal stride and with padding and dilation
+# conv3 = nn.Conv2d(10, 10, (3, 3), stride=(1, 1), padding=(2, 2))#, dilation=(3, 1)
+# input = torch.randn(1, 4, 5, 5)
+# x1 = conv(input)
+# x2 = conv2(x1)
+# x = conv3(x2)
+
+# print(x1.shape)
+# print(x2.shape)
+# print(x.shape)
 
 
 # conv = nn.ConvTranspose2d(1, 1, w_size, stride = stride)
@@ -208,26 +223,26 @@ print(f'{gradient = }')
 # x = conv(torch.from_numpy(t_X).float())
 # print(x)
 
-from numba import njit
+# from numba import njit
 
-start_time = time.time()
-# @njit
-def make_padding(layer, padding):
-    padded_layer = np.pad(layer, ((padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
-    # padded_layer = np.zeros(
-    #     (
-    #         layer.shape[0] + 2 * padding[0],
-    #         layer.shape[1] + 2 * padding[1],
-    #     )
-    # )
+# start_time = time.time()
+# # @njit
+# def make_padding(layer, padding):
+#     padded_layer = np.pad(layer, ((padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
+#     # padded_layer = np.zeros(
+#     #     (
+#     #         layer.shape[0] + 2 * padding[0],
+#     #         layer.shape[1] + 2 * padding[1],
+#     #     )
+#     # )
 
 
-    # padded_layer[
-    #         padding[0] : layer.shape[0] + padding[0],
-    #         padding[1] : layer.shape[1] + padding[1],
-    #     ] = layer
+#     # padded_layer[
+#     #         padding[0] : layer.shape[0] + padding[0],
+#     #         padding[1] : layer.shape[1] + padding[1],
+#     #     ] = layer
 
-    return padded_layer
+#     return padded_layer
 
 
 # print(make_padding(X, (2,2)))
@@ -277,15 +292,49 @@ def make_padding(layer, padding):
 # print(temp)
 
 
-from reshape import Reshape
+# from reshape import Reshape
 
-layer = Reshape(shape = (3, 1, 16))
-print(layer.forward_prop(X).shape)
-print(layer.backward_prop(X).shape)
+# layer = Reshape(shape = (3, 1, 16))
+# print(layer.forward_prop(X).shape)
+# print(layer.backward_prop(X).shape)
 
-from flatten import Flatten
-layer = Flatten()
-print(layer.forward_prop(X).shape)
-print(layer.backward_prop(X).shape)
+# from flatten import Flatten
+# layer = Flatten()
+# print(layer.forward_prop(X).shape)
+# print(layer.backward_prop(X).shape)
 
 # print(np.array([1, 2 ,3 ,4, 5, 6, 7, 8, 9]).reshape(1, *(3, 3)))
+
+
+
+
+input_height, input_width = 4, 5
+batch_size = 1
+channels = 10
+kernels_num = 6
+kernels_height, kernel_width = 3, 4
+X = np.arange(1, batch_size * channels * input_height * input_width + 1).reshape(batch_size, channels, input_height, input_width)
+
+print(f'Input X: \n {X.shape}')
+
+w0 = np.arange(1,kernels_num * channels * kernels_height * kernel_width + 1).reshape(kernels_num, channels, kernels_height, kernel_width)
+
+print(f'Input W: \n {w0.shape}')
+
+stride = 1
+
+# conv_height= (input_height - kernels_size) // (stride) + 1
+
+
+from conv2d import Conv2D
+
+conv = Conv2D(kernels_num, (kernels_height, kernel_width), (channels, input_height, input_width))
+conv.init_weights()
+
+x = conv.forward_prop(X)
+print(x.shape)
+print(x)
+
+x = conv.backward_prop(x)
+print(x.shape)
+# print(x)
