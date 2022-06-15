@@ -352,7 +352,7 @@ test_inputs, test_targets = prepare_data(test_data)
 
 
 
-from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D
+from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, MaxPooling2D, AveragePooling2D
 from NNModel import Model
 from NNModel.activations import LeakyReLU
 
@@ -368,17 +368,14 @@ model = Model()
 # model.add(Dense(units_num = 10, activation = "sigmoid"))
 
 model.add(Reshape(shape = (1, 28, 28)))
-model.add(Conv2D(kernels_num = 5, kernel_shape = (7, 7), input_shape = (1, 28, 28), activation = "relu"))
-model.add(Conv2D(kernels_num = 13, kernel_shape = (7, 7), input_shape = (5, 22, 22), activation = "relu"))
+model.add(Conv2D(kernels_num = 10, kernel_shape = (5, 5), activation = "relu"))
+model.add(MaxPooling2D())
+model.add(Conv2D(kernels_num = 20, kernel_shape = (5, 5), activation = "relu"))
+model.add(MaxPooling2D())
 model.add(Flatten())
 model.add(BatchNormalization())
-# model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
-# model.add(BatchNormalization())
-# model.add(Dropout())
-# model.add(Flatten())
-# model.add(Dense(units_num = 128, activation = "sigmoid"))
-# model.add(BatchNormalization())
-# model.add(Dropout())
+model.add(Dense(units_num = 50,  activation = "relu"))
+model.add(Dropout())
 model.add(Dense(units_num = 10, activation = "sigmoid"))
 
 model.compile(optimizer = "adam", loss_function = "mse")
@@ -422,3 +419,13 @@ model.predict(test_inputs, test_targets)
 # print(layer.backward_prop(X).shape)
 
 # # print(np.array([1, 2 ,3 ,4, 5, 6, 7, 8, 9]).reshape(1, *(3, 3)))
+
+# from numba import njit
+# @njit
+# def create_arr(shape):
+#     arr = np.zeros((shape[0], shape[1]))
+
+
+# create_arr(shape = (1, 2, 3 ,4))
+
+

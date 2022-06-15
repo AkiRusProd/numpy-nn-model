@@ -37,15 +37,14 @@ class BatchNormalization():
 
 
     def forward_prop(self, X, training):
-        self.batch_size, self.input_size = X.shape
+        self.batch_size = X.shape[0]
 
         if self.moving_mean is None: self.moving_mean = np.mean(X, axis = 0)
         if self.moving_var is None: self.moving_var = np.mean(X, axis = 0)
         
-
         if training == True:
-            self.mean = np.mean(X, axis=0)
-            self.var = np.var(X, axis=0)
+            self.mean = np.mean(X, axis = 0)
+            self.var = np.var(X, axis = 0)
 
             self.moving_mean = self.momentum * self.moving_mean + (1.0 - self.momentum) * self.mean
             self.moving_var = self.momentum * self.moving_var + (1.0 - self.momentum) * self.var

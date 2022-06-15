@@ -25,6 +25,18 @@ class Tanh():
         return 1.0 - np.power(self.function(x), 2)
 
 
+class Softmax():
+
+    def function(self, x):
+        e_x = np.exp(x - np.max(x, axis = -1, keepdims=True))
+        
+        return e_x / np.sum(e_x, axis = -1, keepdims=True)
+
+    def derivative(self, x):
+        
+        return self.function(x) * (1.0 - self.function(x))
+
+
 class ReLU():
 
     def function(self, x):
@@ -104,6 +116,7 @@ activations= {
     
     "sigmoid": Sigmoid(),
     "tanh": Tanh(),
+    "softmax": Softmax(),
     "relu": ReLU(),
     "leaky relu": LeakyReLU(),
     "elu": ELU(),

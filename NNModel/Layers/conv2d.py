@@ -5,14 +5,10 @@ from NNModel.activations import activations
 
 class Conv2D():
     #TODO
-    #add accumulate gradients for batch backprop
-    #maybe remove batch_size; only propagate one sample, not batch |yep
     #add bias
     #verify speed of padding/unpadding; maybe native numpy is faster than numba
-    #check backprop and gradients
-    #add numba to forward/ backward/ gradient
 
-    def __init__(self, kernels_num, kernel_shape, input_shape, activation = None, padding = (0, 0), stride = (1, 1)):
+    def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1)):
         self.kernels_num = kernels_num
         self.kernel_height, self.kernel_width = kernel_shape
         self.padding = padding

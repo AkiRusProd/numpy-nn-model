@@ -4,8 +4,6 @@ from NNModel.activations import activations
 
 class Dense():
     #TODO
-    #add accumulate gradients for batch backprop
-    #maybe remove batch_size; only propagate one sample, not batch
     #add bias
 
     def __init__(self, units_num, activation = None, input_shape = None):

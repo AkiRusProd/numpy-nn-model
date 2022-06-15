@@ -4,8 +4,6 @@ from NNModel.activations import activations
 
 class RNN():
     #TODO
-    #add accumulate gradients for batch backprop
-    #maybe remove batch_size; only propagate one sample, not batch
     #add bias
 
     def __init__(self, units_num, activation = 'tanh', input_shape = None, return_sequences = False):

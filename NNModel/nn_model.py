@@ -105,7 +105,7 @@ class Model():
                 self.update_weights()
 
                 tqdm_range.set_description(
-                        f"training | loss: {loss:.4f} | epoch {i + 1}/{epochs}" #loss: {loss:.4f}
+                        f"training | loss: {loss:.7f} | epoch {i + 1}/{epochs}" #loss: {loss:.4f}
                     )
 
     def predict(self, input_data, data_targets):
