@@ -8,6 +8,10 @@ class UpSampling2D():
 
     def __init__(self,  size=(2, 2)) -> None:
         self.size = size
+        self.input_shape = None
+
+    def build(self, optimizer):
+        self.output_shape = (self.input_shape[0], self.input_shape[1] * self.size[0], self.input_shape[2] * self.size[1])
 
     def forward_prop(self, X, training):
 

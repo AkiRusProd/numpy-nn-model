@@ -352,9 +352,10 @@ test_inputs, test_targets = prepare_data(test_data)
 
 
 
-from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, MaxPooling2D, AveragePooling2D
+from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, MaxPooling2D, AveragePooling2D, UpSampling2D
 from NNModel import Model
 from NNModel.activations import LeakyReLU
+from NNModel.optimizers import SGD
 
 model = Model()
 
@@ -368,15 +369,16 @@ model = Model()
 # model.add(Dense(units_num = 10, activation = "sigmoid"))
 
 model.add(Reshape(shape = (1, 28, 28)))
-model.add(Conv2D(kernels_num = 10, kernel_shape = (5, 5), activation = "relu"))
+model.add(Conv2D(kernels_num = 8, kernel_shape = (5, 5), activation = "relu"))
 model.add(MaxPooling2D())
-model.add(Conv2D(kernels_num = 20, kernel_shape = (5, 5), activation = "relu"))
-model.add(MaxPooling2D())
+model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), activation = "relu"))
+# model.add(MaxPooling2D())
+model.add(UpSampling2D())
 model.add(Flatten())
-model.add(BatchNormalization())
-model.add(Dense(units_num = 50,  activation = "relu"))
-model.add(Dropout())
-model.add(Dense(units_num = 10, activation = "sigmoid"))
+# model.add(BatchNormalization())
+# model.add(Dense(units_num = 50,  activation = "relu"))
+# model.add(Dropout())
+model.add(Dense(units_num = 10, activation = "softmax"))
 
 model.compile(optimizer = "adam", loss_function = "mse")
 model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
