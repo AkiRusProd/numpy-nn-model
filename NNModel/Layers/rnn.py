@@ -40,7 +40,7 @@ class RNN():
         self.output_shape = (1, self.units_num) if self.return_sequences == False else (self.timesteps, self.units_num)
 
 
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
         self.input_data = X
         self.batch_size = len(self.input_data)
         # self.batch_size, self.timesteps, self.input_size = self.input_data.shape

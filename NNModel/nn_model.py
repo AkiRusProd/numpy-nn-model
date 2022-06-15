@@ -35,9 +35,9 @@ class Model():
         self.layers.append(layer)
 
 
-    def forward_prop(self, ouput):
+    def forward_prop(self, ouput, training):
         for layer in self.layers:
-            ouput = layer.forward_prop(ouput)
+            ouput = layer.forward_prop(ouput, training)
 
         return ouput
 
@@ -48,7 +48,8 @@ class Model():
 
     def update_weights(self):
         for i, layer in enumerate(reversed(self.layers)):
-            layer.update_weights(layer_num = i + 1)
+            if hasattr(layer, 'update_weights'):
+                layer.update_weights(layer_num = i + 1)
 
 
 
@@ -92,7 +93,7 @@ class Model():
         for i in range(epochs):
             tqdm_range = tqdm(enumerate(zip(batches, batches_targets)), total = len(batches))
             for j, (batch, batch_targets) in tqdm_range:
-                predictions = self.forward_prop(batch)
+                predictions = self.forward_prop(batch, training = True)
                 
                 targets =     self.prepare_targets(batch_targets)
             
@@ -112,7 +113,7 @@ class Model():
         samples_num = true_samples_num = 0
 
         for i, (input, target) in tqdm(enumerate(zip(input_data, data_targets)), desc = "testing", total = len(input_data)):
-            predictions = self.forward_prop(input.reshape(1, *input.shape))
+            predictions = self.forward_prop(input.reshape(1, *input.shape), training = False)
 
             max_output_index = np.argmax(predictions)
 

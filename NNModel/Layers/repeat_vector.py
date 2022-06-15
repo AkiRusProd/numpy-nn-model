@@ -6,7 +6,7 @@ class RepeatVector():
     def __init__(self, num) -> None:
         self.num = num
 
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
         
         return np.tile(X, (self.num, 1))
 

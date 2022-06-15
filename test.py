@@ -375,7 +375,7 @@ test_inputs, test_targets = prepare_data(test_data)
 #     print(b.shape)
 
 
-from NNModel.Layers import Dense
+from NNModel.Layers import Dense, BatchNormalization
 from NNModel import Model
 from NNModel.activations import LeakyReLU
 
@@ -391,8 +391,11 @@ batches_targets = np.array_split(data_targets, batch_num)
 # print(type(batches_targets[0][0]))
 
 model.add(Dense(units_num = 256, input_shape = (1, 784), activation = "sigmoid"))
+model.add(BatchNormalization())
 model.add(Dense(units_num = 128, activation = "sigmoid"))
+model.add(BatchNormalization())
 model.add(Dense(units_num = 10, activation = "sigmoid"))
+
 
 model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 model.predict(test_inputs, test_targets)

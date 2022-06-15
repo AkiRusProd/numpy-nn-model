@@ -45,7 +45,7 @@ class Conv2D():
         self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
      
 
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
         self.input_data = self.make_padding(X, self.padding)
         
         self.batch_size = len(self.input_data)

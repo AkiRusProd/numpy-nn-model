@@ -6,7 +6,7 @@ class Dropout():
     def __init__(self, rate = 0.1) -> None:
         self.rate = rate
         
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
         self.mask = np.random.binomial(
                         n = 1,
                         p = 1 - self.rate,

@@ -68,7 +68,7 @@ class MaxPooling2D(Pooling2D):
     def __init__(self,  pool_size=(2, 2)):
         self.pool_size = pool_size
 
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
         self.input_data = X
         self.block_size = self.input_data.shape[2] // self.pool_size[0], self.input_data.shape[3], self.pool_size[1]
 

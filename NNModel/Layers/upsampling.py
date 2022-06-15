@@ -9,7 +9,7 @@ class UpSampling2D():
     def __init__(self,  size=(2, 2)) -> None:
         self.size = size
 
-    def forward_prop(self, X):
+    def forward_prop(self, X, training):
 
         return self.make_upsampling(X, self.size)
 
