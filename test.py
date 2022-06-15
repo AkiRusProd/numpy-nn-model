@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 
 
 # n1, n2 = 5, 5
@@ -339,9 +340,74 @@ start_time = time.time()
 # print(x.shape)
 # print(x)
 
+training_data = open('dataset/mnist_train.csv','r').readlines()
+test_data = open('dataset/mnist_test.csv','r').readlines()
+
+
+def prepare_data(data):
+    inputs, targets = [], []
+
+    for raw_line in tqdm(data, desc = 'preparing data'):
+
+        line = raw_line.split(',')
+    
+        inputs.append(np.asfarray(line[1:])/255)
+        targets.append(int(line[0]))
+
+    return inputs, targets
+
+
+batch_size = 100
+training_inputs, training_targets = prepare_data(training_data)
+test_inputs, test_targets = prepare_data(test_data)
+
+# inputs = np.asarray(test_inputs)
+# test_targets = test_targets
+# batch_num = len(inputs) // batch_size
+
+# batches = np.array_split(inputs, batch_num)
+# batches_targets =  np.array_split(test_targets, batch_num)
+# # batches = np.stack( batches, axis=0 )
+
+# print(len(batches), batches_targets[0].shape)
+
+# for i, (b, t) in enumerate(zip(batches, batches_targets)):
+#     print(b.shape)
+
+
 from NNModel.Layers import Dense
 from NNModel import Model
+from NNModel.activations import LeakyReLU
 
 model = Model()
+# print(np.asarray(test_targets).shape)
 
-model.fit()
+# data_targets = np.array(test_targets, ndmin = 2)
+data_targets = test_targets
+# print(len(test_inputs))
+batch_num = len(test_inputs) // batch_size
+batches_targets = np.array_split(data_targets, batch_num)
+# print(batch_num)
+# print(type(batches_targets[0][0]))
+
+model.add(Dense(units_num = 256, input_shape = (1, 784), activation = "sigmoid"))
+model.add(Dense(units_num = 128, activation = "sigmoid"))
+model.add(Dense(units_num = 10, activation = "sigmoid"))
+
+model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
+model.predict(test_inputs, test_targets)
+
+
+
+
+
+
+# from NNModel.activations import activations
+# from NNModel.activations import Sigmoid
+
+
+# activation = Sigmoid()
+# activation2 = activations["sigmoid"]
+
+
+# print(activation2.function(3))

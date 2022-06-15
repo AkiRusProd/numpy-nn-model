@@ -1,5 +1,6 @@
 import numpy as np
 from numba import njit
+from NNModel.activations import activations
 
 
 class Conv2D():
@@ -11,33 +12,43 @@ class Conv2D():
     #check backprop and gradients
     #add numba to forward/ backward/ gradient
 
-    def __init__(self, kernels_num, kernel_shape, input_shape, padding = (0, 0), stride = (1, 1)):
+    def __init__(self, kernels_num, kernel_shape, input_shape, activation = None, padding = (0, 0), stride = (1, 1)):
         self.kernels_num = kernels_num
         self.kernel_height, self.kernel_width = kernel_shape
         self.padding = padding
         self.stride = stride
-        self.channels_num, self.input_height, self.input_width = input_shape
+        self.input_shape = input_shape
 
-        self.kernel_per_input = self.kernels_num // self.channels_num
-
-        self.activation = lambda x: x #NotImplemented
-        self.activation_der = lambda x: x#NotImplemented
-
-        self.conv_height = (self.input_height + 2 * self.padding[0]  -  self.kernel_height) // self.stride[0]   + 1
-        self.conv_width =  (self.input_width + 2 * self.padding[1] - self.kernel_width) // self.stride[1] + 1
+        if type(activation) is str:
+            self.activation_function = activations[activation]    
+        else:
+            self.activation_function = activation
+          
 
         self.w = None
 
        
 
-    def init_weights(self):
-        self.w = np.random.normal(0, 1, (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
+    def build(self, optimizer):
+        self.optimizer = optimizer
+        self.channels_num, self.input_height, self.input_width = self.input_shape
+        
+        self.conv_height = (self.input_height + 2 * self.padding[0]  -  self.kernel_height) // self.stride[0]   + 1
+        self.conv_width =  (self.input_width + 2 * self.padding[1] - self.kernel_width) // self.stride[1] + 1
+
+        self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
+
+        
+        self.v, self.m         = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
+        self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
+
+        self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
      
 
     def forward_prop(self, X):
         self.input_data = self.make_padding(X, self.padding)
         
-        self.batch_size, self.channels_num, self.input_height, self.input_width = self.input_data.shape
+        self.batch_size = len(self.input_data)
 
         self.conv_layer = np.zeros((self.batch_size, self.kernels_num, self.conv_height, self.conv_width))
 
@@ -55,10 +66,10 @@ class Conv2D():
                             )
 
 
-        return self.activation(self.conv_layer)
+        return self.activation.function(self.conv_layer)
 
     def backward_prop(self, error):
-        error *= self.activation_der(self.conv_layer)
+        error *= self.activation.derivative(self.conv_layer)
         
         w_rot_180 = self.w
         
@@ -186,3 +197,6 @@ class Conv2D():
 
         return unpadded_layer
  
+
+    def update_weights(self, layer_num):
+        self.w = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
