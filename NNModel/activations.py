@@ -89,6 +89,16 @@ class GELU():
             + 0.5
         )
 
+class Absent():
+
+    def function(self, x):
+
+            return x
+
+    def derivative(self, x):
+
+            return np.ones(x.shape)
+
     
 activations= {
     
@@ -98,5 +108,6 @@ activations= {
     "leaky relu": LeakyReLU(),
     "elu": ELU(),
     "gelu": GELU(),
+    None: Absent()
     
 }

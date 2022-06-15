@@ -293,18 +293,6 @@ start_time = time.time()
 # print(temp)
 
 
-# from reshape import Reshape
-
-# layer = Reshape(shape = (3, 1, 16))
-# print(layer.forward_prop(X).shape)
-# print(layer.backward_prop(X).shape)
-
-# from flatten import Flatten
-# layer = Flatten()
-# print(layer.forward_prop(X).shape)
-# print(layer.backward_prop(X).shape)
-
-# print(np.array([1, 2 ,3 ,4, 5, 6, 7, 8, 9]).reshape(1, *(3, 3)))
 
 
 
@@ -357,52 +345,57 @@ def prepare_data(data):
     return inputs, targets
 
 
-batch_size = 100
+
 training_inputs, training_targets = prepare_data(training_data)
 test_inputs, test_targets = prepare_data(test_data)
 
-# inputs = np.asarray(test_inputs)
-# test_targets = test_targets
-# batch_num = len(inputs) // batch_size
-
-# batches = np.array_split(inputs, batch_num)
-# batches_targets =  np.array_split(test_targets, batch_num)
-# # batches = np.stack( batches, axis=0 )
-
-# print(len(batches), batches_targets[0].shape)
-
-# for i, (b, t) in enumerate(zip(batches, batches_targets)):
-#     print(b.shape)
 
 
-from NNModel.Layers import Dense, BatchNormalization
+
+from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D
 from NNModel import Model
 from NNModel.activations import LeakyReLU
 
 model = Model()
-# print(np.asarray(test_targets).shape)
 
-# data_targets = np.array(test_targets, ndmin = 2)
-data_targets = test_targets
-# print(len(test_inputs))
-batch_num = len(test_inputs) // batch_size
-batches_targets = np.array_split(data_targets, batch_num)
-# print(batch_num)
-# print(type(batches_targets[0][0]))
+# model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
+# model.add(BatchNormalization())
+# model.add(Dropout())
+# model.add(Flatten())
+# model.add(Dense(units_num = 128, activation = "sigmoid"))
+# model.add(BatchNormalization())
+# model.add(Dropout())
+# model.add(Dense(units_num = 10, activation = "sigmoid"))
 
-model.add(Dense(units_num = 256, input_shape = (1, 784), activation = "sigmoid"))
+model.add(Reshape(shape = (1, 28, 28)))
+model.add(Conv2D(kernels_num = 5, kernel_shape = (7, 7), input_shape = (1, 28, 28), activation = "relu"))
+model.add(Conv2D(kernels_num = 13, kernel_shape = (7, 7), input_shape = (5, 22, 22), activation = "relu"))
+model.add(Flatten())
 model.add(BatchNormalization())
-model.add(Dense(units_num = 128, activation = "sigmoid"))
-model.add(BatchNormalization())
+# model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
+# model.add(BatchNormalization())
+# model.add(Dropout())
+# model.add(Flatten())
+# model.add(Dense(units_num = 128, activation = "sigmoid"))
+# model.add(BatchNormalization())
+# model.add(Dropout())
 model.add(Dense(units_num = 10, activation = "sigmoid"))
 
-
+model.compile(optimizer = "adam", loss_function = "mse")
 model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 model.predict(test_inputs, test_targets)
 
 
 
+# X = np.random.normal(0, 1, (5, 1, 28, 28))
 
+# layer = Conv2D(kernels_num = 5, kernel_shape = (7, 7), input_shape = (1, 28, 28), activation = "sigmoid")
+# layer.conv_height = 28 - 7 + 1
+# layer.conv_width= 28 - 7 + 1
+# layer.channels_num = 1
+# layer.w = np.random.normal(0, 1, (5, 1, 7, 7))
+# print(layer.forward_prop(X, training = True).shape)
+# print(layer.backward_prop(X).shape)
 
 
 # from NNModel.activations import activations
@@ -414,3 +407,18 @@ model.predict(test_inputs, test_targets)
 
 
 # print(activation2.function(3))
+
+# from reshape import Reshape
+# X = np.random.normal(0, 1, (5, 1, 48))
+
+# layer = Reshape(shape = (3, 1, 16))
+# print(layer.forward_prop(X, training = True).shape)
+# print(layer.backward_prop(X).shape)
+
+# print(X.shape)
+
+# layer = Flatten()
+# print(layer.forward_prop(X, training = True).shape)
+# print(layer.backward_prop(X).shape)
+
+# # print(np.array([1, 2 ,3 ,4, 5, 6, 7, 8, 9]).reshape(1, *(3, 3)))

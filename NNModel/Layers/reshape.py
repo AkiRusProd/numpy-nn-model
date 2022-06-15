@@ -5,6 +5,10 @@ class Reshape():
 
     def __init__(self, shape) -> None:
         self.shape = shape
+        self.input_shape = None
+
+    def build(self, optimizer):
+        self.output_shape = self.shape
 
     def forward_prop(self, X, training):
         self.prev_shape = X.shape

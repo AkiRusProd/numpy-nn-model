@@ -11,9 +11,9 @@ class Model():
 
         #Default params
         self.loss_function = MSE()
-        self.optimizer = Nadam()
+        self.optimizer = SGD()
 
-    def compile(self, optimizer, loss_function): 
+    def compile(self, optimizer = None, loss_function = None): 
 
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
@@ -86,8 +86,8 @@ class Model():
         input_data = np.asarray(input_data)
         batch_num = len(input_data) // batch_size
 
-        batches = np.array_split(input_data, batch_num)#np.stack
-        batches_targets = np.array_split(data_targets, batch_num)#np.stack
+        batches = np.stack(np.array_split(input_data, batch_num))#np.stack
+        batches_targets = np.stack(np.array_split(data_targets, batch_num))#np.stack
 
 
         for i in range(epochs):

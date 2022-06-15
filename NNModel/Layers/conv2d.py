@@ -18,11 +18,12 @@ class Conv2D():
         self.padding = padding
         self.stride = stride
         self.input_shape = input_shape
-
+        
         if type(activation) is str:
-            self.activation_function = activations[activation]    
+            self.activation = activations[activation]
         else:
-            self.activation_function = activation
+            self.activation = activation
+
           
 
         self.w = None
@@ -50,98 +51,114 @@ class Conv2D():
         
         self.batch_size = len(self.input_data)
 
-        self.conv_layer = np.zeros((self.batch_size, self.kernels_num, self.conv_height, self.conv_width))
+        self.conv_layer = self._forward_prop(self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.kernel_height, self.kernel_width, self.stride)
 
-        
-        for b in range(self.batch_size):
-            for k in range(self.kernels_num):
-                for c in range(self.channels_num):
-                    for h in range(self.conv_height):
-                        for w in range(self.conv_width):
+        return self.activation.function(self.conv_layer)
 
-                            self.conv_layer[b, k, h, w] += (
-                                np.sum(self.input_data[b, c, h * self.stride[0] : h * self.stride[0] + self.kernel_height, w * self.stride[1] : w * self.stride[1] + self.kernel_width] *  self.w[k, c]
+
+    @staticmethod
+    @njit
+    def _forward_prop(input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
+        conv_layer = np.zeros((batch_size, kernels_num, conv_height, conv_width))
+
+        for b in range(batch_size):
+            for k in range(kernels_num):
+                for c in range(channels_num):
+                    for h in range(conv_height):
+                        for w in range(conv_width):
+                            
+                            conv_layer[b, k, h, w] += (
+                                np.sum(input_data[b, c, h * stride[0] : h * stride[0] + kernel_height, w * stride[1] : w * stride[1] + kernel_width] *  weights[k, c]
                                 )
                                 # + bias
                             )
 
-
-        return self.activation.function(self.conv_layer)
+        return conv_layer
 
     def backward_prop(self, error):
         error *= self.activation.derivative(self.conv_layer)
-        
-        w_rot_180 = self.w
-        
-        error_pattern = np.zeros((
-                        self.batch_size,
-                        self.kernels_num, 
-                        self.input_height + np.max([self.conv_height, self.kernel_height]) - 1, 
-                        self.input_width + np.max([self.conv_width, self.kernel_width]) - 1
-                        ))
 
-        conv_backprop_error = np.zeros((self.batch_size, self.channels_num, self.input_height, self.input_width))
-
-        temp_error = np.zeros(
-            (
-                self.stride[0] * self.conv_height - (self.stride[0] - 1),
-                self.stride[1] * self.conv_width - (self.stride[1] - 1),
-            )
-        )
-
-        for b in range(self.batch_size):
-            for i in range(self.kernels_num):
-                temp_error[::self.stride[0], ::self.stride[1]]  = error[b, i]
-
-                error_pattern[
-                    b,
-                    i,
-                    self.kernel_height - 1 : self.conv_height + self.kernel_height - 1,
-                    self.kernel_width - 1 : self.conv_width + self.kernel_width - 1,
-                ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
-
-        for s in range(self.kernels_num):
-            w_rot_180[s] = np.fliplr(w_rot_180[s])
-            w_rot_180[s] = np.flipud(w_rot_180[s])
-
-        for b in range(self.batch_size):
-            for c in range(self.channels_num):
-                for k in range(self.kernels_num):
-                    for h in range(self.input_height):
-                        for w in range(self.input_width):
-
-                            conv_backprop_error[b, c, h, w] += np.sum(
-                                error_pattern[b, k, h : h + self.kernel_height, w : w + self.kernel_width] * w_rot_180[k, c]
-                            )
-
-        self.grad_w = self.compute_gradients(error)
+        self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.kernel_height, self.kernel_width, self.stride)
+        conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.input_height, self.input_width, self.conv_height, self.conv_width, self.kernel_height, self.kernel_width, self.stride)
 
         conv_backprop_error = self.make_unpadding(conv_backprop_error, self.padding)
 
         return conv_backprop_error
 
 
-    def compute_gradients(self, error):
+    @staticmethod
+    @njit
+    def _backward_prop(error, weights, batch_size, channels_num, kernels_num, input_height, input_width, conv_height, conv_width, kernel_height, kernel_width, stride):
 
-        gradient = np.zeros((self.w.shape))
+        w_rot_180 = weights
+        
+        error_pattern = np.zeros((
+                        batch_size,
+                        kernels_num, 
+                        input_height + np.max(np.array([conv_height, kernel_height])) - 1, 
+                        input_width + np.max(np.array([conv_width, kernel_width])) - 1
+                        ))
+
+        conv_backprop_error = np.zeros((batch_size, channels_num, input_height, input_width))
 
         temp_error = np.zeros(
             (
-                self.stride[0] * self.conv_height - (self.stride[0] - 1),
-                self.stride[1] * self.conv_width - (self.stride[1] - 1),
+                stride[0] * conv_height - (stride[0] - 1),
+                stride[1] * conv_width - (stride[1] - 1),
             )
         )
 
-        for b in range(self.batch_size):
-            for k in range(self.kernels_num):
-                for c in range(self.channels_num):
-                    for h in range(self.kernel_height):
-                        for w in range(self.kernel_width):
-                            temp_error[::self.stride[0], ::self.stride[1]] = error[b, k]
+        for b in range(batch_size):
+            for i in range(kernels_num):
+                temp_error[::stride[0], ::stride[1]]  = error[b, i]
+
+                error_pattern[
+                    b,
+                    i,
+                    kernel_height - 1 : conv_height + kernel_height - 1,
+                    kernel_width - 1 : conv_width + kernel_width - 1,
+                ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
+
+        for s in range(kernels_num):
+            w_rot_180[s] = np.fliplr(w_rot_180[s])
+            w_rot_180[s] = np.flipud(w_rot_180[s])
+
+        for b in range(batch_size):
+            for c in range(channels_num):
+                for k in range(kernels_num):
+                    for h in range(input_height):
+                        for w in range(input_width):
+
+                            conv_backprop_error[b, c, h, w] += np.sum(
+                                error_pattern[b, k, h : h + kernel_height, w : w + kernel_width] * w_rot_180[k, c]
+                            )
+    
+        return conv_backprop_error
+        
+
+    @staticmethod
+    @njit
+    def compute_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
+
+        gradient = np.zeros((weights.shape))
+
+        temp_error = np.zeros(
+            (
+                stride[0] * conv_height - (stride[0] - 1),
+                stride[1] * conv_width - (stride[1] - 1),
+            )
+        )
+
+        for b in range(batch_size):
+            for k in range(kernels_num):
+                for c in range(channels_num):
+                    for h in range(kernel_height):
+                        for w in range(kernel_width):
+                            temp_error[::stride[0], ::stride[1]] = error[b, k]
 
                             gradient[k, c, h, w] += np.sum(
                                 temp_error
-                                * self.input_data[b, c, h : h + self.stride[0] * self.conv_height - (self.stride[0] - 1), w : w + self.stride[1] * self.conv_width - (self.stride[1] - 1)]
+                                * input_data[b, c, h : h + stride[0] * conv_height - (stride[0] - 1), w : w + stride[1] * conv_width - (stride[1] - 1)]
                             )
 
 
@@ -199,4 +216,4 @@ class Conv2D():
  
 
     def update_weights(self, layer_num):
-        self.w = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
+        self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
