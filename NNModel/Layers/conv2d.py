@@ -101,8 +101,8 @@ class Conv2D():
         error_pattern = np.zeros((
                         batch_size,
                         kernels_num, 
-                        input_height + np.max(np.array([conv_height, kernel_height])) - 1, 
-                        input_width + np.max(np.array([conv_width, kernel_width])) - 1
+                        stride[0] * conv_height - (stride[0] - 1) +  2 * (kernel_height - 1),     #input_height + np.max(np.array([conv_height, kernel_height])) - 1, 
+                        stride[1] * conv_width - (stride[1] - 1) +  2 * (kernel_width - 1),       #input_width + np.max(np.array([conv_width, kernel_width])) - 1
                         ))
 
         conv_backprop_error = np.zeros((batch_size, channels_num, input_height, input_width))
@@ -120,8 +120,8 @@ class Conv2D():
         error_pattern[
                     :,
                     :,
-                    kernel_height - 1 : conv_height + kernel_height - 1,
-                    kernel_width - 1 : conv_width + kernel_width - 1,
+                    kernel_height - 1 : stride[0] * conv_height - (stride[0] - 1) + kernel_height - 1, #kernel_height - 1 : conv_height + kernel_height - 1,
+                    kernel_width - 1 :  stride[0] * conv_width - (stride[0] - 1) + kernel_width - 1,   #kernel_width - 1 :  conv_width  + kernel_width - 1,
                 ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
 
         for k in range(kernels_num):

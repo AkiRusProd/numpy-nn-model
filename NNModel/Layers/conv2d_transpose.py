@@ -8,7 +8,6 @@ class Conv2DTranspose():
     #add bias
     #verify speed of padding/unpadding; maybe native numpy is faster than numba
     #maybe implement padding as separate layer
-    #add dilation
     #add output_padding
     #add padding when stride is out of scope
     
@@ -58,17 +57,6 @@ class Conv2DTranspose():
 
     def forward_prop(self, X, training):
         self.input_data = self.prepare_inputs(X)
-
-        # w_rot_180 = self.w.copy()
-        
-        # for k in range(self.kernels_num):
-        #     for c in range(self.channels_num):
-        #         w_rot_180[k, c] = np.fliplr(w_rot_180[k, c])
-        #         w_rot_180[k, c] = np.flipud(w_rot_180[k, c])
-
-        # print("algWrot", w_rot_180)
-        # self.w = w_rot_180
-        # print("myWROT",self.w)
         self.w = self.set_stride(self.w, self.dilation) #prepare dilated kernels
 
         self.batch_size = len(self.input_data)
@@ -82,7 +70,6 @@ class Conv2DTranspose():
     @njit
     def _forward_prop(input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
         conv_layer = np.zeros((batch_size, kernels_num, conv_height, conv_width))
-        # print("INPUT\n", input_data)
 
         for b in range(batch_size):
             for k in range(kernels_num):
@@ -152,42 +139,6 @@ class Conv2DTranspose():
     
         return conv_backprop_error
     
-
-    # def prepare_inputs(self, input_data):
-    #     prepared_input_data = np.zeros((input_data.shape[0], 
-    #                                    input_data.shape[1], 
-    #                                    self.prepared_input_height,
-    #                                    self.prepared_input_width))
-        
-        
-
-    #     strided_input_data = self.set_stride(input_data, self.stride) #ADD STRIDING
-    #     print('strided input data shape', strided_input_data.shape)
-    #     #add output_padding here #WARNING output padding must be smaller than either stride or dilation,
-    #     stride_input_data_with_output_padding = np.zeros((strided_input_data.shape[0], 
-    #                                    strided_input_data.shape[1], 
-    #                                    strided_input_data.shape[2] + self.output_padding[0],
-    #                                    strided_input_data.shape[3] + self.output_padding[1]))
-    #     stride_input_data_with_output_padding[:, :, : strided_input_data.shape[2], : strided_input_data.shape[3]] = strided_input_data #ADD output_padding
-    #     # print(self.dilated_kernel_height)
-    #     # prepared_input_data[:, :, (self.dilated_kernel_height - 1) - self.padding[0] : strided_input_data.shape[2], (self.dilated_kernel_height - 1) - self.padding[0] : strided_input_data.shape[3]] = strided_input_data
-        
-    #     print('stride_input_data_with_output_padding shape', stride_input_data_with_output_padding.shape)
-    #     input_data = np.zeros((#add kernel padding
-    #                     input_data.shape[0],
-    #                     input_data.shape[1], 
-    #                     stride_input_data_with_output_padding.shape[2] + 2 * (self.dilated_kernel_height - 1), 
-    #                     stride_input_data_with_output_padding.shape[3] + 2 * (self.dilated_kernel_width  - 1)
-    #                     ))
-        
-    #     input_data[:, :, self.dilated_kernel_height - 1 : stride_input_data_with_output_padding.shape[2] + self.dilated_kernel_height - 1, 
-    #                         self.dilated_kernel_width - 1 : stride_input_data_with_output_padding.shape[3] + self.dilated_kernel_width - 1] = stride_input_data_with_output_padding
-
-    #     print('add kernel padding shape', input_data.shape)
-    #     input_data = self.remove_padding(input_data, self.padding)#ADD remove padding #in conv2dTranspose set padding equals remove padding
-    #     print('remove padding shape', input_data.shape)
-    #     # print(input_data.shape, prepared_input_data.shape)
-    #     return input_data
 
     def prepare_inputs(self, input_data):
         prepared_input_data = np.zeros((input_data.shape[0], 

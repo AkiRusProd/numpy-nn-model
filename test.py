@@ -22,8 +22,8 @@ def prepare_data(data):
 
 
 
-training_inputs, training_targets = prepare_data(training_data)
-test_inputs, test_targets = prepare_data(test_data)
+# training_inputs, training_targets = prepare_data(training_data)
+# test_inputs, test_targets = prepare_data(test_data)
 
 
 
@@ -59,8 +59,8 @@ model.add(BatchNormalization())
 model.add(Dense(units_num = 10, activation = "softmax"))
 
 model.compile(optimizer = "adam", loss_function = "mse")
-model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
-model.predict(test_inputs, test_targets)
+# model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
+# model.predict(test_inputs, test_targets)
 
 
 
@@ -109,55 +109,61 @@ model.predict(test_inputs, test_targets)
 # create_arr(shape = (1, 2, 3 ,4))
 
 
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-# kernels_num = 1
-# kernel_size = 2
-# inputs_num = 1
-# input_size = 3
-# stride_f = 2
+kernels_num = 1
+kernel_size = 3
+inputs_num = 1
+input_size = 4
+stride_f = 2
 
-# # conv_size = input_size - kernel_size + 1
+# conv_size = input_size - kernel_size + 1
 
-# conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, dilation = (2, 2), bias=False)
+conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, dilation = (1, 1), bias=False)
 
-# X = np.arange(0, np.float(1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
-# W = np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
-# BIAS = np.random.normal(0, 1, (kernels_num))
-# # LOSS = np.random.normal(0, 1, (1, kernels_num, conv_size, conv_size))
+X = np.arange(0, np.float(1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
+W = np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
+BIAS = np.random.normal(0, 1, (kernels_num))
 
 
-# conv.weight = nn.Parameter(torch.from_numpy(W).float())
 
+conv.weight = nn.Parameter(torch.from_numpy(W).float())
+
+x = conv(torch.from_numpy(X).float())
+print("Pytorch conv")
+print(x)
+
+
+conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size),stride = (stride_f, stride_f), dilation = (1, 1))
+conv.w = W
+
+conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
+# conv.conv_height, conv.conv_width = conv_size, conv_size
+conv.conv_height = (conv.input_height + 2 * conv.padding[0]  - conv.dilation[0] * (conv.kernel_height - 1) - 1) // conv.stride[0]   + 1
+conv.conv_width =  (conv.input_width + 2 * conv.padding[1] - conv.dilation[1] * (conv.kernel_width - 1) - 1) // conv.stride[1] + 1
+
+conv.dilated_kernel_height = conv.dilation[0] * (conv.kernel_height - 1) + 1
+conv.dilated_kernel_width = conv.dilation[1] * (conv.kernel_width - 1) + 1
+
+x = conv.forward_prop(X, training = True)
+
+print(conv.conv_height, conv.conv_width, conv.dilated_kernel_height, conv.dilated_kernel_width)
+print("My conv")
+print(x)
+LOSS = np.random.normal(0, 1, (1, kernels_num, conv.conv_height, conv.conv_width ))
+
+x = conv.backward_prop(LOSS)
+
+print("My conv backward")
+print(x)
+
+# conv = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, dilation = 1, bias=False)
 # x = conv(torch.from_numpy(X).float())
-# print("Pytorch conv")
-# print(x)
+# print(x.shape)
 
-
-# conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), dilation = (2, 2))
-# conv.w = W
-
-# conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
-# # conv.conv_height, conv.conv_width = conv_size, conv_size
-# conv.conv_height = (conv.input_height + 2 * conv.padding[0]  - conv.dilation[0] * (conv.kernel_height - 1) - 1) // conv.stride[0]   + 1
-# conv.conv_width =  (conv.input_width + 2 * conv.padding[1] - conv.dilation[1] * (conv.kernel_width - 1) - 1) // conv.stride[1] + 1
-
-# conv.dilated_kernel_height = conv.dilation[0] * (conv.kernel_height - 1) + 1
-# conv.dilated_kernel_width = conv.dilation[1] * (conv.kernel_width - 1) + 1
-
-# x = conv.forward_prop(X, training = True)
-
-# print("My conv")
-# print(x)
-
-
-# # conv = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, dilation = 1, bias=False)
-# # x = conv(torch.from_numpy(X).float())
-# # print(x.shape)
-
-# # With square kernels and equal stride
+# With square kernels and equal stride
 # m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride=stride_f,  output_padding = 1, bias = False)
 # m.weight = nn.Parameter(torch.from_numpy(W).float())
 # m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
