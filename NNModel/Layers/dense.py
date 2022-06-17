@@ -10,7 +10,7 @@ class Dense():
         self.units_num = units_num
         self.input_shape = input_shape
 
-        if type(activation) is str:
+        if type(activation) is str or activation is None:
             self.activation = activations[activation]
         else:
             self.activation = activation

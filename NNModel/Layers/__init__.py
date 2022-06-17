@@ -1,5 +1,6 @@
 from NNModel.Layers.dense import Dense
 from NNModel.Layers.conv2d import Conv2D
+from NNModel.Layers.conv2d_transpose import Conv2DTranspose
 from NNModel.Layers.rnn import RNN
 from NNModel.Layers.lstm import LSTM
 from NNModel.Layers.gru import GRU

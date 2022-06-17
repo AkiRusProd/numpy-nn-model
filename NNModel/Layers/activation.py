@@ -7,7 +7,7 @@ class Activation():
     def __init__(self, activation = None):
         self.input_shape = None
 
-        if type(activation) is str:
+        if type(activation) is str or activation is None:
             self.activation = activations[activation]
         else:
             self.activation = activation

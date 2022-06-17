@@ -5,6 +5,7 @@ from numba import njit
 class UpSampling2D():
     #TODO
      #verify speed of METHODS/unpadding; maybe native numpy is faster than numba
+     #nearest neighbour, bed of nails, interpolation
 
     def __init__(self,  size=(2, 2)) -> None:
         self.size = size

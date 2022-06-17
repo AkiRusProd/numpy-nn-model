@@ -5,6 +5,12 @@ from NNModel.loss_functions import *
 from NNModel.activations import *
 
 class Model():
+    #TODO
+    #add save/open model methods
+    #add oportnity to choose metrics
+    #add lstm, gru layers
+    #maybe add oportnity to create custom layers??
+    #maybe something more...
 
     def __init__(self):
         self.layers = []
