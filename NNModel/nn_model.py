@@ -1,8 +1,8 @@
 import numpy as np
 from tqdm import tqdm
-from NNModel.optimizers import *
-from NNModel.loss_functions import *
-from NNModel.activations import *
+from nnmodel.optimizers import *
+from nnmodel.loss_functions import *
+from nnmodel.activations import *
 
 class Model():
     #TODO
@@ -66,20 +66,20 @@ class Model():
 
         for target in batch_targets:
             
-            if type(target) is not list:
-                
+            try:
                 correct_target = int(target)
 
                 last_layer_activation = self.layers[-1].activation
+                last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
 
                 if last_layer_activation == activations["sigmoid"] or last_layer_activation == activations["softmax"]:
-                    targets_list = np.zeros(self.layers[-1].units_num)
+                    targets_list = np.zeros(last_layer_units_num)
                 elif last_layer_activation == activations["tanh"]:
-                    targets_list = np.full(self.layers[-1].units_num, -1)
+                    targets_list = np.full(last_layer_units_num, -1)
 
                 targets_list[correct_target] = 1
 
-            else:
+            except:
                 targets_list = target
 
             prepared_batch_targets.append(targets_list)

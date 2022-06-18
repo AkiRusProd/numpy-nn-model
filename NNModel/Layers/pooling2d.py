@@ -3,7 +3,7 @@ from numba import njit
 
 
 class Pooling2D():
-
+    # add strides, padding= same, valid, custom
     def __init__(self,  pool_size=(2, 2)):
         self.pool_size = pool_size
         self.input_shape = None
@@ -55,6 +55,7 @@ class Pooling2D():
     def pooling_error_backward_prop(
         pooling_layer_ind, error, conv_shape
     ):  
+        
         error = error.reshape((error.shape[0], error.shape[1], error.shape[2] * error.shape[3]))
 
         output_layer_error = np.zeros((conv_shape[0], conv_shape[1], conv_shape[2], conv_shape[3]))
@@ -85,6 +86,7 @@ class MaxPooling2D(Pooling2D):
         return self.pooling_layer
 
     def backward_prop(self, error):
+        error = error.copy()
 
         return self.pooling_error_backward_prop(self.pooling_layer_ind, error, self.input_data.shape)
 

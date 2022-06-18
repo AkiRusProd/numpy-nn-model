@@ -2,8 +2,13 @@ import numpy as np
 
 
 #References: https://mlfromscratch.com/activation-functions-explained/
+class ActivationFunction():
 
-class Sigmoid():
+    def __init__(self):
+        pass
+
+
+class Sigmoid(ActivationFunction):
 
     def function(self, x):
 
@@ -14,7 +19,7 @@ class Sigmoid():
         return self.function(x) * (1.0 - self.function(x))
 
 
-class Tanh():
+class Tanh(ActivationFunction):
 
     def function(self, x):
 
@@ -25,7 +30,7 @@ class Tanh():
         return 1.0 - np.power(self.function(x), 2)
 
 
-class Softmax():
+class Softmax(ActivationFunction):
 
     def function(self, x):
         e_x = np.exp(x - np.max(x, axis = -1, keepdims=True))
@@ -37,7 +42,7 @@ class Softmax():
         return self.function(x) * (1.0 - self.function(x))
 
 
-class Softplus():
+class Softplus(ActivationFunction):
 
     def function(self, x):
         
@@ -48,7 +53,7 @@ class Softplus():
         return 1 / (1 + np.exp(-x))
 
 
-class ReLU():
+class ReLU(ActivationFunction):
 
     def function(self, x):
 
@@ -59,7 +64,7 @@ class ReLU():
         return np.where(x <= 0, 0, 1)
 
 
-class LeakyReLU():
+class LeakyReLU(ActivationFunction):
 
     def __init__(self, alpha = 0.01):
         self.alpha = alpha
@@ -73,7 +78,7 @@ class LeakyReLU():
         return np.where(x <= 0, self.alpha, 1)
 
 
-class ELU():
+class ELU(ActivationFunction):
 
     def __init__(self, alpha = 0.1):
         self.alpha = alpha 
@@ -87,7 +92,7 @@ class ELU():
         return np.where(x <= 0, self.alpha + self.function(x), 1)
 
 
-class SELU():
+class SELU(ActivationFunction):
 
     def __init__(self):
         self.alpha = 1.6732632423543772848170429916717
@@ -100,7 +105,7 @@ class SELU():
         return self.lmbda * np.where(x > 0, 1, self.alpha * np.exp(x))
 
 
-class GELU():
+class GELU(ActivationFunction):
 
     def function(self, x):
 
@@ -125,7 +130,7 @@ class GELU():
             + 0.5
         )
 
-class Identity():
+class Identity(ActivationFunction):
 
     def function(self, x):
 

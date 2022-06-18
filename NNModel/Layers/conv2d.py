@@ -1,31 +1,26 @@
 import numpy as np
 from numba import njit
-from NNModel.activations import activations
-
+from nnmodel.activations import activations
+from nnmodel.values_checker import ValuesChecker
 
 class Conv2D():
     #TODO
     #add bias
-    #verify speed of padding/unpadding; maybe native numpy is faster than numba
-    #maybe implement padding as separate layer
-    #add padding when stride is out of scope
+    #add padding when stride is out of scope / same valid padding
+    #add zeropadding
     
 
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1)):
-        self.kernels_num = kernels_num
+        self.kernels_num = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_height, self.kernel_width = kernel_shape
-        self.padding = padding
-        self.stride = stride
         self.input_shape = input_shape
-        self.dilation = dilation
-        
-        if type(activation) is str or activation is None:
-            self.activation = activations[activation]
-        else:
-            self.activation = activation
+        self.padding =  ValuesChecker.check_size2_variable(padding, variable_name = "padding")
+        self.stride =   ValuesChecker.check_size2_variable(stride, variable_name = "stride")
+        self.dilation = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation")
+    
+        self.activation = ValuesChecker.check_activation(activation, activations)
 
           
-
         self.w = None
 
        
@@ -33,13 +28,41 @@ class Conv2D():
     def build(self, optimizer):
         self.optimizer = optimizer
         self.channels_num, self.input_height, self.input_width = self.input_shape
+
+        if self.padding == "valid":
+            self.padding == (0, 0, 0, 0)
+        elif self.padding == "same":
+            padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.kernel_height - 1)
+            padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1)
+
+            if padding_up_down % 2 == 0:
+                padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
+            else:
+                padding_up, padding_down = padding_up_down // 2, padding_up_down - padding_up_down // 2
+
+            if padding_left_right % 2 == 0:
+                padding_left, padding_right = padding_left_right // 2, padding_left_right // 2
+            else:
+                padding_left, padding_right = padding_left_right // 2, padding_left_right - padding_left_right // 2
+    
+
+            self.padding = (padding_up, padding_down, padding_left, padding_right)
+
+        elif len(self.padding) == 2:
+            self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(up, down, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
+
+
+
         
         #https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
-        self.conv_height = (self.input_height + 2 * self.padding[0]  - self.dilation[0] * (self.kernel_height - 1) - 1) // self.stride[0]   + 1
-        self.conv_width =  (self.input_width + 2 * self.padding[1] - self.dilation[1] * (self.kernel_width - 1) - 1) // self.stride[1] + 1
+        self.conv_height = (self.input_height + self.padding[0] + self.padding[1] - self.dilation[0] * (self.kernel_height - 1) - 1) // self.stride[0]   + 1
+        self.conv_width =  (self.input_width + self.padding[2] + self.padding[3] - self.dilation[1] * (self.kernel_width - 1) - 1) // self.stride[1] + 1
 
         self.dilated_kernel_height = self.dilation[0] * (self.kernel_height - 1) + 1
         self.dilated_kernel_width = self.dilation[1] * (self.kernel_width - 1) + 1
+
+        self.prepared_input_height = (self.input_height + self.padding[0] + self.padding[1])
+        self.prepared_input_width = (self.input_width + self.padding[2] + self.padding[3])
 
         self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
 
@@ -82,11 +105,12 @@ class Conv2D():
 
     def backward_prop(self, error):
         error *= self.activation.derivative(self.conv_layer)
-
+        
         self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
-        conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.input_height, self.input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
-
+        conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        
         conv_backprop_error = self.remove_padding(conv_backprop_error, self.padding)
+        
         self.w = self.remove_stride(self.w, self.dilation)
 
         return conv_backprop_error
@@ -96,7 +120,7 @@ class Conv2D():
     @njit
     def _backward_prop(error, weights, batch_size, channels_num, kernels_num, input_height, input_width, conv_height, conv_width, kernel_height, kernel_width, stride):
 
-        w_rot_180 = weights
+        w_rot_180 = weights.copy()
         
         error_pattern = np.zeros((
                         batch_size,
@@ -173,25 +197,24 @@ class Conv2D():
     def update_weights(self, layer_num):
         self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
 
-
     @staticmethod
     @njit
     def set_padding(layer, padding):
-        # padded_layer = np.pad(layer, ((0, 0), (padding_size, padding_size), (padding_size, padding_size)), constant_values = 0)
+        # padded_layer = np.pad(layer, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
         padded_layer = np.zeros(
             (   
                 layer.shape[0],
                 layer.shape[1],
-                layer.shape[2] + 2 * padding[0],
-                layer.shape[3] + 2 * padding[1],
+                layer.shape[2] + padding[0] + padding[1],
+                layer.shape[3] + padding[2] + padding[3],
             )
         )
 
         padded_layer[
                     :,
                     :,
-                    padding[0] : layer.shape[2] + padding[0],
-                    padding[1] : layer.shape[3] + padding[1],
+                    padding[0] :padded_layer.shape[2] - padding[1],
+                    padding[2] :padded_layer.shape[3] - padding[3],
                 ] = layer
 
         return padded_layer
@@ -199,21 +222,21 @@ class Conv2D():
     @staticmethod
     @njit
     def remove_padding(layer, padding):
-        # losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
+        # unpadded_layer = unpadded_layer[:, :, padding[0]:-padding[1], padding[1]:-padding[0]]
         unpadded_layer = np.zeros(
             (
                 layer.shape[0],
                 layer.shape[1],
-                layer.shape[2] - 2 * padding[0],
-                layer.shape[3] - 2 * padding[1],
+                layer.shape[2] - padding[0] - padding[1],
+                layer.shape[3] - padding[2] - padding[3],
             )
         )
         
         unpadded_layer = layer[
                     :,
                     :,
-                    padding[0] : layer.shape[2] - padding[0],
-                    padding[1] : layer.shape[3] - padding[1],
+                    padding[0] :layer.shape[2] - padding[1],
+                    padding[2] :layer.shape[2] - padding[3],
                 ]
 
         return unpadded_layer

@@ -4,34 +4,35 @@ from numba import njit
 
 
 
-from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D
-from NNModel import Model
-from NNModel.activations import LeakyReLU
-from NNModel.optimizers import SGD
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D
+from nnmodel import Model
+from nnmodel.activations import LeakyReLU
+from nnmodel.optimizers import SGD
 
 
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-# kernels_num = 1
-# kernel_size = 2
-# inputs_num = 1
-# input_size = 3
-# stride_f = 2
-
-
-
-# conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, bias=False)
-
-# X = np.arange(0, np.float(1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
-# W = np.arange(0, np.float(1 * kernels_num * kernel_size * kernel_size)).reshape((1, kernels_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
-# BIAS = np.random.normal(0, 1, (kernels_num))
+kernels_num = 1
+kernel_size = 3
+inputs_num = 1
+input_size = 5
+stride_f = 2
+print(len(np.array([1, 2])))
 
 
-# conv = Conv2DTranspose(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = (0, 0), stride = (1, 1), output_padding = (0, 0), dilation = (1, 1))
-# conv.w = W
+conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, bias=False)
 
+X = np.arange(0.0, (1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
+W = np.arange(0.0, (1 * kernels_num * kernel_size * kernel_size)).reshape((1, kernels_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
+BIAS = np.random.normal(0, 1, (kernels_num))
+
+
+conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = "same", stride = 1, dilation = (1, 1))
+
+conv.build(None)
+conv.w = W
 # conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
 
 
@@ -48,25 +49,32 @@ from NNModel.optimizers import SGD
 
 
 
-# LOSS = np.arange(0, np.float(1 * kernels_num * conv.conv_height * conv.conv_width)).reshape((1, kernels_num, conv.conv_height, conv.conv_width))
-# print(X)
+LOSS = np.arange(0.0, 1 * kernels_num * conv.conv_height * conv.conv_width).reshape((1, kernels_num, conv.conv_height, conv.conv_width))
+# print(f"x shape is {X.shape}")
+
+print(X)
+print(W)
+print(conv.padding)
+
+print("FORWARD")
+x = conv.forward_prop(X, training = True)
+print(x.shape)
+print(x)
+
+
+x = conv.backward_prop(LOSS)
+
+print("BACKWARD")
+print(x.shape)
+print(x)
+
+
 # x = conv.forward_prop(X, training = True)
-
-
-# print("FORWARD")
-# print(x.shape)
 # print(x)
-
-# x = conv.backward_prop(LOSS)
-
-# print("BACKWARD")
-# print(x.shape)
-# print(x)
-
-# m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 1, padding = (0, 0),  output_padding = 0, dilation = (1, 1), bias = False)
+# m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 2, padding = (1, 2),  output_padding = 0, dilation = (1, 1), bias = False)
 
 # m.weight = nn.Parameter(torch.from_numpy(W).float())
-# # m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
+# #m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
 
 # input = torch.from_numpy(X).float()
 # output = m(input)
@@ -76,69 +84,111 @@ from NNModel.optimizers import SGD
 # GRAD = output.backward(torch.from_numpy(LOSS).float(), retain_graph=True)
 # print(GRAD)
 
-import time
+
+
+# import tensorflow as tf
+# from keras.layers import Conv2DTranspose as C2DT
+
+# input_shape = (1, kernel_size, kernel_size, kernels_num)
+# X_keras = tf.convert_to_tensor(X.reshape(1, input_size, input_size, kernels_num))
+# # y = tf.keras.layers.Conv2DTranspose(1, 3, activation='relu', input_shape = input_shape[1:])(x)
+# conv_keras = C2DT(1, 2, activation='relu', input_shape = input_shape[1:], data_format="channels_last", use_bias = False)
+# print(W)
+
+# # conv.set_weights([W.reshape(kernel_size, kernel_size, kernels_num, 1)])   
+
+# y = conv_keras(X_keras)
+# print(y)
+# # print(y)
+# print(conv_keras.get_weights()[0].shape)
+# W = conv_keras.get_weights()[0].reshape(1, kernels_num, kernel_size, kernel_size)
+# conv.w = W
+# x = conv.forward_prop(X, training = True)
+# print(x)
+
+# m.weight = nn.Parameter(torch.from_numpy(W).float())
+# # m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
+
+# input = torch.from_numpy(X).float()
+# output = m(input)
+# print(output.shape)
+# print(output)
+
+# class MyModel(tf.keras.Model):
+
+#   def __init__(self):
+#     super().__init__()
+#     self.convT = Conv2DTranspose(kernels_num, kernel_size, padding = (0, 0), use_bias = False)
+#     self.convT.kernel = W
+#     # self.dense2 = tf.keras.layers.Dense(5, activation=tf.nn.softmax)
+
+#   def call(self, inputs):
+#     x = self.convT(tf.convert_to_tensor(inputs.reshape(1, input_size, input_size, 1)))
+#     return self.convT(x)
+
+# model = MyModel()
+# x = model.call(X)
+# print(x)
+
+# def set_padding(layer, padding):
+#     # padded_layer = np.pad(layer, ((0, 0), (padding_size, padding_size), (padding_size, padding_size)), constant_values = 0)
+#     padded_layer = np.zeros(
+#         (   
+#             layer.shape[0],
+#             layer.shape[1],
+#             layer.shape[2] + 2 * padding[0],
+#             layer.shape[3] + 2 * padding[1],
+#         )
+#     )
+
+
+#     padded_layer[
+#                 :,
+#                 :,
+#                 padding[0] : layer.shape[2] + padding[0],
+#                 padding[1] : layer.shape[3] + padding[1],
+#             ] = layer
+
+#     return padded_layer
+
+
+# def remove_padding(layer, padding):
+#     # losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
+#     unpadded_layer = np.zeros(
+#         (
+#             layer.shape[0],
+#             layer.shape[1],
+#             layer.shape[2] - 2 * padding[0],
+#             layer.shape[3] - 2 * padding[1],
+#         )
+#     )
+
+#     unpadded_layer = layer[
+#                 :,
+#                 :,
+#                 padding[0] : layer.shape[2] - padding[0],
+#                 padding[1] : layer.shape[3] - padding[1],
+#             ]
+
+#     return unpadded_layer
 
 
 
-def set_padding(layer, padding):
-    # padded_layer = np.pad(layer, ((0, 0), (padding_size, padding_size), (padding_size, padding_size)), constant_values = 0)
-    padded_layer = np.zeros(
-        (   
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] + 2 * padding[0],
-            layer.shape[3] + 2 * padding[1],
-        )
-    )
-
-
-    padded_layer[
-                :,
-                :,
-                padding[0] : layer.shape[2] + padding[0],
-                padding[1] : layer.shape[3] + padding[1],
-            ] = layer
-
-    return padded_layer
-
-
-def remove_padding(layer, padding):
-    # losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
-    unpadded_layer = np.zeros(
-        (
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] - 2 * padding[0],
-            layer.shape[3] - 2 * padding[1],
-        )
-    )
-
-    unpadded_layer = layer[
-                :,
-                :,
-                padding[0] : layer.shape[2] - padding[0],
-                padding[1] : layer.shape[3] - padding[1],
-            ]
-
-    return unpadded_layer
-
-
-
-arr = np.random.normal(0, 1, (1000, 10, 10, 10))
+# arr = np.random.normal(0, 1, (1000, 10, 10, 10))
 
 
 
 
-start_time = time.time()
-arr2 = set_padding(arr, (5, 5))
-print(arr2.shape)
-print(time.time() - start_time)
+# start_time = time.time()
+# arr2 = set_padding(arr, (5, 5))
+# print(arr2.shape)
+# print(time.time() - start_time)
 
 
-start_time = time.time()
-arr2 = np.pad(arr, ((0, 0), (0, 0), (5, 5), (5, 5)), constant_values = 0)
-print(arr2.shape)
-print(time.time() - start_time)
+# start_time = time.time()
+# arr2 = np.pad(arr, ((0, 0), (0, 0), (5, 5), (5, 5)), constant_values = 0)
+# print(arr2.shape)
+# print(time.time() - start_time)
 
 
 

@@ -1,32 +1,25 @@
 import numpy as np
 from numba import njit
-from NNModel.activations import activations
+from nnmodel.activations import activations
+from nnmodel.values_checker import ValuesChecker
+
 
 
 class Conv2DTranspose():
     #TODO
     #add bias
-    #verify speed of padding/unpadding; maybe native numpy is faster than numba
     #maybe implement padding as separate layer
-    #add output_padding
-    #add padding when stride is out of scope
     
 
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), output_padding = (0, 0)):
-        self.kernels_num = kernels_num
+        self.kernels_num = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_height, self.kernel_width = kernel_shape
-        self.padding = padding
-        self.stride = stride
         self.input_shape = input_shape
-        self.dilation = dilation
-        self.output_padding = output_padding
-        
-        if type(activation) is str or activation is None:
-            self.activation = activations[activation]
-        else:
-            self.activation = activation
-
-          
+        self.padding = ValuesChecker.check_size2_variable(padding, variable_name = "padding")
+        self.stride =  ValuesChecker.check_size2_variable(stride, variable_name = "stride")
+        self.dilation = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation")
+        self.output_padding = ValuesChecker.check_size2_variable(output_padding, variable_name = "output_padding")
+        self.activation = ValuesChecker.check_activation(activation, activations)
 
         self.w = None
 
@@ -35,16 +28,39 @@ class Conv2DTranspose():
     def build(self, optimizer):
         self.optimizer = optimizer
         self.channels_num, self.input_height, self.input_width = self.input_shape
+
+        if self.padding == "valid":
+            self.padding == (0, 0, 0, 0)
+        elif self.padding == "same":
+            padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0]
+            padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1) + self.output_padding[1]
+
+            if padding_up_down % 2 == 0:
+                padding_up, padding_down = padding_up_down // 2
+            else:
+                padding_up, padding_down = padding_up_down // 2, padding_up_down - padding_up_down // 2
+
+            if padding_left_right % 2 == 0:
+                padding_left, padding_right = padding_left_right // 2
+            else:
+                padding_left, padding_right = padding_left_right // 2, padding_left_right - padding_left_right // 2
+    
+
+            self.padding = (padding_up, padding_down, padding_left, padding_right)
+
+        elif len(self.padding) == 2:
+            self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(top, bottom, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
+    
         
         #https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
-        self.conv_height = (self.input_height - 1) * self.stride[0] - 2 * self.padding[0]  +  self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0] + 1
-        self.conv_width =  (self.input_width - 1) * self.stride[1] - 2 * self.padding[1] + self.dilation[1] * (self.kernel_width - 1) + self.output_padding[1] + 1
+        self.conv_height = (self.input_height - 1) * self.stride[0] - (self.padding[0] + self.padding[1])  +  self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0] + 1
+        self.conv_width =  (self.input_width - 1) * self.stride[1] - (self.padding[2] + self.padding[3]) + self.dilation[1] * (self.kernel_width - 1) + self.output_padding[1] + 1
         
         self.dilated_kernel_height = self.dilation[0] * (self.kernel_height - 1) + 1
         self.dilated_kernel_width = self.dilation[1] * (self.kernel_width - 1) + 1
 
-        self.prepared_input_height = (self.input_height - 1) * self.stride[0] + 1 - 2 * self.padding[0] + self.output_padding[0] + 2 * self.dilated_kernel_height - 2
-        self.prepared_input_width = (self.input_width - 1) * self.stride[1] + 1 - 2 * self.padding[1] + self.output_padding[1] + 2 * self.dilated_kernel_width - 2
+        self.prepared_input_height = (self.input_height - 1) * self.stride[0] + 1 - (self.padding[0] + self.padding[1]) + self.output_padding[0] + 2 * self.dilated_kernel_height - 2
+        self.prepared_input_width = (self.input_width - 1) * self.stride[1] + 1 - (self.padding[2] + self.padding[3])+ self.output_padding[1] + 2 * self.dilated_kernel_width - 2
        
         self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
 
@@ -53,7 +69,7 @@ class Conv2DTranspose():
         self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
 
         self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
-     
+        
 
     def forward_prop(self, X, training):
         self.input_data = self.prepare_inputs(X)
@@ -102,7 +118,7 @@ class Conv2DTranspose():
     @njit
     def _backward_prop(error, weights, batch_size, channels_num, kernels_num, input_height, input_width, conv_height, conv_width, kernel_height, kernel_width):
 
-        w_rot_180 = weights
+        w_rot_180 = weights.copy()
         
         error_pattern = np.zeros((
                         batch_size,
@@ -141,14 +157,28 @@ class Conv2DTranspose():
     
 
     def prepare_inputs(self, input_data):
-        prepared_input_data = np.zeros((input_data.shape[0], 
-                                       input_data.shape[1], 
-                                       self.prepared_input_height,
-                                       self.prepared_input_width))
-        strided_input_data = self.set_stride(input_data, self.stride)
-        prepared_input_data[:, :, (self.dilated_kernel_height - 1) - self.padding[0] :(self.dilated_kernel_height - 1) - self.padding[0] + strided_input_data.shape[2], (self.dilated_kernel_width - 1) - self.padding[0] : (self.dilated_kernel_width - 1) - self.padding[0] + strided_input_data.shape[3]] = strided_input_data
 
-        return prepared_input_data
+        temp_strided = self.set_stride(input_data, self.stride) #ADD STRIDING
+
+        #add output_padding here #WARNING output padding must be smaller than either stride or dilation,
+        temp_out = np.zeros((temp_strided.shape[0], 
+                                       temp_strided.shape[1], 
+                                       temp_strided.shape[2] + self.output_padding[0],
+                                       temp_strided.shape[3] + self.output_padding[1]))
+        temp_out[:, :, : temp_strided.shape[2], : temp_strided.shape[3]] = temp_strided #ADD output_padding
+
+        input_data = np.zeros((#add kernel padding
+                        input_data.shape[0],
+                        input_data.shape[1], 
+                        temp_out.shape[2] + 2 * (self.dilated_kernel_height - 1), 
+                        temp_out.shape[3] + 2 * (self.dilated_kernel_width  - 1)
+                        ))
+
+        input_data[:, :, self.dilated_kernel_height - 1 : temp_out.shape[2] + self.dilated_kernel_height - 1, 
+                            self.dilated_kernel_width - 1 : temp_out.shape[3] + self.dilated_kernel_width - 1] = temp_out
+
+        input_data = self.remove_padding(input_data, self.padding)#ADD remove padding #in conv2dTranspose set padding equals remove padding
+        return input_data
 
 
     def prepare_error(self, error):
@@ -194,22 +224,21 @@ class Conv2DTranspose():
     @staticmethod
     @njit
     def set_padding(layer, padding):
-        # padded_layer = np.pad(layer, ((0, 0), (padding_size, padding_size), (padding_size, padding_size)), constant_values = 0)
+        # padded_layer = np.pad(layer, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
         padded_layer = np.zeros(
             (   
                 layer.shape[0],
                 layer.shape[1],
-                layer.shape[2] + 2 * padding[0],
-                layer.shape[3] + 2 * padding[1],
+                layer.shape[2] + padding[0] + padding[1],
+                layer.shape[3] + padding[2] + padding[3],
             )
         )
-
 
         padded_layer[
                     :,
                     :,
-                    padding[0] : layer.shape[2] + padding[0],
-                    padding[1] : layer.shape[3] + padding[1],
+                    padding[0] :padded_layer.shape[2] - padding[1],
+                    padding[2] :padded_layer.shape[3] - padding[3],
                 ] = layer
 
         return padded_layer
@@ -217,21 +246,21 @@ class Conv2DTranspose():
     @staticmethod
     @njit
     def remove_padding(layer, padding):
-        # losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
+        # unpadded_layer = unpadded_layer[:, :, padding[0]:-padding[1], padding[1]:-padding[0]]
         unpadded_layer = np.zeros(
             (
                 layer.shape[0],
                 layer.shape[1],
-                layer.shape[2] - 2 * padding[0],
-                layer.shape[3] - 2 * padding[1],
+                layer.shape[2] - padding[0] - padding[1],
+                layer.shape[3] - padding[2] - padding[3],
             )
         )
-
+        
         unpadded_layer = layer[
                     :,
                     :,
-                    padding[0] : layer.shape[2] - padding[0],
-                    padding[1] : layer.shape[3] - padding[1],
+                    padding[0] :layer.shape[2] - padding[1],
+                    padding[2] :layer.shape[2] - padding[3],
                 ]
 
         return unpadded_layer

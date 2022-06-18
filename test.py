@@ -22,16 +22,16 @@ def prepare_data(data):
 
 
 
-# training_inputs, training_targets = prepare_data(training_data)
-# test_inputs, test_targets = prepare_data(test_data)
+training_inputs, training_targets = prepare_data(training_data)
+test_inputs, test_targets = prepare_data(test_data)
 
 
 
 
-from NNModel.Layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D
-from NNModel import Model
-from NNModel.activations import LeakyReLU
-from NNModel.optimizers import SGD
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation
+from nnmodel import Model
+from nnmodel.activations import LeakyReLU
+from nnmodel.optimizers import SGD
 
 model = Model()
 
@@ -47,8 +47,8 @@ model = Model()
 model.add(Reshape(shape = (1, 28, 28)))
 model.add(Conv2D(kernels_num = 8, kernel_shape = (5, 5), activation = "relu"))
 model.add(MaxPooling2D())
-# model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), activation = "relu"))
-model.add(Conv2DTranspose(kernels_num = 16, kernel_shape = (3, 3), activation = "relu"))
+model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), padding = "same", activation = "relu"))
+# model.add(Conv2DTranspose(kernels_num = 16, kernel_shape = (3, 3), activation = "relu"))
 model.add(MaxPooling2D())
 
 # model.add(UpSampling2D())
@@ -56,11 +56,12 @@ model.add(Flatten())
 model.add(BatchNormalization())
 # model.add(Dense(units_num = 50,  activation = "relu"))
 # model.add(Dropout())
-model.add(Dense(units_num = 10, activation = "softmax"))
+model.add(Dense(units_num = 10, activation = None))
+model.add(Activation(activation = "softmax"))
 
 model.compile(optimizer = "adam", loss_function = "mse")
-# model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
-# model.predict(test_inputs, test_targets)
+model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
+model.predict(test_inputs, test_targets)
 
 
 
@@ -109,55 +110,55 @@ model.compile(optimizer = "adam", loss_function = "mse")
 # create_arr(shape = (1, 2, 3 ,4))
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
 
-kernels_num = 1
-kernel_size = 3
-inputs_num = 1
-input_size = 4
-stride_f = 2
+# kernels_num = 1
+# kernel_size = 3
+# inputs_num = 1
+# input_size = 4
+# stride_f = 2
 
-# conv_size = input_size - kernel_size + 1
+# # conv_size = input_size - kernel_size + 1
 
-conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, dilation = (1, 1), bias=False)
+# conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, dilation = (1, 1), bias=False)
 
-X = np.arange(0, np.float(1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
-W = np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
-BIAS = np.random.normal(0, 1, (kernels_num))
-
-
-
-conv.weight = nn.Parameter(torch.from_numpy(W).float())
-
-x = conv(torch.from_numpy(X).float())
-print("Pytorch conv")
-print(x)
+# X = np.arange(0, np.float(1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
+# W = np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
+# BIAS = np.random.normal(0, 1, (kernels_num))
 
 
-conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size),stride = (stride_f, stride_f), dilation = (1, 1))
-conv.w = W
 
-conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
-# conv.conv_height, conv.conv_width = conv_size, conv_size
-conv.conv_height = (conv.input_height + 2 * conv.padding[0]  - conv.dilation[0] * (conv.kernel_height - 1) - 1) // conv.stride[0]   + 1
-conv.conv_width =  (conv.input_width + 2 * conv.padding[1] - conv.dilation[1] * (conv.kernel_width - 1) - 1) // conv.stride[1] + 1
+# conv.weight = nn.Parameter(torch.from_numpy(W).float())
 
-conv.dilated_kernel_height = conv.dilation[0] * (conv.kernel_height - 1) + 1
-conv.dilated_kernel_width = conv.dilation[1] * (conv.kernel_width - 1) + 1
+# x = conv(torch.from_numpy(X).float())
+# print("Pytorch conv")
+# print(x)
 
-x = conv.forward_prop(X, training = True)
 
-print(conv.conv_height, conv.conv_width, conv.dilated_kernel_height, conv.dilated_kernel_width)
-print("My conv")
-print(x)
-LOSS = np.random.normal(0, 1, (1, kernels_num, conv.conv_height, conv.conv_width ))
+# conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size),stride = (stride_f, stride_f), dilation = (1, 1))
+# conv.w = W
 
-x = conv.backward_prop(LOSS)
+# conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
+# # conv.conv_height, conv.conv_width = conv_size, conv_size
+# conv.conv_height = (conv.input_height + 2 * conv.padding[0]  - conv.dilation[0] * (conv.kernel_height - 1) - 1) // conv.stride[0]   + 1
+# conv.conv_width =  (conv.input_width + 2 * conv.padding[1] - conv.dilation[1] * (conv.kernel_width - 1) - 1) // conv.stride[1] + 1
 
-print("My conv backward")
-print(x)
+# conv.dilated_kernel_height = conv.dilation[0] * (conv.kernel_height - 1) + 1
+# conv.dilated_kernel_width = conv.dilation[1] * (conv.kernel_width - 1) + 1
+
+# x = conv.forward_prop(X, training = True)
+
+# print(conv.conv_height, conv.conv_width, conv.dilated_kernel_height, conv.dilated_kernel_width)
+# print("My conv")
+# print(x)
+# LOSS = np.random.normal(0, 1, (1, kernels_num, conv.conv_height, conv.conv_width ))
+
+# x = conv.backward_prop(LOSS)
+
+# print("My conv backward")
+# print(x)
 
 # conv = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, dilation = 1, bias=False)
 # x = conv(torch.from_numpy(X).float())
@@ -229,4 +230,12 @@ print(x)
 # cv2d_size = H = (input_size-1) * stride + kernel_size
 # op = tf.nn.conv2d_transpose(input, filter, output_shape = cv2d_size, strides=[1, 1, 1, 1], padding='VALID')
 # print(op)
+
+# from keras.layers import UpSampling2D, Conv2D, MaxPooling2D
+# from keras.models import Sequential, Model, load_model
+
+# model = Sequential()
+
+# model.add(Conv2D(1, kernel_size = 3, activation="relu", strides = 2, input_shape=(4, 4, 1)))
+# model.summary()
 

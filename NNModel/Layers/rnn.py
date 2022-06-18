@@ -1,6 +1,6 @@
 import numpy as np
-from NNModel.activations import activations
-
+from nnmodel.activations import activations
+from nnmodel.values_checker import ValuesChecker
 
 class RNN():
     #TODO
@@ -8,13 +8,10 @@ class RNN():
     #(Common) TimeDistributedLayer
 
     def __init__(self, units_num, activation = 'tanh', input_shape = None, return_sequences = False):
-        self.units_num = units_num
+        self.units_num = ValuesChecker.check_integer_variable(units_num, "units_num")
         self.input_shape = input_shape
 
-        if type(activation) is str or activation is None:
-            self.activation = activations[activation]
-        else:
-            self.activation = activation
+        self.activation = ValuesChecker.check_activation(activation, activations)
     
 
         self.return_sequences = return_sequences

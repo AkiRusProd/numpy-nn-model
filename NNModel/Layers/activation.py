@@ -1,16 +1,13 @@
 import numpy as np
-from NNModel.activations import activations
-
+from nnmodel.activations import activations
+from nnmodel.values_checker import ValuesChecker
 
 class Activation():
 
     def __init__(self, activation = None):
         self.input_shape = None
 
-        if type(activation) is str or activation is None:
-            self.activation = activations[activation]
-        else:
-            self.activation = activation
+        self.activation = ValuesChecker.check_activation(activation, activations)
 
     def build(self, optimizer):
         self.output_shape = self.input_shape
