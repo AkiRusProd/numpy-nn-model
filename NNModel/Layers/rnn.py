@@ -9,7 +9,7 @@ class RNN():
 
     def __init__(self, units_num, activation = 'tanh', input_shape = None, return_sequences = False):
         self.units_num = ValuesChecker.check_integer_variable(units_num, "units_num")
-        self.input_shape = input_shape
+        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 2)
 
         self.activation = ValuesChecker.check_activation(activation, activations)
     

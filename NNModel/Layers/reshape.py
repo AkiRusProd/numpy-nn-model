@@ -1,10 +1,10 @@
 import numpy as np
-
+from nnmodel.values_checker import ValuesChecker
 
 class Reshape():
 
     def __init__(self, shape) -> None:
-        self.shape = shape
+        self.shape = ValuesChecker.check_shape(shape)
         self.input_shape = None
 
     def build(self, optimizer):

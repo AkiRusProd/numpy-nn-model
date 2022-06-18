@@ -43,7 +43,7 @@ model = Model()
 # model.add(BatchNormalization())
 # model.add(Dropout())
 # model.add(Dense(units_num = 10, activation = "sigmoid"))
-
+model.add(BatchNormalization(input_shape = (1, 784)))
 model.add(Reshape(shape = (1, 28, 28)))
 model.add(Conv2D(kernels_num = 8, kernel_shape = (5, 5), activation = "relu"))
 model.add(MaxPooling2D())

@@ -13,7 +13,7 @@ class Conv2D():
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1)):
         self.kernels_num = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_height, self.kernel_width = kernel_shape
-        self.input_shape = input_shape
+        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
         self.padding =  ValuesChecker.check_size2_variable(padding, variable_name = "padding")
         self.stride =   ValuesChecker.check_size2_variable(stride, variable_name = "stride")
         self.dilation = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation")

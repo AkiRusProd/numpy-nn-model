@@ -1,15 +1,15 @@
 import numpy as np
 from numba import njit
-
+from nnmodel.values_checker import ValuesChecker
 
 class UpSampling2D():
     #TODO
      #verify speed of METHODS/unpadding; maybe native numpy is faster than numba
      #add other interpolations, "bicubic", "bilinear", now only nearest 
 
-    def __init__(self,  size=(2, 2)) -> None:
-        self.size = size
-        self.input_shape = None
+    def __init__(self,  size=(2, 2), input_shape = None) -> None:
+        self.size = ValuesChecker.check_size2_variable(size, variable_name = "size")
+        self.input_shape = input_shape
 
     def build(self, optimizer):
         self.output_shape = (self.input_shape[0], self.input_shape[1] * self.size[0], self.input_shape[2] * self.size[1])

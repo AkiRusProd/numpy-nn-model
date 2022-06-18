@@ -1,10 +1,10 @@
 import numpy as np
-
+from nnmodel.values_checker import ValuesChecker
 
 class Dropout():
 
     def __init__(self, rate = 0.1) -> None:
-        self.rate = rate
+        self.rate = ValuesChecker.check_float_variable(rate, "rate")
         self.input_shape = None
 
     def build(self, optimizer):
