@@ -1,12 +1,12 @@
 import numpy as np
 from numba import njit
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Pooling2D():
     # add strides, padding= same, valid, custom
     def __init__(self,  pool_size=(2, 2), input_shape = None):
-        self.pool_size = ValuesChecker.check_size2_variable(pool_size, variable_name = "pool_size")
-        self.input_shape = input_shape
+        self.pool_size   = ValuesChecker.check_size2_variable(pool_size, variable_name = "pool_size", min_acceptable_value = 1)
+        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
 
     def build(self, optimizer):
         self.block_size = self.input_shape[1] // self.pool_size[0], self.input_shape[2] // self.pool_size[1]

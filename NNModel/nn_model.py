@@ -9,6 +9,7 @@ class Model():
     #add save/open model methods
     #add oportnity to choose metrics
     #add lstm, gru layers
+    #add loss func and optimizers exception + their input values
     #maybe add oportnity to create custom layers??
     #maybe something more...
 

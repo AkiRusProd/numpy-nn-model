@@ -3,7 +3,6 @@ from tqdm import tqdm
 
 
 
-
 training_data = open('dataset/mnist_train.csv','r').readlines()
 test_data = open('dataset/mnist_test.csv','r').readlines()
 
@@ -47,7 +46,7 @@ model.add(BatchNormalization(input_shape = (1, 784)))
 model.add(Reshape(shape = (1, 28, 28)))
 model.add(Conv2D(kernels_num = 8, kernel_shape = (5, 5), activation = "relu"))
 model.add(MaxPooling2D())
-model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), padding = "same", activation = "relu"))
+model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), padding = "same", activation = LeakyReLU()))
 # model.add(Conv2DTranspose(kernels_num = 16, kernel_shape = (3, 3), activation = "relu"))
 model.add(MaxPooling2D())
 

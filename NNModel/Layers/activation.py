@@ -1,6 +1,6 @@
 import numpy as np
 from nnmodel.activations import activations
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Activation():
 

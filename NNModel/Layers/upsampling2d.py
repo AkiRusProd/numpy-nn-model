@@ -1,6 +1,6 @@
 import numpy as np
 from numba import njit
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class UpSampling2D():
     #TODO
@@ -8,8 +8,8 @@ class UpSampling2D():
      #add other interpolations, "bicubic", "bilinear", now only nearest 
 
     def __init__(self,  size=(2, 2), input_shape = None) -> None:
-        self.size = ValuesChecker.check_size2_variable(size, variable_name = "size")
-        self.input_shape = input_shape
+        self.size        = ValuesChecker.check_size2_variable(size, variable_name = "size", min_acceptable_value = 1)
+        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
 
     def build(self, optimizer):
         self.output_shape = (self.input_shape[0], self.input_shape[1] * self.size[0], self.input_shape[2] * self.size[1])

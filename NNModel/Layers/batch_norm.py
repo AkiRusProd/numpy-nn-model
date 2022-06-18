@@ -1,12 +1,12 @@
 import numpy as np
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class BatchNormalization():
 
     def __init__(self, momentum = 0.99, epsilon = 0.001, input_shape = None):
 
-        self.momentum =  ValuesChecker.check_float_variable(momentum, "momentum")
-        self.epsilon = ValuesChecker.check_float_variable(epsilon, "epsilon")
+        self.momentum = ValuesChecker.check_float_variable(momentum, "momentum")
+        self.epsilon  = ValuesChecker.check_float_variable(epsilon, "epsilon")
 
         self.gamma = None
         self.beta = None

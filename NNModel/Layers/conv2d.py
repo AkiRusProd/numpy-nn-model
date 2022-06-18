@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 from nnmodel.activations import activations
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Conv2D():
     #TODO
@@ -11,14 +11,13 @@ class Conv2D():
     
 
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1)):
-        self.kernels_num = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
-        self.kernel_height, self.kernel_width = kernel_shape
-        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
-        self.padding =  ValuesChecker.check_size2_variable(padding, variable_name = "padding")
-        self.stride =   ValuesChecker.check_size2_variable(stride, variable_name = "stride")
-        self.dilation = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation")
-    
-        self.activation = ValuesChecker.check_activation(activation, activations)
+        self.kernels_num  = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
+        self.kernel_shape = ValuesChecker.check_size2_variable(kernel_shape, variable_name = "kernel_shape", min_acceptable_value = 1)
+        self.input_shape  = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
+        self.padding      = ValuesChecker.check_size2_variable(padding, variable_name = "padding", min_acceptable_value = 0)
+        self.stride       = ValuesChecker.check_size2_variable(stride, variable_name = "stride", min_acceptable_value = 1)
+        self.dilation     = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation", min_acceptable_value = 1)
+        self.activation   = ValuesChecker.check_activation(activation, activations)
 
           
         self.w = None
@@ -27,6 +26,7 @@ class Conv2D():
 
     def build(self, optimizer):
         self.optimizer = optimizer
+        self.kernel_height, self.kernel_width = self.kernel_shape
         self.channels_num, self.input_height, self.input_width = self.input_shape
 
         if self.padding == "valid":

@@ -1,16 +1,15 @@
 import numpy as np
 from nnmodel.activations import activations
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Dense():
     #TODO
     #add bias
 
     def __init__(self, units_num, activation = None, input_shape = None):
-        self.units_num = ValuesChecker.check_integer_variable(units_num, "units_num")
+        self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 1)
-
-        self.activation = ValuesChecker.check_activation(activation, activations)
+        self.activation  = ValuesChecker.check_activation(activation, activations)
 
         
         self.w  = None

@@ -1,3 +1,4 @@
+from msilib.schema import Class
 import numpy as np
 from tqdm import tqdm
 from numba import njit
@@ -6,8 +7,9 @@ from numba import njit
 
 from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D
 from nnmodel import Model
-from nnmodel.activations import LeakyReLU
+from nnmodel.activations import LeakyReLU, ActivationFunction
 from nnmodel.optimizers import SGD
+
 
 
 import torch
@@ -19,7 +21,7 @@ kernel_size = 3
 inputs_num = 1
 input_size = 5
 stride_f = 2
-print(len(np.array([1, 2])))
+
 
 
 conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, bias=False)
@@ -71,18 +73,18 @@ print(x)
 
 # x = conv.forward_prop(X, training = True)
 # print(x)
-# m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 2, padding = (1, 2),  output_padding = 0, dilation = (1, 1), bias = False)
+m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 2, padding = (1, 2),  output_padding = 0, dilation = (1, 1), bias = False)
 
-# m.weight = nn.Parameter(torch.from_numpy(W).float())
-# #m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
+m.weight = nn.Parameter(torch.from_numpy(W).float())
+#m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
 
-# input = torch.from_numpy(X).float()
-# output = m(input)
-# print(output.shape)
-# print(output)
+input = torch.from_numpy(X).float()
+output = m(input)
+print(output.shape)
+print(output)
 
-# GRAD = output.backward(torch.from_numpy(LOSS).float(), retain_graph=True)
-# print(GRAD)
+GRAD = output.backward(torch.from_numpy(LOSS).float(), retain_graph=True)
+print(GRAD)
 
 
 

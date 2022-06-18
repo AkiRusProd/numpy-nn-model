@@ -1,5 +1,5 @@
 import numpy as np
-from nnmodel.values_checker import ValuesChecker
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Reshape():
 

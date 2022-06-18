@@ -7,6 +7,11 @@ class ActivationFunction():
     def __init__(self):
         pass
 
+    def parent_name(self): 
+        
+        return "ActivationFunction"
+
+
 
 class Sigmoid(ActivationFunction):
 
