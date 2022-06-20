@@ -1,4 +1,4 @@
-# numpy-nn-model
+# numpy-nn-model (in the pipeline)
 Сustom numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line (2 version)
 
 ## Some information and features:
