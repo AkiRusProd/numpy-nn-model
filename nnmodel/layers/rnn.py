@@ -4,14 +4,13 @@ from nnmodel.exceptions.values_checker import ValuesChecker
 
 class RNN():
     #TODO
-    #add bias
     #(Common) TimeDistributedLayer
 
     def __init__(self, units_num, activation = 'tanh', input_shape = None, return_sequences = False, use_bias = True):
         self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 2)
         self.activation  = ValuesChecker.check_activation(activation, activations)
-        self.use_bias = use_bias
+        self.use_bias    = ValuesChecker.check_boolean_type(use_bias, "use_bias")
 
         self.return_sequences = return_sequences
 

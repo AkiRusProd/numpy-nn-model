@@ -5,8 +5,6 @@ from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Conv2D():
     #TODO
-    #add bias
-    #add padding when stride is out of scope / same valid padding
     #add zeropadding
     
 
@@ -18,7 +16,7 @@ class Conv2D():
         self.stride       = ValuesChecker.check_size2_variable(stride, variable_name = "stride", min_acceptable_value = 1)
         self.dilation     = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation", min_acceptable_value = 1)
         self.activation   = ValuesChecker.check_activation(activation, activations)
-        self.use_bias = use_bias
+        self.use_bias     = ValuesChecker.check_boolean_type(use_bias, "use_bias")
           
         self.w = None
         self.b = None

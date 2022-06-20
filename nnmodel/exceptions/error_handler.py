@@ -70,3 +70,12 @@ class ErrorHandler(Exception):
 
             def __str__(self):
                 return f'''Unable to extract "shape" values from type {self.variable_type};\nPossibe cases:\n "input_shape" must be positive integer value or list/tuple type that contain positive integer values'''
+
+    class InvalidBoleanType(Exception):
+            def __init__(self, variable_type, variable_name):
+                self.variable_name = variable_name
+                self.variable_type = variable_type
+                super().__init__(self.variable_type, self.variable_name)
+
+            def __str__(self):
+                return f'Type of the variable {self.variable_name} must be boolean (True, False), got {self.variable_type}'
