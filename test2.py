@@ -16,46 +16,54 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-kernels_num = 1
-kernel_size = 3
+batch_size = 2
+kernels_num = 3
+kernel_size = 2
 inputs_num = 1
-input_size = 5
-stride_f = 2
+input_size = 7
+stride_f = 3
 
 
 
-conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, bias=False)
+conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
 
-X = np.arange(0.0, (1 * inputs_num * input_size * input_size)).reshape((1, inputs_num, input_size, input_size))
-W = np.arange(0.0, (1 * kernels_num * kernel_size * kernel_size)).reshape((1, kernels_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
-BIAS = np.random.normal(0, 1, (kernels_num))
+X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
+W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).reshape((kernels_num, inputs_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
+# BIAS = np.random.normal(0, 1, (kernels_num))
 
 
-conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = "same", stride = 1, dilation = (1, 1))
-
-conv.build(None)
+conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = "same", stride = stride_f, dilation = (1, 1))
 conv.w = W
+conv.build(None)
+
 # conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
 
 
-# conv.conv_height = (conv.input_height - 1) * conv.stride[0] - 2 * conv.padding[0]  +  conv.dilation[0] * (conv.kernel_height - 1) + conv.output_padding[0] + 1
-# conv.conv_width =  (conv.input_width - 1) * conv.stride[1] - 2 * conv.padding[1] + conv.dilation[1] * (conv.kernel_width - 1) + conv.output_padding[1] + 1
+# # conv.conv_height = (conv.input_height - 1) * conv.stride[0] - 2 * conv.padding[0]  +  conv.dilation[0] * (conv.kernel_height - 1) + conv.output_padding[0] + 1
+# # conv.conv_width =  (conv.input_width - 1) * conv.stride[1] - 2 * conv.padding[1] + conv.dilation[1] * (conv.kernel_width - 1) + conv.output_padding[1] + 1
+# conv.conv_height = (conv.input_height + conv.padding[0] + conv.padding[1] - conv.dilation[0] * (conv.kernel_height - 1) - 1) // conv.stride[0]   + 1
+# conv.conv_width =  (conv.input_width + conv.padding[2] + conv.padding[3] - conv.dilation[1] * (conv.kernel_width - 1) - 1) // conv.stride[1] + 1
 
 
 # conv.dilated_kernel_height = conv.dilation[0] * (conv.kernel_height - 1) + 1
 # conv.dilated_kernel_width = conv.dilation[1] * (conv.kernel_width - 1) + 1
 
-# conv.prepared_input_height = (conv.input_height - 1) * conv.stride[0] + 1 - 2 * conv.padding[0] + conv.output_padding[0] + 2 * conv.dilated_kernel_height - 2
-# conv.prepared_input_width = (conv.input_width - 1) * conv.stride[1] + 1 - 2 * conv.padding[1] + conv.output_padding[1] + 2 * conv.dilated_kernel_width - 2
-# print(conv.prepared_input_height)
+# conv.input_height = (conv.conv_height - 1) * conv.stride[0] - conv.padding[0] + conv.padding[1] +  conv.dilated_kernel_height
+# conv.input_width = (conv.conv_width - 1) * conv.stride[1] - conv.padding[2] + conv.padding[3] +  conv.dilated_kernel_width
+
+# # conv.prepared_input_height = (conv.input_height - 1) * conv.stride[0] + 1 - 2 * conv.padding[0] + conv.output_padding[0] + 2 * conv.dilated_kernel_height - 2
+# # conv.prepared_input_width = (conv.input_width - 1) * conv.stride[1] + 1 - 2 * conv.padding[1] + conv.output_padding[1] + 2 * conv.dilated_kernel_width - 2
+# conv.prepared_input_height = (conv.input_height + conv.padding[0] + conv.padding[1])
+# conv.prepared_input_width = (conv.input_width + conv.padding[2] + conv.padding[3])
+# # print(conv.prepared_input_height)
 
 
 
-LOSS = np.arange(0.0, 1 * kernels_num * conv.conv_height * conv.conv_width).reshape((1, kernels_num, conv.conv_height, conv.conv_width))
+LOSS = np.arange(0.0, batch_size * kernels_num * conv.conv_height * conv.conv_width).reshape((batch_size, kernels_num, conv.conv_height, conv.conv_width))
 # print(f"x shape is {X.shape}")
 
-print(X)
-print(W)
+# print(X)
+# print(W)
 print(conv.padding)
 
 print("FORWARD")
@@ -71,20 +79,20 @@ print(x.shape)
 print(x)
 
 
-# x = conv.forward_prop(X, training = True)
-# print(x)
-m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 2, padding = (1, 2),  output_padding = 0, dilation = (1, 1), bias = False)
+# # x = conv.forward_prop(X, training = True)
+# # print(x)
+# m = nn.ConvTranspose2d(inputs_num, kernels_num, kernel_size, stride= 2, padding = (1, 2),  output_padding = 0, dilation = (1, 1), bias = False)
 
-m.weight = nn.Parameter(torch.from_numpy(W).float())
-#m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
+# m.weight = nn.Parameter(torch.from_numpy(W).float())
+# #m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
 
-input = torch.from_numpy(X).float()
-output = m(input)
-print(output.shape)
-print(output)
+# input = torch.from_numpy(X).float()
+# output = m(input)
+# print(output.shape)
+# print(output)
 
-GRAD = output.backward(torch.from_numpy(LOSS).float(), retain_graph=True)
-print(GRAD)
+# GRAD = output.backward(torch.from_numpy(LOSS).float(), retain_graph=True)
+# print(GRAD)
 
 
 
@@ -118,15 +126,15 @@ print(GRAD)
 
 # class MyModel(tf.keras.Model):
 
-#   def __init__(self):
+#   def __init__(conv):
 #     super().__init__()
-#     self.convT = Conv2DTranspose(kernels_num, kernel_size, padding = (0, 0), use_bias = False)
-#     self.convT.kernel = W
-#     # self.dense2 = tf.keras.layers.Dense(5, activation=tf.nn.softmax)
+#     conv.convT = Conv2DTranspose(kernels_num, kernel_size, padding = (0, 0), use_bias = False)
+#     conv.convT.kernel = W
+#     # conv.dense2 = tf.keras.layers.Dense(5, activation=tf.nn.softmax)
 
-#   def call(self, inputs):
-#     x = self.convT(tf.convert_to_tensor(inputs.reshape(1, input_size, input_size, 1)))
-#     return self.convT(x)
+#   def call(conv, inputs):
+#     x = conv.convT(tf.convert_to_tensor(inputs.reshape(1, input_size, input_size, 1)))
+#     return conv.convT(x)
 
 # model = MyModel()
 # x = model.call(X)
@@ -155,7 +163,7 @@ print(GRAD)
 
 
 # def remove_padding(layer, padding):
-#     # losses[k] = losses[k][...,self.topology[k+1]['padding']:-self.topology[k+1]['padding'],self.topology[k+1]['padding']:-self.topology[k+1]['padding']]
+#     # losses[k] = losses[k][...,conv.topology[k+1]['padding']:-conv.topology[k+1]['padding'],conv.topology[k+1]['padding']:-conv.topology[k+1]['padding']]
 #     unpadded_layer = np.zeros(
 #         (
 #             layer.shape[0],

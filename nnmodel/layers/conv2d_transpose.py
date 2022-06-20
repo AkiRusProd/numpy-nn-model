@@ -11,7 +11,7 @@ class Conv2DTranspose():
     #maybe implement padding as separate layer
     
 
-    def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), output_padding = (0, 0)):
+    def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), output_padding = (0, 0), use_bias = True):
         self.kernels_num    = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_shape   = ValuesChecker.check_size2_variable(kernel_shape, variable_name = "kernel_shape", min_acceptable_value = 1)
         self.input_shape    = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
@@ -20,8 +20,10 @@ class Conv2DTranspose():
         self.dilation       = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation", min_acceptable_value = 1)
         self.output_padding = ValuesChecker.check_size2_variable(output_padding, variable_name = "output_padding", min_acceptable_value = 0)
         self.activation     = ValuesChecker.check_activation(activation, activations)
+        self.use_bias = use_bias
 
         self.w = None
+        self.b = None
 
        
 
@@ -37,12 +39,12 @@ class Conv2DTranspose():
             padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1) + self.output_padding[1]
 
             if padding_up_down % 2 == 0:
-                padding_up, padding_down = padding_up_down // 2
+                padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
             else:
                 padding_up, padding_down = padding_up_down // 2, padding_up_down - padding_up_down // 2
 
             if padding_left_right % 2 == 0:
-                padding_left, padding_right = padding_left_right // 2
+                padding_left, padding_right = padding_left_right // 2, padding_left_right // 2
             else:
                 padding_left, padding_right = padding_left_right // 2, padding_left_right - padding_left_right // 2
     
@@ -64,10 +66,13 @@ class Conv2DTranspose():
         self.prepared_input_width = (self.input_width - 1) * self.stride[1] + 1 - (self.padding[2] + self.padding[3])+ self.output_padding[1] + 2 * self.dilated_kernel_width - 2
        
         self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
-
+        self.b = np.zeros(self.kernels_num)
         
         self.v, self.m         = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
         self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
+
+        self.vb, self.mb         = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
+        self.vb_hat, self.mb_hat = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
 
         self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
         
@@ -78,14 +83,14 @@ class Conv2DTranspose():
 
         self.batch_size = len(self.input_data)
         
-        self.conv_layer = self._forward_prop(self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        self.conv_layer = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
 
         return self.activation.function(self.conv_layer)
 
 
     @staticmethod
     @njit
-    def _forward_prop(input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
+    def _forward_prop(input_data, weights, bias, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
         conv_layer = np.zeros((batch_size, kernels_num, conv_height, conv_width))
 
         for b in range(batch_size):
@@ -97,7 +102,7 @@ class Conv2DTranspose():
                             conv_layer[b, k, h, w] += (
                                 np.sum(input_data[b, c, h : h + kernel_height, w  : w  + kernel_width] *  weights[k, c]
                                 )
-                                # + bias
+                                + bias[k]
                             )
         
         return conv_layer
@@ -106,9 +111,11 @@ class Conv2DTranspose():
         error *= self.activation.derivative(self.conv_layer)
         
         self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        self.grad_b = self.compute_bias_gradients(error)
+        
         conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
-
         conv_backprop_error = self.prepare_error(conv_backprop_error)
+
         self.w = self.remove_stride(self.w, self.dilation)
         self.grad_w = self.remove_stride(self.grad_w, self.dilation)
         
@@ -201,7 +208,7 @@ class Conv2DTranspose():
     def compute_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
         
         gradient = np.zeros((weights.shape))
-
+        bias_gradient = np.sum(error)
 
         for b in range(batch_size):
             for k in range(kernels_num):
@@ -214,10 +221,19 @@ class Conv2DTranspose():
                                 * input_data[b, c, h : h + conv_height, w : w + conv_width]
                             )
 
-        return gradient
+        return gradient, bias_gradient
+
+
+    @staticmethod
+    def compute_bias_gradients(error):
+
+        return np.sum(error, axis = (0, 2, 3))
+
 
     def update_weights(self, layer_num):
         self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
+        if self.use_bias == True:
+            self.b, self.vb, self.mb, self.vb_hat, self.mb_hat  = self.optimizer.update(self.grad_b, self.b, self.vb, self.mb, self.vb_hat, self.mb_hat, layer_num)
 
 
 

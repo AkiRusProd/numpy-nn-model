@@ -10,7 +10,7 @@ class Conv2D():
     #add zeropadding
     
 
-    def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1)):
+    def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), use_bias = True):
         self.kernels_num  = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_shape = ValuesChecker.check_size2_variable(kernel_shape, variable_name = "kernel_shape", min_acceptable_value = 1)
         self.input_shape  = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
@@ -18,9 +18,10 @@ class Conv2D():
         self.stride       = ValuesChecker.check_size2_variable(stride, variable_name = "stride", min_acceptable_value = 1)
         self.dilation     = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation", min_acceptable_value = 1)
         self.activation   = ValuesChecker.check_activation(activation, activations)
-
+        self.use_bias = use_bias
           
         self.w = None
+        self.b = None
 
        
 
@@ -61,14 +62,21 @@ class Conv2D():
         self.dilated_kernel_height = self.dilation[0] * (self.kernel_height - 1) + 1
         self.dilated_kernel_width = self.dilation[1] * (self.kernel_width - 1) + 1
 
+        #input height and width for comparing with stride
+        self.input_height = (self.conv_height - 1) * self.stride[0] - self.padding[0] - self.padding[1] +  self.dilated_kernel_height
+        self.input_width = (self.conv_width - 1) * self.stride[1] - self.padding[2] - self.padding[3] +  self.dilated_kernel_width
+    
         self.prepared_input_height = (self.input_height + self.padding[0] + self.padding[1])
         self.prepared_input_width = (self.input_width + self.padding[2] + self.padding[3])
 
         self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
-
+        self.b = np.zeros(self.kernels_num)
         
         self.v, self.m         = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
         self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
+
+        self.vb, self.mb         = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
+        self.vb_hat, self.mb_hat = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
 
         self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
      
@@ -79,14 +87,14 @@ class Conv2D():
         
         self.batch_size = len(self.input_data)
 
-        self.conv_layer = self._forward_prop(self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        self.conv_layer = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
 
         return self.activation.function(self.conv_layer)
 
 
     @staticmethod
     @njit
-    def _forward_prop(input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
+    def _forward_prop(input_data, weights, bias, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
         conv_layer = np.zeros((batch_size, kernels_num, conv_height, conv_width))
 
         for b in range(batch_size):
@@ -98,7 +106,7 @@ class Conv2D():
                             conv_layer[b, k, h, w] += (
                                 np.sum(input_data[b, c, h * stride[0] : h * stride[0] + kernel_height, w * stride[1] : w * stride[1] + kernel_width] *  weights[k, c]
                                 )
-                                # + bias
+                                + bias[k]
                             )
 
         return conv_layer
@@ -106,12 +114,14 @@ class Conv2D():
     def backward_prop(self, error):
         error *= self.activation.derivative(self.conv_layer)
         
-        self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        self.grad_w = self.compute_weights_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        self.grad_b = self.compute_bias_gradients(error)
+
         conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
-        
         conv_backprop_error = self.remove_padding(conv_backprop_error, self.padding)
         
         self.w = self.remove_stride(self.w, self.dilation)
+        self.grad_w = self.remove_stride(self.grad_w, self.dilation)
 
         return conv_backprop_error
 
@@ -168,7 +178,7 @@ class Conv2D():
 
     @staticmethod
     @njit
-    def compute_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
+    def compute_weights_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width, stride):
 
         gradient = np.zeros((weights.shape))
 
@@ -194,8 +204,15 @@ class Conv2D():
 
         return gradient
 
+    @staticmethod
+    def compute_bias_gradients(error):
+
+        return np.sum(error, axis = (0, 2, 3))
+
     def update_weights(self, layer_num):
         self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
+        if self.use_bias == True:
+            self.b, self.vb, self.mb, self.vb_hat, self.mb_hat  = self.optimizer.update(self.grad_b, self.b, self.vb, self.mb, self.vb_hat, self.mb_hat, layer_num)
 
     @staticmethod
     @njit
