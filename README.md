@@ -26,16 +26,20 @@
 1) Dense
 2) Activation
 3) Flatten
-4) Reshape
-5) RepeatVector
-6) Dropout
-7) BatchNormalization
-8) RNN (Need to Test)
-9) Conv2D
-10) Conv2DTranspose
-11) MaxPooling2D
-12) AveragePooling2D
-13) UpSamling2D
+4) ZeroPadding2D (Not implemented yet)
+5) Reshape
+6) RepeatVector
+7) Dropout
+8) BatchNormalization
+9) RNN (Need to Test)
+10) LSTM (Not implemented yet)
+11) GRU (Not implemented yet)
+12) TimeDistributed (Not implemented yet)
+13) Conv2D
+14) Conv2DTranspose
+15) MaxPooling2D
+16) AveragePooling2D
+17) UpSamling2D
 
 
 ### Model Initialization (Example):
