@@ -1,4 +1,4 @@
-from msilib.schema import Class
+
 import numpy as np
 from tqdm import tqdm
 from numba import njit
@@ -16,25 +16,26 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-batch_size = 2
-kernels_num = 3
+batch_size = 1
+kernels_num = 2
 kernel_size = 2
 inputs_num = 1
-input_size = 7
-stride_f = 3
+input_size = 5
+stride_f = 2
 
 
 
-conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
+# conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
 
 X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
 W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).reshape((kernels_num, inputs_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
 # BIAS = np.random.normal(0, 1, (kernels_num))
 
 
-conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = "same", stride = stride_f, dilation = (1, 1))
-conv.w = W
-conv.build(None)
+# conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = 0, stride = stride_f, dilation = (1, 1))
+
+# conv.build(None)
+# conv.w = W
 
 # conv.channels_num, conv.input_height, conv.input_width = inputs_num, input_size, input_size
 
@@ -59,24 +60,24 @@ conv.build(None)
 
 
 
-LOSS = np.arange(0.0, batch_size * kernels_num * conv.conv_height * conv.conv_width).reshape((batch_size, kernels_num, conv.conv_height, conv.conv_width))
+# LOSS = np.arange(0.0, batch_size * kernels_num * conv.conv_height * conv.conv_width).reshape((batch_size, kernels_num, conv.conv_height, conv.conv_width))
 # print(f"x shape is {X.shape}")
 
 # print(X)
 # print(W)
-print(conv.padding)
+# print(X)
 
-print("FORWARD")
-x = conv.forward_prop(X, training = True)
-print(x.shape)
-print(x)
+# print("FORWARD")
+# x = conv.forward_prop(X, training = True)
+# print(x.shape)
+# print(x)
 
 
-x = conv.backward_prop(LOSS)
+# x = conv.backward_prop(LOSS)
 
-print("BACKWARD")
-print(x.shape)
-print(x)
+# print("BACKWARD")
+# print(x.shape)
+# print(x)
 
 
 # # x = conv.forward_prop(X, training = True)
@@ -97,15 +98,31 @@ print(x)
 
 
 # import tensorflow as tf
-# from keras.layers import Conv2DTranspose as C2DT
+# from keras.layers import MaxPooling2D as KerasMaxPooling2D#Conv2DTranspose as C2DT
 
 # input_shape = (1, kernel_size, kernel_size, kernels_num)
-# X_keras = tf.convert_to_tensor(X.reshape(1, input_size, input_size, kernels_num))
-# # y = tf.keras.layers.Conv2DTranspose(1, 3, activation='relu', input_shape = input_shape[1:])(x)
+# X_keras = tf.convert_to_tensor(X.reshape(1, input_size, input_size, inputs_num))
+# maxpooling = KerasMaxPooling2D(pool_size = (2, 2), strides = (1, 1))
+# y = tf.keras.layers.Conv2DTranspose(1, 3, activation='relu', input_shape = input_shape[1:])(x)
 # conv_keras = C2DT(1, 2, activation='relu', input_shape = input_shape[1:], data_format="channels_last", use_bias = False)
 # print(W)
 
-# # conv.set_weights([W.reshape(kernel_size, kernel_size, kernels_num, 1)])   
+# conv.set_weights([W.reshape(kernel_size, kernel_size, kernels_num, 1)])   
+# y = maxpooling(X_keras)
+# print(y)
+
+print("X=\n", X)
+mymaxpooling = MaxPooling2D(pool_size = (2, 2), stride = (2, 2), input_shape = (inputs_num,  input_size, input_size))
+mymaxpooling.build()
+
+y = mymaxpooling.forward_prop(X, training = True)
+print("FORWARD=\n", y)
+
+print("POOL IND\n", mymaxpooling.pooling_layer_ind)
+
+LOSS = y.copy()
+y = mymaxpooling.backward_prop(LOSS)
+print("BACKWARD=\n", y)
 
 # y = conv_keras(X_keras)
 # print(y)

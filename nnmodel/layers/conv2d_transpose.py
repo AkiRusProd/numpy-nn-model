@@ -276,7 +276,7 @@ class Conv2DTranspose():
                     :,
                     :,
                     padding[0] :layer.shape[2] - padding[1],
-                    padding[2] :layer.shape[2] - padding[3],
+                    padding[2] :layer.shape[3] - padding[3],
                 ]
 
         return unpadded_layer

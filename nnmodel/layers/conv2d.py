@@ -58,14 +58,14 @@ class Conv2D():
         self.conv_width =  (self.input_width + self.padding[2] + self.padding[3] - self.dilation[1] * (self.kernel_width - 1) - 1) // self.stride[1] + 1
 
         self.dilated_kernel_height = self.dilation[0] * (self.kernel_height - 1) + 1
-        self.dilated_kernel_width = self.dilation[1] * (self.kernel_width - 1) + 1
+        self.dilated_kernel_width  = self.dilation[1] * (self.kernel_width - 1) + 1
 
         #input height and width for comparing with stride
-        self.input_height = (self.conv_height - 1) * self.stride[0] - self.padding[0] - self.padding[1] +  self.dilated_kernel_height
-        self.input_width = (self.conv_width - 1) * self.stride[1] - self.padding[2] - self.padding[3] +  self.dilated_kernel_width
+        self.stride_compared_input_height = (self.conv_height - 1) * self.stride[0] - self.padding[0] - self.padding[1] +  self.dilated_kernel_height
+        self.stride_compared_input_width = (self.conv_width - 1) * self.stride[1] - self.padding[2] - self.padding[3] +  self.dilated_kernel_width
     
-        self.prepared_input_height = (self.input_height + self.padding[0] + self.padding[1])
-        self.prepared_input_width = (self.input_width + self.padding[2] + self.padding[3])
+        self.prepared_input_height = (self.stride_compared_input_height + self.padding[0] + self.padding[1])
+        self.prepared_input_width = (self.stride_compared_input_width + self.padding[2] + self.padding[3])
 
         self.w = np.random.normal(0, pow(self.kernel_height * self.kernel_width, -0.5), (self.kernels_num, self.channels_num, self.kernel_height, self.kernel_width))
         self.b = np.zeros(self.kernels_num)
@@ -116,8 +116,9 @@ class Conv2D():
         self.grad_b = self.compute_bias_gradients(error)
 
         conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        conv_backprop_error = self.set_padding(conv_backprop_error, (0, self.input_height - self.stride_compared_input_height, 0, self.input_width - self.stride_compared_input_width))
         conv_backprop_error = self.remove_padding(conv_backprop_error, self.padding)
-        
+
         self.w = self.remove_stride(self.w, self.dilation)
         self.grad_w = self.remove_stride(self.grad_w, self.dilation)
 
@@ -251,7 +252,7 @@ class Conv2D():
                     :,
                     :,
                     padding[0] :layer.shape[2] - padding[1],
-                    padding[2] :layer.shape[2] - padding[3],
+                    padding[2] :layer.shape[3] - padding[3],
                 ]
 
         return unpadded_layer
