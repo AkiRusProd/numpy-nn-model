@@ -26,7 +26,7 @@
 1) Dense
 2) Activation
 3) Flatten
-4) ZeroPadding2D (Not implemented yet)
+4) ZeroPadding2D
 5) Reshape
 6) RepeatVector
 7) Dropout

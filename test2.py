@@ -5,10 +5,12 @@ from numba import njit
 
 
 
-from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU, ActivationFunction
 from nnmodel.optimizers import SGD
+
+
 
 
 
@@ -31,6 +33,14 @@ X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape(
 W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).reshape((kernels_num, inputs_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
 # BIAS = np.random.normal(0, 1, (kernels_num))
 
+# ZP = ZeroPadding2D(padding = 2, input_shape = (inputs_num, input_size, input_size))
+# ZP.build()
+
+# Y = ZP.forward_prop(X, training = True)
+# print(f"{Y=}\n")
+
+# Y = ZP.backward_prop(X)
+# print(f"{Y=}\n")
 
 # conv = Conv2D(kernels_num, kernel_shape = (kernel_size, kernel_size), input_shape = (inputs_num, input_size, input_size), padding = 0, stride = stride_f, dilation = (1, 1))
 

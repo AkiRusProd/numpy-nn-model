@@ -10,5 +10,6 @@ from nnmodel.layers.upsampling2d import UpSampling2D
 from nnmodel.layers.activation import Activation
 from nnmodel.layers.dropout import Dropout
 from nnmodel.layers.flatten import Flatten
+from nnmodel.layers.zero_padding2d import ZeroPadding2D
 from nnmodel.layers.reshape import Reshape
 from nnmodel.layers.repeat_vector import RepeatVector
