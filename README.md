@@ -46,9 +46,9 @@
 
 ```python
 from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, MaxPooling2D, Activation
-from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD
+from nnmodel import Model
 
 model = Model()
 

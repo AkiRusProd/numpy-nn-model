@@ -17,12 +17,15 @@ class BatchNormalization():
         self.moving_mean = None
         self.moving_var = None
 
+        self.optimizer = None
+
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = None)
     
-
-    def build(self, optimizer):
+    def set_optimizer(self, optimizer):
         self.optimizer = optimizer
+    
 
+    def build(self):
         self.gamma = np.ones(self.input_shape)
         self.beta = np.zeros(self.input_shape)
 

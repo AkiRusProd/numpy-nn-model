@@ -21,10 +21,13 @@ class Conv2D():
         self.w = None
         self.b = None
 
-       
+        self.optimizer = None
 
-    def build(self, optimizer):
-        self.optimizer = optimizer
+    def set_optimizer(self, optimizer):
+        self.optimizer = optimizer 
+
+    def build(self):
+        
         self.kernel_height, self.kernel_width = self.kernel_shape
         self.channels_num, self.input_height, self.input_width = self.input_shape
 

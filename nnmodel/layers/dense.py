@@ -14,8 +14,13 @@ class Dense():
         self.w = None
         self.b = None
 
-    def build(self, optimizer):
+        self.optimizer = None
+
+    def set_optimizer(self, optimizer):
         self.optimizer = optimizer
+
+    def build(self):
+        
         self.input_size = self.input_shape[-1]
         
         self.w = np.random.normal(0, pow(self.input_size, -0.5), (self.input_size, self.units_num))
@@ -34,7 +39,7 @@ class Dense():
        
         self.batch_size = len(self.input_data)
 
-        self.output_data = np.dot(self.input_data, self.w)# + self.b
+        self.output_data = np.dot(self.input_data, self.w) + self.b
         
         return self.activation.function(self.output_data)
 
@@ -44,7 +49,7 @@ class Dense():
         self.grad_w = np.dot(self.input_data.T, error)
         self.grad_b = np.sum(error, axis = 0)
 
-        output_error = np.dot(error, self.w.T) #* self.activation_der(self.input_data) #TODO FIX: ACT FUNC OF PREV LAYER| unverified solution
+        output_error = np.dot(error, self.w.T)
 
         return output_error
 

@@ -7,7 +7,7 @@ class Reshape():
         self.shape = ValuesChecker.check_shape(shape)
         self.input_shape = None
 
-    def build(self, optimizer):
+    def build(self):
         self.output_shape = self.shape
 
     def forward_prop(self, X, training):

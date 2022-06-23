@@ -9,7 +9,7 @@ class Activation():
 
         self.activation = ValuesChecker.check_activation(activation, activations)
 
-    def build(self, optimizer):
+    def build(self):
         self.output_shape = self.input_shape
 
     def forward_prop(self, X, training):

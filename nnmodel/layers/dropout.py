@@ -7,7 +7,7 @@ class Dropout():
         self.rate = ValuesChecker.check_float_variable(rate, "rate")
         self.input_shape = None
 
-    def build(self, optimizer):
+    def build(self):
         self.output_shape = self.input_shape
 
     def forward_prop(self, X, training):

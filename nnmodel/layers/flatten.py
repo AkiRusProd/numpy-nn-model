@@ -6,7 +6,7 @@ class Flatten():
     def __init__(self) -> None:
         self.input_shape = None
 
-    def build(self, optimizer):
+    def build(self):
         self.output_shape = (1, int(np.prod(self.input_shape)))#[1:]
 
     def forward_prop(self, X, training):

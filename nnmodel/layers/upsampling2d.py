@@ -11,7 +11,7 @@ class UpSampling2D():
         self.size        = ValuesChecker.check_size2_variable(size, variable_name = "size", min_acceptable_value = 1)
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
 
-    def build(self, optimizer):
+    def build(self):
         self.output_shape = (self.input_shape[0], self.input_shape[1] * self.size[0], self.input_shape[2] * self.size[1])
 
     def forward_prop(self, X, training):

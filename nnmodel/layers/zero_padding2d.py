@@ -8,7 +8,7 @@ class ZeroPadding2D():
         self.padding      = ValuesChecker.check_size2_variable(padding, variable_name = "padding", min_acceptable_value = 0)
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 3)
 
-    def build(self, optimizer = None):
+    def build(self):
         self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1])
         self.output_shape = (self.input_shape[0], self.input_shape[1] + 2 * self.padding[0], self.input_shape[2] + 2 * self.padding[1])
 

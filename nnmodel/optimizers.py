@@ -66,7 +66,6 @@ class Adam():
        
 
     def update(self, gradient, weights, v, m, v_hat, m_hat, t):
-       
         return self._update(self.alpha, self.beta, self.beta2, self.epsilon, gradient, weights, v, m, v_hat, m_hat, t)
 
     @staticmethod
@@ -113,10 +112,10 @@ class Nadam():
 
 optimizers = {
     
-    "sgd": SGD,
-    "momentum": Momentum,
-    "rmsprop": RMSProp,
-    "adam": Adam,
-    "nadam": Nadam,
+    "sgd": SGD(),
+    "momentum": Momentum(),
+    "rmsprop": RMSProp(),
+    "adam": Adam(),
+    "nadam": Nadam(),
     
 }

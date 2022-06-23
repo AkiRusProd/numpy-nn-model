@@ -13,7 +13,7 @@ class Pooling2D():
         self.dilation     = ValuesChecker.check_size2_variable(dilation, variable_name = "dilation", min_acceptable_value = 1)
 
 
-    def build(self, optimizer = None):
+    def build(self):
 
         self.pool_height, self.pool_width = self.pool_size
         self.channels_num, self.input_height, self.input_width = self.input_shape

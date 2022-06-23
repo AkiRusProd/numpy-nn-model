@@ -5,7 +5,7 @@ from numba import njit
 
 
 
-from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D, RepeatVector
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU, ActivationFunction
 from nnmodel.optimizers import SGD
@@ -18,13 +18,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-batch_size = 1
+batch_size = 2
 kernels_num = 2
 kernel_size = 2
-inputs_num = 1
+inputs_num = 3
 input_size = 5
 stride_f = 2
-
 
 
 # conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
@@ -35,7 +34,17 @@ W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).resha
 
 # ZP = ZeroPadding2D(padding = 2, input_shape = (inputs_num, input_size, input_size))
 # ZP.build()
-
+# rp = RepeatVector(3)
+# XRP = np.arange(0.0, (batch_size * inputs_num * input_size)).reshape((batch_size, inputs_num, input_size))
+# print(XRP.shape)
+# print(XRP)
+# YRP = rp.forward_prop(XRP, training = True)
+# print(YRP.shape)
+# print(YRP)
+# # print(rp.backward_prop(YRP.shape))
+# OUT = rp.backward_prop(YRP)
+# print(OUT.shape)
+# print(OUT)
 # Y = ZP.forward_prop(X, training = True)
 # print(f"{Y=}\n")
 
@@ -121,18 +130,18 @@ W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).resha
 # y = maxpooling(X_keras)
 # print(y)
 
-print("X=\n", X)
-mymaxpooling = MaxPooling2D(pool_size = (2, 2), stride = (2, 2), input_shape = (inputs_num,  input_size, input_size))
-mymaxpooling.build()
+# print("X=\n", X)
+# mymaxpooling = MaxPooling2D(pool_size = (2, 2), stride = (2, 2), input_shape = (inputs_num,  input_size, input_size))
+# mymaxpooling.build()
 
-y = mymaxpooling.forward_prop(X, training = True)
-print("FORWARD=\n", y)
+# y = mymaxpooling.forward_prop(X, training = True)
+# print("FORWARD=\n", y)
 
-print("POOL IND\n", mymaxpooling.pooling_layer_ind)
+# print("POOL IND\n", mymaxpooling.pooling_layer_ind)
 
-LOSS = y.copy()
-y = mymaxpooling.backward_prop(LOSS)
-print("BACKWARD=\n", y)
+# LOSS = y.copy()
+# y = mymaxpooling.backward_prop(LOSS)
+# print("BACKWARD=\n", y)
 
 # y = conv_keras(X_keras)
 # print(y)

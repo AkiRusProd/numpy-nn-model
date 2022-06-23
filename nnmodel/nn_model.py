@@ -11,6 +11,7 @@ class Model():
     #add lstm, gru layers
     #add loss func and optimizers exception + their input values
     #maybe add oportnity to create custom layers??
+    #add optimzer clip gradient
     #maybe something more...
 
     def __init__(self):
@@ -20,24 +21,29 @@ class Model():
         self.loss_function = MSE()
         self.optimizer = SGD()
 
-    def compile(self, optimizer = None, loss_function = None): 
+    def compile(self, optimizer = None, loss = None): 
 
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
         else:
             self.optimizer = optimizer
 
-        if type(loss_function) is str:
-            self.loss_function = loss_functions[loss_function]
+        if type(loss) is str:
+            self.loss_function = loss_functions[loss]
         else:
-            self.loss_function = loss_function
+            self.loss_function = loss
+
+    def set_optimizer(self):
+        for layer in self.layers:
+            if hasattr(layer, 'set_optimizer'):
+                layer.set_optimizer(self.optimizer)
 
 
     def add(self, layer):
         if self.layers: layer.input_shape = self.layers[-1].output_shape #or layer.input_shape == None
 
         if hasattr(layer, 'build'):
-                layer.build(self.optimizer)
+                layer.build()
 
         self.layers.append(layer)
 
@@ -69,7 +75,7 @@ class Model():
             
             try:
                 correct_target = int(target)
-
+                
                 last_layer_activation = self.layers[-1].activation
                 last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
 
@@ -93,8 +99,10 @@ class Model():
         input_data = np.asarray(input_data)
         batch_num = len(input_data) // batch_size
 
-        batches = np.stack(np.array_split(input_data, batch_num))#np.stack
-        batches_targets = np.stack(np.array_split(data_targets, batch_num))#np.stack
+        batches = np.array_split(input_data, batch_num)#np.stack
+        batches_targets = np.array_split(data_targets, batch_num)#np.stack
+
+        self.set_optimizer()
 
 
         for i in range(epochs):
@@ -103,7 +111,7 @@ class Model():
                 predictions = self.forward_prop(batch, training = True)
                 
                 targets =     self.prepare_targets(batch_targets)
-            
+                # print("pred", predictions.shape,"tar", targets.shape)
                 error = self.loss_function.derivative(predictions, targets)
                 loss = self.loss_function.loss(predictions, targets).mean()
 
@@ -121,7 +129,7 @@ class Model():
 
         for i, (input, target) in tqdm(enumerate(zip(input_data, data_targets)), desc = "testing", total = len(input_data)):
             predictions = self.forward_prop(input.reshape(1, *input.shape), training = False)
-
+            
             max_output_index = np.argmax(predictions)
 
             samples_num += 1
