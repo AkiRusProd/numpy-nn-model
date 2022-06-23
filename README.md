@@ -68,3 +68,5 @@ model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 model.predict(test_inputs, test_targets)
 ```
 
+### Datasets
+Для тренировки примеров нужно скачать датасеты по ссылке: https://pjreddie.com/projects/mnist-in-csv/ и закинуть в эту папку или запустить 'import_mnist_data' скрипт.

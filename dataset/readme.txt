@@ -1,1 +1,0 @@
-Для тренировки примеров нужно скачать датасеты по ссылке: https://pjreddie.com/projects/mnist-in-csv/ и закинуть в эту папку или запустить 'import_mnist_data' скрипт.

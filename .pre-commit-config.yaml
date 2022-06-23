@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0 # frozen v4.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/psf/black
+    rev: ae2c0758c9e61a385df9700dc9c231bf54887041 # frozen 22.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: c5e8fa75dda5f764d20f66a215d71c21cfa198e1 # frozen 5.10.1
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/python-poetry/poetry
+    rev: 8b640886ee39aee4a6c3208f39febf368dc32953 # frozen >1.1.13
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+      - id: poetry-export
+
+  - repo: https://github.com/pycqa/autoflake
+    rev: d43d8a770c0f9ef2f68b368670ab882f6ca6ea03 # frozen 1.4
+    hooks:
+      - id: autoflake
+        args:
+          [
+            "-r",
+            "--remove-all-unused-imports",
+            "--expand-star-imports",
+            "--remove-unused-variables",
+          ]

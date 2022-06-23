@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "nnmodel"
+version = "0.1.0"
+description = "Сustom numpy neural network model implementation in which you can add fully connected and convolutional layers by one line"
+authors = ["Rustam Akimov <akirusprod@gmail.com>, Stanislav Lyubovsky <wallseat@gmail.com>"]
+license = "Apache License 2.0"
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.11"
+numba = "^0.55.2"
+tqdm = "^4.64.0"
+numpy = "<1.23.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.19.0"
+black = "^22.3.0"
+isort = "^5.10.1"
+autoflake = "^1.4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
