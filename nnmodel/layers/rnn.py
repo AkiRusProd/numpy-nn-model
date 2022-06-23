@@ -11,8 +11,8 @@ class RNN():
         self.activation  = ValuesChecker.check_activation(activation, activations)
         self.use_bias    = ValuesChecker.check_boolean_type(use_bias, "use_bias")
 
-        self.return_sequences = return_sequences
-        self.cycled_states = cycled_states
+        self.return_sequences = ValuesChecker.check_boolean_type(return_sequences, "cycled_states")
+        self.cycled_states = ValuesChecker.check_boolean_type(cycled_states, "return_sequences")
         self.w = None
         self.wh = None
         self.b = None
@@ -24,7 +24,7 @@ class RNN():
 
 
     def build(self):
-       
+        
         self.timesteps, self.input_size = self.input_shape
 
         self.w = np.random.normal(0, pow(self.input_size, -0.5), (self.input_size, self.units_num))
@@ -94,9 +94,9 @@ class RNN():
         for t in reversed(range(self.timesteps)):
             hidden_delta = (next_hidden_delta + error[:, t, :]) *  self.activation.derivative(self.states[:, t, :])
 
-            self.grad_w  += np.dot(self.input_data[:, t, :].T, hidden_delta) #-?
-            self.grad_wh += np.dot(self.states[:, t - 1, :].T, hidden_delta)#-?
-            self.grad_b += np.sum(error[:, t, :], axis = 0)#-?
+            self.grad_w  += np.dot(self.input_data[:, t, :].T, hidden_delta)
+            self.grad_wh += np.dot(self.states[:, t - 1, :].T, hidden_delta)
+            self.grad_b += np.sum(error[:, t, :], axis = 0)
 
             next_hidden_delta = np.dot(hidden_delta, self.wh.T)
 

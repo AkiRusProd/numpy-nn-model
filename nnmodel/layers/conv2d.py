@@ -4,9 +4,7 @@ from nnmodel.activations import activations
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Conv2D():
-    #TODO
-    #add zeropadding
-    
+
 
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), use_bias = True):
         self.kernels_num  = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
@@ -88,9 +86,9 @@ class Conv2D():
         
         self.batch_size = len(self.input_data)
 
-        self.conv_layer = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
+        self.output_data = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
 
-        return self.activation.function(self.conv_layer)
+        return self.activation.function(self.output_data)
 
 
     @staticmethod
@@ -113,7 +111,7 @@ class Conv2D():
         return conv_layer
 
     def backward_prop(self, error):
-        error *= self.activation.derivative(self.conv_layer)
+        error *= self.activation.derivative(self.output_data)
         
         self.grad_w = self.compute_weights_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width, self.stride)
         self.grad_b = self.compute_bias_gradients(error)

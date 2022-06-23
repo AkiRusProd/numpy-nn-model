@@ -34,10 +34,10 @@ from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
 model = Model()
 
-# from keras import Sequential
-# from keras.layers import Dense, TimeDistributed, RepeatVector
-# from keras.layers import SimpleRNN as RNN
-# model = Sequential()
+# # from keras import Sequential
+# # from keras.layers import Dense, TimeDistributed, RepeatVector
+# # from keras.layers import SimpleRNN as RNN
+# # model = Sequential()
 
 
 # # model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
@@ -64,27 +64,31 @@ model = Model()
 # model.add(Dense(units_num = 10, activation = None))
 # model.add(Activation(activation = "softmax"))
 
-# model.compile(optimizer = "adam", loss_function = "mse")
+# model.compile(optimizer = "adam", loss = "mse")
 # model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 # model.predict(test_inputs, test_targets)
 
 timesteps = 3
 inputs_num = 16
 training_inputs = np.arange(0, timesteps * inputs_num).reshape(inputs_num, timesteps, 1)
-test_outputs = training_inputs + 15
-# test_outputs = np.sum(training_inputs, axis=1)
+# test_outputs = training_inputs + 15
+test_outputs = np.sum(training_inputs, axis=1)
 # # print(test_outputs)
 
 
-model.add(RNN(100, activation='relu', input_shape=(timesteps, 1), return_sequences=False, use_bias = False, cycled_states = False))
-model.add(RepeatVector(3))
+model.add(RNN(100, activation='relu', input_shape=(timesteps, 1), return_sequences=True, use_bias = False, cycled_states = False))
+# model.add(RepeatVector(3))
 # model.add(RNN(70, activation='relu', return_sequences=True, use_bias = False))
-model.add(RNN(50, activation='relu', return_sequences=True, use_bias = False, cycled_states = False))
-
+model.add(RNN(50, activation='relu', return_sequences=False, use_bias = False, cycled_states = False))
+model.add(Reshape(shape = (2, 5, 5)))
+model.add(RepeatVector(3))
+model.add(TimeDistributed(Conv2D(kernels_num = 5, kernel_shape = (2, 2), activation = "relu")))
+model.add(TimeDistributed(Flatten()))
 model.add(TimeDistributed(Dense(1, use_bias=False)))
-
+model.add(TimeDistributed(Flatten()))
+model.add(RNN(50, activation='relu', return_sequences=False, use_bias = False, cycled_states = False))
 # model.add(RNN(50, activation='relu', input_shape=(3, 50), use_bias = False))
-# model.add(Dense(1))
+model.add(Dense(1))
 
 model.compile(optimizer=Adam(), loss='mse')
 model.fit(training_inputs,  test_outputs, epochs = 1000, batch_size = 1)

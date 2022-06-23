@@ -6,10 +6,8 @@ from nnmodel.exceptions.values_checker import ValuesChecker
 
 
 class Conv2DTranspose():
-    #TODO
-    #maybe implement padding as separate layer
-    
 
+    
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), output_padding = (0, 0), use_bias = True):
         self.kernels_num    = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
         self.kernel_shape   = ValuesChecker.check_size2_variable(kernel_shape, variable_name = "kernel_shape", min_acceptable_value = 1)
@@ -86,9 +84,9 @@ class Conv2DTranspose():
 
         self.batch_size = len(self.input_data)
         
-        self.conv_layer = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        self.output_data = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
 
-        return self.activation.function(self.conv_layer)
+        return self.activation.function(self.output_data)
 
 
     @staticmethod
@@ -111,7 +109,7 @@ class Conv2DTranspose():
         return conv_layer
 
     def backward_prop(self, error):
-        error *= self.activation.derivative(self.conv_layer)
+        error *= self.activation.derivative(self.output_data)
         
         self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
         self.grad_b = self.compute_bias_gradients(error)

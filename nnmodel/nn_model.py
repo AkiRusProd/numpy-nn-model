@@ -76,12 +76,16 @@ class Model():
             try:
                 correct_target = int(target)
                 
-                last_layer_activation = self.layers[-1].activation
+                try:
+                    last_layer_activation = self.layers[-1].activation
+                except:
+                    last_layer_activation = activations[None] #for layers thats have no activation
+
                 last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
 
-                if last_layer_activation == activations["sigmoid"] or last_layer_activation == activations["softmax"]:
-                    targets_list = np.zeros(last_layer_units_num)
-                elif last_layer_activation == activations["tanh"]:
+                
+                targets_list = np.zeros(last_layer_units_num)
+                if last_layer_activation == activations["tanh"]:
                     targets_list = np.full(last_layer_units_num, -1)
 
                 targets_list[correct_target] = 1

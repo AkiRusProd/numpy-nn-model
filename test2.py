@@ -26,6 +26,7 @@ input_size = 5
 stride_f = 2
 
 
+
 # conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
 
 X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
@@ -34,17 +35,17 @@ W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).resha
 
 # ZP = ZeroPadding2D(padding = 2, input_shape = (inputs_num, input_size, input_size))
 # ZP.build()
-# rp = RepeatVector(3)
-# XRP = np.arange(0.0, (batch_size * inputs_num * input_size)).reshape((batch_size, inputs_num, input_size))
-# print(XRP.shape)
-# print(XRP)
-# YRP = rp.forward_prop(XRP, training = True)
-# print(YRP.shape)
-# print(YRP)
-# # print(rp.backward_prop(YRP.shape))
-# OUT = rp.backward_prop(YRP)
-# print(OUT.shape)
-# print(OUT)
+rp = RepeatVector(3)
+XRP = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
+print(XRP.shape)
+print(XRP)
+YRP = rp.forward_prop(XRP, training = True)
+print(YRP.shape)
+print(YRP)
+# print(rp.backward_prop(YRP.shape))
+OUT = rp.backward_prop(YRP)
+print(OUT.shape)
+print(OUT)
 # Y = ZP.forward_prop(X, training = True)
 # print(f"{Y=}\n")
 

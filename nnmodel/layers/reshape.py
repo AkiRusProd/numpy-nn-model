@@ -10,6 +10,7 @@ class Reshape():
     def build(self):
         self.output_shape = self.shape
 
+
     def forward_prop(self, X, training):
         self.prev_shape = X.shape
         
