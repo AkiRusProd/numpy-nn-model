@@ -40,14 +40,15 @@ class BatchNormalization():
 
 
     def forward_prop(self, X, training):
+        self.input_data = X
         self.batch_size = X.shape[0]
-
-        if self.moving_mean is None: self.moving_mean = np.mean(X, axis = 0)
-        if self.moving_var is None: self.moving_var = np.mean(X, axis = 0)
+        
+        if self.moving_mean is None: self.moving_mean = np.mean(self.input_data, axis = 0)
+        if self.moving_var is None: self.moving_var = np.mean(self.input_data, axis = 0)
         
         if training == True:
-            self.mean = np.mean(X, axis = 0)
-            self.var = np.var(X, axis = 0)
+            self.mean = np.mean(self.input_data, axis = 0)
+            self.var = np.var(self.input_data, axis = 0)
 
             self.moving_mean = self.momentum * self.moving_mean + (1.0 - self.momentum) * self.mean
             self.moving_var = self.momentum * self.moving_var + (1.0 - self.momentum) * self.var
@@ -55,15 +56,15 @@ class BatchNormalization():
             self.mean = self.moving_mean
             self.var = self.moving_var
 
-
-        self.X_centered = (X - self.mean)
+    
+        self.X_centered = (self.input_data - self.mean)
         self.stddev_inv = 1 / np.sqrt(self.var + self.epsilon)
 
         X_hat = self.X_centered * self.stddev_inv
 
-        Y = self.gamma * X_hat + self.beta
+        self.output_data = self.gamma * X_hat + self.beta
         
-        return Y
+        return self.output_data
 
         
 
@@ -79,9 +80,7 @@ class BatchNormalization():
         self.grad_gamma = np.sum(error * X_hat, axis = 0)
         self.grad_beta = np.sum(error, axis = 0)
 
-        # self.gamma -= grad_gamma
-        # self.beta -= grad_beta
-
+        
         return output_error
 
     def update_weights(self, layer_num):

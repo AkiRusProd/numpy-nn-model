@@ -55,7 +55,7 @@ class RNN():
         self.states = np.zeros((self.batch_size, self.timesteps + 1, self.units_num))
         
         if self.hprev is None: self.hprev = np.zeros_like(self.states[:, 0, :])
-        if self.cycled_states == True:
+        if self.cycled_states == True and training == True:
             self.states[:, -1, :] = self.hprev.copy()
         
         for t in range(self.timesteps):

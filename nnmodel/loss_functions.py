@@ -27,11 +27,11 @@ class CategoricalCrossEntropy():
 
     def loss(self, y, t):
 
-        return t * np.log(y)
+        return - t * np.log(y)
 
     def derivative(self, y, t):
 
-        return t / y
+        return -t / y
 
 
 loss_functions = {

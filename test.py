@@ -3,26 +3,26 @@ from tqdm import tqdm
 
 
 
-# training_data = open('dataset/mnist_train.csv','r').readlines()
-# test_data = open('dataset/mnist_test.csv','r').readlines()
+training_data = open('dataset/mnist_train.csv','r').readlines()
+test_data = open('dataset/mnist_test.csv','r').readlines()
 
 
-# def prepare_data(data):
-#     inputs, targets = [], []
+def prepare_data(data):
+    inputs, targets = [], []
 
-#     for raw_line in tqdm(data, desc = 'preparing data'):
+    for raw_line in tqdm(data, desc = 'preparing data'):
 
-#         line = raw_line.split(',')
+        line = raw_line.split(',')
     
-#         inputs.append(np.asfarray(line[1:])/255)
-#         targets.append(int(line[0]))
+        inputs.append(np.asfarray(line[1:])/255)
+        targets.append(int(line[0]))
 
-#     return inputs, targets
+    return inputs, targets
 
 
 
-# training_inputs, training_targets = prepare_data(training_data)
-# test_inputs, test_targets = prepare_data(test_data)
+training_inputs, training_targets = prepare_data(training_data)
+test_inputs, test_targets = prepare_data(test_data)
 
 
 
@@ -34,23 +34,26 @@ from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
 model = Model()
 
-# # from keras import Sequential
-# # from keras.layers import Dense, TimeDistributed, RepeatVector
-# # from keras.layers import SimpleRNN as RNN
-# # model = Sequential()
+# from keras import Sequential
+# from keras.layers import Dense, TimeDistributed, RepeatVector, Flatten, Reshape, Conv2D, BatchNormalization
+# from keras.layers import SimpleRNN as RNN
+# model = Sequential()
 
-
-# # model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
-# # model.add(BatchNormalization())
-# # model.add(Dropout())
-# # model.add(Flatten())
-# # model.add(Dense(units_num = 128, activation = "sigmoid"))
-# # model.add(BatchNormalization())
-# # model.add(Dropout())
-# # model.add(Dense(units_num = 10, activation = "sigmoid"))
+"""SOME KINDA TEST LAYERS"""
+# model.add(Dense(units_num = 256, input_shape = (1, 784), activation = LeakyReLU()))
+# model.add(BatchNormalization())
+# model.add(Dropout())
+# model.add(Flatten())
+# model.add(Dense(units_num = 128, activation = "sigmoid"))
+# model.add(BatchNormalization())
+# model.add(Dropout())
+# model.add(Dense(units_num = 10, activation = "sigmoid"))
 # model.add(BatchNormalization(input_shape = (1, 784)))
+
+"""CONV2D CLASSIFIER TEST EXAMPLE"""
 # model.add(Reshape(shape = (1, 28, 28)))
 # model.add(Conv2D(kernels_num = 8, kernel_shape = (5, 5), activation = "relu"))
+
 # model.add(MaxPooling2D())
 # model.add(Conv2D(kernels_num = 32, kernel_shape = (3, 3), padding = "same", activation = LeakyReLU()))
 # # model.add(Conv2DTranspose(kernels_num = 16, kernel_shape = (3, 3), activation = "relu"))
@@ -68,34 +71,56 @@ model = Model()
 # model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 # model.predict(test_inputs, test_targets)
 
-timesteps = 3
-inputs_num = 16
-training_inputs = np.arange(0, timesteps * inputs_num).reshape(inputs_num, timesteps, 1)
+# timesteps = 3
+# inputs_num = 16
+# training_inputs = np.arange(0, timesteps * inputs_num).reshape(inputs_num, timesteps, 1)
 # test_outputs = training_inputs + 15
-test_outputs = np.sum(training_inputs, axis=1)
+# test_outputs = np.sum(training_inputs, axis=1)
 # # print(test_outputs)
 
+"""SHIT RNN TEST  PERFORMANCE CHECK EXAMPLE"""
+# model.add(RNN(100, activation='relu', input_shape=(timesteps, 1), return_sequences=True, use_bias = False))
+# # model.add(RepeatVector(3))
+# # model.add(BatchNormalization())
+# # model.add(RNN(70, activation='relu', return_sequences=True, use_bias = False))
+# model.add(RNN(50, activation='relu', return_sequences=True, use_bias = False))
+# # model.add(Reshape(target_shape = (2, 5, 5)))
+# # model.add(RepeatVector(3))
 
-model.add(RNN(100, activation='relu', input_shape=(timesteps, 1), return_sequences=True, use_bias = False, cycled_states = False))
-# model.add(RepeatVector(3))
-# model.add(RNN(70, activation='relu', return_sequences=True, use_bias = False))
-model.add(RNN(50, activation='relu', return_sequences=False, use_bias = False, cycled_states = False))
-model.add(Reshape(shape = (2, 5, 5)))
-model.add(RepeatVector(3))
-model.add(TimeDistributed(Conv2D(kernels_num = 5, kernel_shape = (2, 2), activation = "relu")))
-model.add(TimeDistributed(Flatten()))
-model.add(TimeDistributed(Dense(1, use_bias=False)))
-model.add(TimeDistributed(Flatten()))
-model.add(RNN(50, activation='relu', return_sequences=False, use_bias = False, cycled_states = False))
-# model.add(RNN(50, activation='relu', input_shape=(3, 50), use_bias = False))
-model.add(Dense(1))
+# # model.add(TimeDistributed(Conv2D(kernels_num = 5, kernel_shape = (2, 2), activation = "relu")))
 
-model.compile(optimizer=Adam(), loss='mse')
-model.fit(training_inputs,  test_outputs, epochs = 1000, batch_size = 1)
-# model.predict(training_inputs,  test_outputs)
+# # model.add(TimeDistributed(Flatten()))
+# model.add(TimeDistributed(BatchNormalization()))
+# model.add(TimeDistributed(Dense(1, use_bias=False)))
+# # model.add(TimeDistributed(Flatten()))
+
+# # model.add(RNN(50, activation='relu', return_sequences=False, use_bias = False, cycled_states = False))
+# # model.add(RNN(50, activation='relu', input_shape=(3, 50), use_bias = False))
+# # model.add(Dense(1))
+
+# model.compile(optimizer="adam", loss='mse')
+# model.fit(training_inputs,  test_outputs, epochs = 10000, batch_size = 4)
+# # model.predict(training_inputs,  test_outputs)
 
 
+"""RNN CLASSIFIER TEST EXAMPLE"""
 
+model.add(Reshape(shape = (28, 28)))
+model.add(RNN(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
+model.add(RepeatVector(28))
+model.add(TimeDistributed(Dense(50, use_bias=False)))
+model.add(TimeDistributed(BatchNormalization()))
+# model.add(BatchNormalization())
+model.add(RNN(128, input_shape=(28, 28), cycled_states = True))
+# model.add(BatchNormalization())
+model.add(Dense(10, activation='softmax'))
+
+model.compile(optimizer = "adam", loss = "mse")
+model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 100)
+model.predict(test_inputs, test_targets)
+
+
+"""SOME SHIT KINDA TEST LAYERS AND THEIR FUNCTIONS (I DON'T UNDERSTAND THIS ANYMORE)"""
 # X = np.random.normal(0, 1, (5, 1, 28, 28))
 
 # layer = Conv2D(kernels_num = 5, kernel_shape = (7, 7), input_shape = (1, 28, 28), activation = "sigmoid")
