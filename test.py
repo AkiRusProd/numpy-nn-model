@@ -28,7 +28,7 @@ test_inputs, test_targets = prepare_data(test_data)
 
 
 
-from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation, RepeatVector, TimeDistributed, RNN
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation, RepeatVector, TimeDistributed, RNN, LSTM
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
@@ -106,17 +106,17 @@ model = Model()
 """RNN CLASSIFIER TEST EXAMPLE"""
 
 model.add(Reshape(shape = (28, 28)))
-model.add(RNN(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
+model.add(LSTM(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
 model.add(RepeatVector(28))
 model.add(TimeDistributed(Dense(50, use_bias=False)))
 model.add(TimeDistributed(BatchNormalization()))
 # model.add(BatchNormalization())
-model.add(RNN(128, input_shape=(28, 28), cycled_states = True))
+model.add(LSTM(128, input_shape=(28, 28), cycled_states = True))
 # model.add(BatchNormalization())
 model.add(Dense(10, activation='softmax'))
 
 model.compile(optimizer = "adam", loss = "mse")
-model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 100)
+model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 200)
 model.predict(test_inputs, test_targets)
 
 

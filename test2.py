@@ -7,8 +7,9 @@ from numba import njit
 
 from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D, RepeatVector
 from nnmodel import Model
-from nnmodel.activations import LeakyReLU, ActivationFunction
-from nnmodel.optimizers import SGD
+from nnmodel.activations import LeakyReLU
+from nnmodel.optimizers import SGD, Adam
+
 
 
 
