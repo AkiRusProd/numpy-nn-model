@@ -32,7 +32,7 @@
 7) Dropout
 8) BatchNormalization
 9) RNN
-10) LSTM (Not implemented yet)
+10) LSTM
 11) GRU (Not implemented yet)
 12) TimeDistributed
 13) Conv2D
