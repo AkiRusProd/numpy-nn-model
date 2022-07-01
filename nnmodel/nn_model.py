@@ -8,10 +8,11 @@ class Model():
     #TODO
     #add save/open model methods
     #add oportnity to choose metrics
-    #add lstm, gru layers
     #add loss func and optimizers exception + their input values
     #maybe add oportnity to create custom layers??
     #add optimzer clip gradient
+    #add gan, vae modules
+    #add examples
     #maybe something more...
 
     def __init__(self):
