@@ -33,13 +33,14 @@
 8) BatchNormalization
 9) RNN
 10) LSTM
-11) GRU (Not implemented yet)
+11) GRU
 12) TimeDistributed
-13) Conv2D
-14) Conv2DTranspose
-15) MaxPooling2D
-16) AveragePooling2D
-17) UpSamling2D
+13) Bidirectional (Not implemented Yet)
+14) Conv2D
+15) Conv2DTranspose
+16) MaxPooling2D
+17) AveragePooling2D
+18) UpSamling2D
 
 
 ### Model Initialization (Example):
