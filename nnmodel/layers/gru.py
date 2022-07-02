@@ -4,7 +4,8 @@ from nnmodel.exceptions.values_checker import ValuesChecker
 
 class GRU():
     #References
-    #https://arxiv.org/pdf/1612.07778.pdf
+    #https://arxiv.org/pdf/1612.07778.pdf]
+    # #https://github.com/erikvdplas/gru-rnn/blob/master/main.py
 
     def __init__(self, units_num, activation = 'tanh', recurrent_activation = 'sigmoid', input_shape = None, return_sequences = False, use_bias = True, cycled_states = False):
         self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")
@@ -93,9 +94,14 @@ class GRU():
         # self.batch_size, self.timesteps = self.input_data.shape[0], self.input_data.shape[1]
 
         self.update_gates = np.zeros((self.batch_size, self.timesteps, self.units_num))
+        self.unactivated_update_gates = np.zeros_like(self.update_gates)
+
         self.reset_gates = np.zeros((self.batch_size, self.timesteps, self.units_num))
-        
+        self.unactivated_reset_gates = np.zeros_like(self.reset_gates)
+
         self.cell_states = np.zeros((self.batch_size, self.timesteps + 1, self.units_num))
+        self.unactivated_cell_states = np.zeros_like(self.cell_states)
+
         self.hidden_states = np.zeros((self.batch_size, self.timesteps + 1, self.units_num))
 
         if self.cprev is None: self.cprev = np.zeros_like(self.cell_states[:, 0, :])
@@ -112,10 +118,15 @@ class GRU():
 
         
         for t in range(self.timesteps):
-            self.update_gates[:, t, :] = self.recurrent_activation.function(np.dot(self.input_data[:, t, :], self.w_z) + np.dot(self.hidden_states[:, t-1, :], self.wh_z) + self.b_z)
-            self.reset_gates[:, t, :]  = self.recurrent_activation.function(np.dot(self.input_data[:, t, :], self.w_r) + np.dot(self.hidden_states[:, t-1, :], self.wh_r) + self.b_r)
+            self.unactivated_update_gates[:, t, :] = np.dot(self.input_data[:, t, :], self.w_z) + np.dot(self.hidden_states[:, t-1, :], self.wh_z) + self.b_z
+            self.update_gates[:, t, :] = self.recurrent_activation.function(self.unactivated_update_gates[:, t, :])
 
-            self.cell_states[:, t, :] = self.activation.function(np.dot(self.input_data[:, t, :], self.w_h) + np.dot(self.reset_gates[:, t, :] * self.hidden_states[:, t - 1, :], self.wh_h) + self.b_h)
+            self.unactivated_reset_gates[:, t, :] = np.dot(self.input_data[:, t, :], self.w_r) + np.dot(self.hidden_states[:, t-1, :], self.wh_r) + self.b_r
+            self.reset_gates[:, t, :]  = self.recurrent_activation.function(self.unactivated_reset_gates[:, t, :])
+
+            self.unactivated_cell_states[:, t, :] = np.dot(self.input_data[:, t, :], self.w_h) + np.dot(self.reset_gates[:, t, :] * self.hidden_states[:, t - 1, :], self.wh_h) + self.b_h
+            self.cell_states[:, t, :] = self.activation.function(self.unactivated_cell_states[:, t, :])
+
             self.hidden_states[:, t, :] = self.update_gates[:, t, :] * self.hidden_states[:, t - 1, :] + (1 - self.update_gates[:, t, :]) * self.cell_states[:, t, :]
 
 
@@ -157,20 +168,20 @@ class GRU():
                
                 hidden_delta = error[:, t, :] + next_hidden_delta
                
-                cell_gates_delta = hidden_delta * (1 - self.update_gates[:, t, :]) * self.activation.derivative(self.cell_states[:, t, :])
+                cell_gates_delta = hidden_delta * (1 - self.update_gates[:, t, :]) * self.activation.derivative(self.unactivated_cell_states[:, t, :])
                 self.grad_w_h   += np.dot(self.input_data[:, t, :].T,  cell_gates_delta)
-                self.grad_wh_h  += np.dot(self.reset_gates[:, t, :].T * self.hidden_states[:, t - 1, :].T, cell_gates_delta)
+                self.grad_wh_h  += np.dot(self.hidden_states[:, t - 1, :].T * self.reset_gates[:, t, :].T, cell_gates_delta)#* self.reset_gates[:, t, :].T<-------
                 self.grad_b_h   += cell_gates_delta.sum(axis=0)
             
-                reset_gates_delta = np.dot(cell_gates_delta, self.wh_h.T) * self.hidden_states[:, t - 1, :] * self.recurrent_activation.derivative(self.reset_gates[:, t, :])
+                reset_gates_delta = np.dot(cell_gates_delta, self.wh_h.T) * self.hidden_states[:, t - 1, :] * self.recurrent_activation.derivative(self.unactivated_reset_gates[:, t, :])
                 
                 self.grad_w_r   += np.dot(self.input_data[:, t, :].T,  reset_gates_delta)
                 self.grad_wh_r  += np.dot(self.hidden_states[:, t - 1, :].T, reset_gates_delta)
                 self.grad_b_r   += reset_gates_delta.sum(axis=0)
 
-                update_gates_delta = hidden_delta * (self.hidden_states[:, t - 1, :] - self.cell_states[:, t, :]) * self.recurrent_activation.derivative(self.update_gates[:, t, :])
+                update_gates_delta = hidden_delta * (self.hidden_states[:, t - 1, :] - self.cell_states[:, t, :]) * self.recurrent_activation.derivative(self.unactivated_update_gates[:, t, :])
                 self.grad_w_z   += np.dot(self.input_data[:, t, :].T,  update_gates_delta)
-                self.grad_wh_z  += np.dot(self.hidden_states[:, t - 1, :].T, update_gates_delta)
+                self.grad_wh_z  += np.dot(self.hidden_states[:, t - 1, :].T,  update_gates_delta) #* self.reset_gates[:, t, :].T,
                 self.grad_b_z   += update_gates_delta.sum(axis=0)
 
    

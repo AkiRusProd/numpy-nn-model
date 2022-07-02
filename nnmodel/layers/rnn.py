@@ -53,13 +53,15 @@ class RNN():
         # self.batch_size, self.timesteps = self.input_data.shape[0], self.input_data.shape[1]
         
         self.states = np.zeros((self.batch_size, self.timesteps + 1, self.units_num))
+        self.unactivated_states = np.zeros_like(self.states)
         
         if self.hprev is None: self.hprev = np.zeros_like(self.states[:, 0, :])
         if self.cycled_states == True and training == True:
             self.states[:, -1, :] = self.hprev.copy()
         
         for t in range(self.timesteps):
-            self.states[:, t, :] =  self.activation.function(np.dot(self.input_data[:, t, :], self.w) + np.dot(self.states[:, t-1, :], self.wh) + self.b)
+            self.unactivated_states[:, t, :] = np.dot(self.input_data[:, t, :], self.w) + np.dot(self.states[:, t-1, :], self.wh) + self.b
+            self.states[:, t, :] =  self.activation.function(self.unactivated_states[:, t, :])
 
         
         self.hprev = self.states[:, self.timesteps - 1, :].copy()
@@ -92,7 +94,7 @@ class RNN():
         output_error = np.zeros((self.input_data.shape))
 
         for t in reversed(range(self.timesteps)):
-            hidden_delta = (next_hidden_delta + error[:, t, :]) *  self.activation.derivative(self.states[:, t, :])
+            hidden_delta = (next_hidden_delta + error[:, t, :]) *  self.activation.derivative(self.unactivated_states[:, t, :])
 
             self.grad_w  += np.dot(self.input_data[:, t, :].T, hidden_delta)
             self.grad_wh += np.dot(self.states[:, t - 1, :].T, hidden_delta)

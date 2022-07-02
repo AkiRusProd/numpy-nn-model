@@ -106,12 +106,12 @@ model = Model()
 """RNN CLASSIFIER TEST EXAMPLE"""
 
 model.add(Reshape(shape = (28, 28)))
-model.add(GRU(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
+model.add(LSTM(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
 model.add(RepeatVector(28))
 model.add(TimeDistributed(Dense(50, use_bias=False)))
 model.add(TimeDistributed(BatchNormalization()))
 # model.add(BatchNormalization())
-model.add(GRU(128, input_shape=(28, 28), cycled_states = True))
+model.add(LSTM(128, input_shape=(28, 28), cycled_states = True))
 # model.add(BatchNormalization())
 model.add(Dense(10, activation='softmax'))
 
