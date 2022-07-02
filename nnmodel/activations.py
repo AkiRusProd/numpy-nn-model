@@ -20,8 +20,9 @@ class Sigmoid(ActivationFunction):
         return 1 / (1 + np.exp(-x))
 
     def derivative(self, x):
+        f_x = self.function(x)
 
-        return self.function(x) * (1.0 - self.function(x))
+        return f_x * (1.0 - f_x)
 
 
 class Tanh(ActivationFunction):
@@ -43,8 +44,9 @@ class Softmax(ActivationFunction):
         return e_x / np.sum(e_x, axis = -1, keepdims=True)
 
     def derivative(self, x):
+        f_x = self.function(x)
         
-        return self.function(x) * (1.0 - self.function(x))
+        return f_x * (1.0 - f_x)
 
 
 class Softplus(ActivationFunction):

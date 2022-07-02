@@ -28,7 +28,8 @@ test_inputs, test_targets = prepare_data(test_data)
 
 
 
-from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation, RepeatVector, TimeDistributed, RNN, LSTM, GRU
+from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation, RepeatVector, \
+TimeDistributed, RNN, LSTM, GRU, Bidirectional
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
@@ -103,15 +104,32 @@ model = Model()
 # # model.predict(training_inputs,  test_outputs)
 
 
-"""RNN CLASSIFIER TEST EXAMPLE"""
+# """RNN CLASSIFIER TEST EXAMPLE"""
+
+# model.add(Reshape(shape = (28, 28)))
+# model.add(LSTM(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
+# model.add(RepeatVector(28))
+# model.add(TimeDistributed(Dense(50, use_bias=False)))
+# model.add(TimeDistributed(BatchNormalization()))
+# # model.add(BatchNormalization())
+# model.add(LSTM(128, input_shape=(28, 28), cycled_states = True))
+# # model.add(BatchNormalization())
+# model.add(Dense(10, activation='softmax'))
+
+# model.compile(optimizer = "adam", loss = "mse")
+# model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 200)
+# model.predict(test_inputs, test_targets)
+
+
+"""BIDIRECTIONAL RNN CLASSIFIER TEST EXAMPLE"""
 
 model.add(Reshape(shape = (28, 28)))
-model.add(LSTM(256, input_shape=(28, 28), return_sequences=False, cycled_states = True))
-model.add(RepeatVector(28))
-model.add(TimeDistributed(Dense(50, use_bias=False)))
-model.add(TimeDistributed(BatchNormalization()))
-# model.add(BatchNormalization())
-model.add(LSTM(128, input_shape=(28, 28), cycled_states = True))
+model.add(Bidirectional(RNN(256, input_shape=(28, 28), return_sequences=True, cycled_states = True)))
+# model.add(RepeatVector(28))
+# model.add(TimeDistributed(Dense(50, use_bias=False)))
+# model.add(TimeDistributed(BatchNormalization()))
+model.add(BatchNormalization())
+model.add(Bidirectional(RNN(128,  cycled_states = True)))
 # model.add(BatchNormalization())
 model.add(Dense(10, activation='softmax'))
 
