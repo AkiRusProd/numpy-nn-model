@@ -35,7 +35,7 @@
 10) LSTM
 11) GRU
 12) TimeDistributed
-13) Bidirectional (Not implemented Yet)
+13) Bidirectional
 14) Conv2D
 15) Conv2DTranspose
 16) MaxPooling2D
