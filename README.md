@@ -64,7 +64,7 @@ model.add(Dropout())
 model.add(Dense(units_num = 10, activation = "sigmoid"))
 model.add(Activation(activation = "softmax"))
 
-model.compile(optimizer = "adam", loss_function = "mse")
+model.compile(optimizer = "adam", loss = "mse")
 model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 model.predict(test_inputs, test_targets)
 ```
