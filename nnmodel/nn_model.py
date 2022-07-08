@@ -1,4 +1,5 @@
 import numpy as np
+import pickle as pkl
 from tqdm import tqdm
 from nnmodel.optimizers import *
 from nnmodel.loss_functions import *
@@ -38,6 +39,18 @@ class Model():
         for layer in self.layers:
             if hasattr(layer, 'set_optimizer'):
                 layer.set_optimizer(self.optimizer)
+
+    def load(self, path):
+        pickle_model = open(path, 'rb')
+        self.layers = pkl.load(pickle_model)
+        pickle_model.close()
+        
+
+    def save(self, path):
+        pickle_model = open(path, 'wb')
+        pkl.dump(self.layers, pickle_model)
+        pickle_model.close()
+            
 
 
     def add(self, layer):

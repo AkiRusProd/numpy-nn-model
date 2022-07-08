@@ -9,7 +9,7 @@ class RepeatVector():
 
     def build(self):
         if len(self.input_shape) == 2:
-            self.output_shape = (self.num, *self.input_shape[1 :])
+            self.output_shape = (self.num * self.input_shape[0], *self.input_shape[1 :])
         else:
             self.output_shape = (self.num, *self.input_shape)
         

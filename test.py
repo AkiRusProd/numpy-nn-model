@@ -137,6 +137,11 @@ model.compile(optimizer = "adam", loss = "mse")
 model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 200)
 model.predict(test_inputs, test_targets)
 
+model.save('bidirectional_rnn_classifier')
+model.load('bidirectional_rnn_classifier')
+model.predict(test_inputs, test_targets)
+
+
 
 """SOME SHIT KINDA TEST LAYERS AND THEIR FUNCTIONS (I DON'T UNDERSTAND THIS ANYMORE)"""
 # X = np.random.normal(0, 1, (5, 1, 28, 28))

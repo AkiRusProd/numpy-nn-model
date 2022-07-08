@@ -22,17 +22,27 @@ class Bidirectional():
             self.direct_layer.set_optimizer(self.optimizer)
             self.reverse_layer.set_optimizer(self.optimizer)
 
+    def concatenate_mode(self, first_output, second_output):
+        return  np.concatenate((first_output, second_output), axis=-1)
+    def sum_mode(self, first_output, second_output):
+        return first_output + second_output
+    def multiply_mode(self, first_output, second_output):
+        return first_output * second_output
+    def average_mode(self, first_output, second_output):
+        return (first_output + second_output) / 2
+
 
     def build(self):
+        
 
         if self.merge_mode == "concatenate":
-            self.merge_outputs = lambda first_output, second_output: np.concatenate((first_output, second_output), axis=-1)
+            self.merge_outputs = self.concatenate_mode
         elif self.merge_mode == "sum":
-            self.merge_outputs = lambda first_output, second_output: first_output + second_output
+            self.merge_outputs = self.sum_mode
         elif self.merge_mode == "multiply":
-            self.merge_outputs = lambda first_output, second_output: first_output * second_output
+            self.merge_outputs = self.multiply_mode
         elif self.merge_mode == "average":
-            self.merge_outputs = lambda first_output, second_output: first_output + second_output/2
+            self.merge_outputs = self.average_mode
 
 
         self.direct_layer.input_shape = self.input_shape
