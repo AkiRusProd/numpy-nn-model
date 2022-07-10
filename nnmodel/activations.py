@@ -155,7 +155,7 @@ activations= {
     "softmax": Softmax(),
     "softplus": Softplus(),
     "relu": ReLU(),
-    "leaky relu": LeakyReLU(),
+    "leaky_relu": LeakyReLU(),
     "elu": ELU(),
     "selu": SELU(),
     "gelu": GELU(),

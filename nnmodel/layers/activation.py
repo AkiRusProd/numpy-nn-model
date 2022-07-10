@@ -13,8 +13,8 @@ class Activation():
         self.output_shape = self.input_shape
 
     def forward_prop(self, X, training):
-        self.layer_input = X
+        self.input_data = X
         return self.activation.function(X)
 
     def backward_prop(self, error):
-        return error * self.activation.derivative(self.layer_input)
+        return error * self.activation.derivative(self.input_data)

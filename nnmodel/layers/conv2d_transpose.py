@@ -319,3 +319,9 @@ class Conv2DTranspose():
         untransposed_layer = layer[:, :, ::stride[0], ::stride[1]]
 
         return untransposed_layer
+
+    def get_grads(self):
+        return self.grad_w, self.grad_b
+
+    def set_grads(self, grads):
+        self.grad_w, self.grad_b = grads

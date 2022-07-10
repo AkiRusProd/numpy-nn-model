@@ -123,7 +123,7 @@ class LSTM():
         if self.cprev is None: self.cprev = np.zeros_like(self.cell_states[:, 0, :])
         if self.hprev is None: self.hprev = np.zeros_like(self.hidden_states[:, 0, :])
 
-        if self.cycled_states == True and training == True:
+        if self.cycled_states == True and training == True and self.states[:, -1, :].shape == self.hprev.shape:
             self.cell_states[:, -1, :] = self.cprev.copy()
             self.hidden_states[:, -1, :] = self.hprev.copy()
 
@@ -188,48 +188,33 @@ class LSTM():
         output_error = np.zeros((self.input_data.shape))
 
         for t in reversed(range(self.timesteps)):
-            # hidden_delta = self.activation.derivative(self.cell_states[:, t, :]) * self.output_gates[:, t, :] * error[:, t, :] + next_hidden_delta #()?
             
-            # output_gates_delta =  error[:, t, :] * self.activation.function(self.cell_states[:, t, :]) * self.recurrent_activation.derivative(self.output_gates[:, t, :])
             hidden_delta = error[:, t, :] + next_hidden_delta
-            cell_delta = hidden_delta * self.output_gates[:, t, :] * self.activation.derivative(self.cell_states[:, t, :]) + next_cell_delta#✓
+            cell_delta = hidden_delta * self.output_gates[:, t, :] * self.activation.derivative(self.cell_states[:, t, :]) + next_cell_delta
 
-            output_gates_delta = hidden_delta * self.activation.function(self.cell_states[:, t, :]) * self.recurrent_activation.derivative(self.unactivated_output_gates[:, t, :]) #✓
+            output_gates_delta = hidden_delta * self.activation.function(self.cell_states[:, t, :]) * self.recurrent_activation.derivative(self.unactivated_output_gates[:, t, :])
             self.grad_w_o   += np.dot(self.input_data[:, t, :].T,  output_gates_delta)
             self.grad_wh_o  += np.dot(self.hidden_states[:, t - 1, :].T, output_gates_delta)
             self.grad_b_o   += output_gates_delta.sum(axis=0)
-            # dX_o = np.dot(np.dot(output_gates_delta, self.wh_o.T), self.w_o.T) #unverified solution
 
-            # forget_gates_delta = (hidden_delta * self.cell_states[:, t - 1, :]) * self.recurrent_activation.derivative(self.forget_gates[:, t, :])
             forget_gates_delta = (cell_delta * self.cell_states[:, t - 1, :]) * self.recurrent_activation.derivative(self.unactivated_forget_gates[:, t, :])
             self.grad_w_f   += np.dot(self.input_data[:, t, :].T,  forget_gates_delta)
             self.grad_wh_f  += np.dot(self.hidden_states[:, t - 1, :].T, forget_gates_delta)
             self.grad_b_f   += forget_gates_delta.sum(axis=0)
-            # dX_f = np.dot(np.dot(forget_gates_delta, self.wh_f.T), self.w_f.T) #unverified solution
 
-            # input_gates_delta = (hidden_delta * self.cell_gates[:, t, :]) * self.recurrent_activation.derivative(self.input_gates[:, t, :])
             input_gates_delta = (cell_delta * self.cell_gates[:, t, :]) * self.recurrent_activation.derivative(self.unactivated_input_gates[:, t, :])
             self.grad_w_i   += np.dot(self.input_data[:, t, :].T,  input_gates_delta)
             self.grad_wh_i  += np.dot(self.hidden_states[:, t - 1, :].T, input_gates_delta)
             self.grad_b_i   += input_gates_delta.sum(axis=0)
-            # dX_i = np.dot(np.dot(input_gates_delta, self.wh_i.T), self.w_i.T) #unverified solution
 
-            # cell_gates_delta = (hidden_delta * self.input_gates[:, t, :]) * self.activation.derivative(self.cell_gates[:, t, :])
             cell_gates_delta = (cell_delta * self.input_gates[:, t, :]) * self.activation.derivative(self.unactivated_cell_gates[:, t, :])
             self.grad_w_c   += np.dot(self.input_data[:, t, :].T,  cell_gates_delta)
             self.grad_wh_c  += np.dot(self.hidden_states[:, t - 1, :].T, cell_gates_delta)
             self.grad_b_c   += cell_gates_delta.sum(axis=0)
-            # dX_c = np.dot(np.dot(cell_gates_delta, self.wh_c.T), self.w_c.T) #unverified solution
 
-            #next_hidden_delta = hidden_delta #* self.forget_gates[:, t, :]
             next_hidden_delta = np.dot(cell_gates_delta, self.wh_c.T) + np.dot(input_gates_delta, self.wh_i.T) + np.dot(forget_gates_delta, self.wh_f.T) + np.dot(output_gates_delta, self.wh_o.T)
             next_cell_delta = cell_delta * self.forget_gates[:, t, :]
 
-            
-            # output_error[:, t, :] = dX_o + \
-            #                         dX_f + \
-            #                         dX_i + \
-            #                         dX_c
 
             output_error[:, t, :] = np.dot(cell_gates_delta, self.w_c.T) + np.dot(input_gates_delta, self.w_i.T) + np.dot(forget_gates_delta, self.w_f.T) + np.dot(output_gates_delta, self.w_o.T)
 
@@ -253,3 +238,9 @@ class LSTM():
             self.b_i, self.vb_i, self.mb_i, self.vb_hat_i, self.mb_hat_i  = self.optimizer.update(self.grad_b_i, self.b_i, self.vb_i, self.mb_i, self.vb_hat_i, self.mb_hat_i, layer_num)
             self.b_o, self.vb_o, self.mb_o, self.vb_hat_o, self.mb_hat_o  = self.optimizer.update(self.grad_b_o, self.b_o, self.vb_o, self.mb_o, self.vb_hat_o, self.mb_hat_o, layer_num)
             self.b_c, self.vb_c, self.mb_c, self.vb_hat_c, self.mb_hat_c  = self.optimizer.update(self.grad_b_c, self.b_c, self.vb_c, self.mb_c, self.vb_hat_c, self.mb_hat_c, layer_num)
+    
+    def get_grads(self):
+        return self.grad_w_f, self.grad_w_i, self.grad_w_o, self.grad_w_c, self.grad_wh_f, self.grad_wh_i, self.grad_wh_o, self.grad_wh_c, self.grad_b_f, self.grad_b_i, self.grad_b_o, self.grad_b_c
+
+    def set_grads(self, grads):
+        self.grad_w_f, self.grad_w_i, self.grad_w_o, self.grad_w_c, self.grad_wh_f, self.grad_wh_i, self.grad_wh_o, self.grad_wh_c, self.grad_b_f, self.grad_b_i, self.grad_b_o, self.grad_b_c = grads

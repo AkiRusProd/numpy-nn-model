@@ -56,7 +56,7 @@ class RNN():
         self.unactivated_states = np.zeros_like(self.states)
         
         if self.hprev is None: self.hprev = np.zeros_like(self.states[:, 0, :])
-        if self.cycled_states == True and training == True:
+        if self.cycled_states == True and training == True and self.states[:, -1, :].shape == self.hprev.shape:
             self.states[:, -1, :] = self.hprev.copy()
         
         for t in range(self.timesteps):
@@ -113,4 +113,10 @@ class RNN():
         self.wh, self.vh, self.mh, self.vh_hat, self.mh_hat = self.optimizer.update(self.grad_wh, self.wh, self.vh, self.mh, self.vh_hat, self.mh_hat, layer_num)
         if self.use_bias == True:
             self.b, self.vb, self.mb, self.vb_hat, self.mb_hat  = self.optimizer.update(self.grad_b, self.b, self.vb, self.mb, self.vb_hat, self.mb_hat, layer_num)
+
+    def get_grads(self):
+        return self.grad_w, self.grad_wh, self.grad_b
+
+    def set_grads(self, grads):
+        self.grad_w, self.grad_wh, self.grad_b = grads
         

@@ -107,7 +107,7 @@ class GRU():
         if self.cprev is None: self.cprev = np.zeros_like(self.cell_states[:, 0, :])
         if self.hprev is None: self.hprev = np.zeros_like(self.hidden_states[:, 0, :])
 
-        if self.cycled_states == True and training == True:
+        if self.cycled_states == True and training == True and self.states[:, -1, :].shape == self.hprev.shape:
             self.cell_states[:, -1, :] = self.cprev.copy()
             self.hidden_states[:, -1, :] = self.hprev.copy()
 
@@ -209,4 +209,11 @@ class GRU():
             self.b_h, self.vb_h, self.mb_h, self.vb_hat_h, self.mb_hat_h  = self.optimizer.update(self.grad_b_h, self.b_h, self.vb_h, self.mb_h, self.vb_hat_h, self.mb_hat_h, layer_num)
             self.b_r, self.vb_r, self.mb_r, self.vb_hat_r, self.mb_hat_r  = self.optimizer.update(self.grad_b_r, self.b_r, self.vb_r, self.mb_r, self.vb_hat_r, self.mb_hat_r, layer_num)
             self.b_z, self.vb_z, self.mb_z, self.vb_hat_z, self.mb_hat_z  = self.optimizer.update(self.grad_b_z, self.b_z, self.vb_z, self.mb_z, self.vb_hat_z, self.mb_hat_z, layer_num)
+
+    def get_grads(self):
+        return self.grad_w_h, self.grad_w_r, self.grad_w_z, self.grad_wh_h, self.grad_wh_r, self.grad_wh_z, self.grad_b_h, self.grad_b_r, self.grad_b_z
+
+    def set_grads(self, grads):
+        self.grad_w_h, self.grad_w_r, self.grad_w_z, self.grad_wh_h, self.grad_wh_r, self.grad_wh_z, self.grad_b_h, self.grad_b_r, self.grad_b_z = grads
+
             

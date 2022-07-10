@@ -7,11 +7,7 @@ from nnmodel.activations import *
 
 class Model():
     #TODO
-    #add save/open model methods
-    #add oportnity to choose metrics
     #add loss func and optimizers exception + their input values
-    #maybe add oportnity to create custom layers??
-    #add optimzer clip gradient
     #add gan, vae modules
     #add examples
     #maybe something more...
@@ -23,7 +19,7 @@ class Model():
         self.loss_function = MSE()
         self.optimizer = SGD()
 
-    def compile(self, optimizer = None, loss = None): 
+    def compile(self, optimizer = SGD(), loss = MSE()): 
 
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
@@ -72,6 +68,8 @@ class Model():
         for layer in reversed(self.layers):
             error = layer.backward_prop(error)
 
+        return error
+
 
     def update_weights(self):
         for i, layer in enumerate(reversed(self.layers)):
@@ -93,7 +91,7 @@ class Model():
                 try:
                     last_layer_activation = self.layers[-1].activation
                 except:
-                    last_layer_activation = activations[None] #for layers thats have no activation
+                    last_layer_activation = activations[None] #for layers thats has no activation
 
                 last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
 
@@ -115,14 +113,22 @@ class Model():
 
     def fit(self, input_data, data_targets, batch_size, epochs):
         input_data = np.asarray(input_data)
+        data_targets = np.asarray(data_targets)
         batch_num = len(input_data) // batch_size
 
-        batches = np.array_split(input_data, batch_num)#np.stack
-        batches_targets = np.array_split(data_targets, batch_num)#np.stack
+        batches = np.array_split(input_data, np.arange(batch_size,len(input_data),batch_size))#np.stack
+        batches_targets = np.array_split(data_targets, np.arange(batch_size,len(input_data),batch_size))#np.stack
+
+        if len(batches[-1]) < batch_size:
+            indexes = np.random.choice(len(input_data), size = batch_size - len(batches[-1]), replace=False)
+            new_samples = input_data[indexes]
+            new_samples_target = data_targets[indexes]
+            batches[-1] = np.concatenate((batches[-1], new_samples))
+            batches_targets[-1] = np.concatenate((batches_targets[-1], new_samples_target))
 
         self.set_optimizer()
 
-
+        loss_history = []
         for i in range(epochs):
             tqdm_range = tqdm(enumerate(zip(batches, batches_targets)), total = len(batches))
             for j, (batch, batch_targets) in tqdm_range:
@@ -131,18 +137,20 @@ class Model():
                 targets =     self.prepare_targets(batch_targets)
                 # print("pred", predictions.shape,"tar", targets.shape)
                 error = self.loss_function.derivative(predictions, targets)
-                loss = self.loss_function.loss(predictions, targets).mean()
+                loss_history.append(self.loss_function.loss(predictions, targets).mean())
 
                 self.backward_prop(error)
 
                 self.update_weights()
 
                 tqdm_range.set_description(
-                        f"training | loss: {loss:.7f} | epoch {i + 1}/{epochs}" #loss: {loss:.4f}
+                        f"training | loss: {loss_history[-1]:.7f} | epoch {i + 1}/{epochs}" #loss: {loss:.4f}
                     )
 
+        return loss_history
+
     def predict(self, input_data, data_targets):
-        accuracy = []
+        accuracy_history = []
         samples_num = true_samples_num = 0
 
         for i, (input, target) in tqdm(enumerate(zip(input_data, data_targets)), desc = "testing", total = len(input_data)):
@@ -155,8 +163,9 @@ class Model():
             if max_output_index == int(target):
                 true_samples_num += 1
 
-            accuracy.append(true_samples_num / samples_num)
+            accuracy_history.append(true_samples_num / samples_num)
 
             # print(f'inputs: {inputs[j]}, targets: {targets[j]}, output: {max_output_index}, output neurons values : {layers_outputs[len(layers_outputs)-1]}')
 
-        print(f"> {accuracy[-1] * 100} %")
+        print(f"> {accuracy_history[-1] * 100} %")
+        return accuracy_history

@@ -41,11 +41,15 @@ class TimeDistributed():
         self._backward_prop = self._default_backward_prop
         self._forward_prop = self._default_forward_prop
         self._update_weights = self._default_update_weights
+        self._get_grads = self._default_get_grads
+        self._set_grads = self._default_set_grads
 
         if self.layer.__class__.__name__ == "BatchNormalization":
            self._backward_prop = self._batchnorm_backward_prop
            self._forward_prop  = self._batchnorm_forward_prop
            self._update_weights = self._batchnorm_update_weights
+           self._get_grads = self._batchnorm_get_grads
+           self._set_grads = self._batchnorm_set_grads
 
     def forward_prop(self, X, training):
 
@@ -159,6 +163,24 @@ class TimeDistributed():
         self.layer.grad_beta = self.grads_beta
 
         self.layer.update_weights(layer_num)
+
+    def get_grads(self):
+        return self._get_grads()
+
+    def _default_get_grads(self):
+        return self.grads_w, self.grads_b
+
+    def _batchnorm_get_grads(self):
+        return self.grads_gamma, self.grads_beta
+
+    def set_grads(self, grads):
+        return self._set_grads(grads)
+
+    def _default_set_grads(self, grads):
+        self.grads_w, self.grads_b = grads
+
+    def _batchnorm_set_grads(self, grads):
+        self.grads_gamma, self.grads_beta = grads
     
            
 

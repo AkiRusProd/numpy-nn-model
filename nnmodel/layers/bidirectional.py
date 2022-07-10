@@ -83,3 +83,12 @@ class Bidirectional():
     def update_weights(self, layer_num):
         self.direct_layer.update_weights(layer_num)
         self.reverse_layer.update_weights(layer_num)
+
+    def get_grads(self):
+        
+        return self.direct_layer.get_grads() , self.reverse_layer.get_grads()
+
+    def set_grads(self, grads):
+        
+        self.direct_layer.set_grads(grads[0])
+        self.reverse_layer.set_grads(grads[1])
