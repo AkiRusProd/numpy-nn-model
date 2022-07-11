@@ -169,3 +169,7 @@ class Model():
 
         print(f"> {accuracy_history[-1] * 100} %")
         return accuracy_history
+
+    def predict_classes(self, input_data):
+        predictions = self.forward_prop(input_data.reshape(1, *input_data.shape), training = False)
+        return np.argmax(predictions, axis = 1), predictions
