@@ -35,9 +35,14 @@ class Conv2DTranspose():
 
         if self.padding == "valid":
             self.padding == (0, 0, 0, 0)
-        elif self.padding == "same":
-            padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0]
-            padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1) + self.output_padding[1]
+        elif self.padding == "same" or self.padding == "real same":
+
+            if self.padding == "same": #keras "same" implementation, that returns the output of size "input_size + stride_size"
+                padding_up_down = (1 - self.stride[0]) + self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0] 
+                padding_left_right = (1 - self.stride[1]) + self.dilation[1] * (self.kernel_width  - 1) + self.output_padding[1]
+            elif self.padding == "real same": # my "same" implementation, that returns the output of size "input_size"
+                padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0]
+                padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1) + self.output_padding[1]
 
             if padding_up_down % 2 == 0:
                 padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
@@ -111,7 +116,7 @@ class Conv2DTranspose():
     def backward_prop(self, error):
         error *= self.activation.derivative(self.output_data)
         
-        self.grad_w = self.compute_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        self.grad_w = self.compute_weights_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
         self.grad_b = self.compute_bias_gradients(error)
         
         conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
@@ -206,10 +211,9 @@ class Conv2DTranspose():
 
     @staticmethod
     @njit
-    def compute_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
+    def compute_weights_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
         
         gradient = np.zeros((weights.shape))
-        bias_gradient = np.sum(error)
 
         for b in range(batch_size):
             for k in range(kernels_num):
@@ -222,7 +226,7 @@ class Conv2DTranspose():
                                 * input_data[b, c, h : h + conv_height, w : w + conv_width]
                             )
 
-        return gradient, bias_gradient
+        return gradient
 
 
     @staticmethod

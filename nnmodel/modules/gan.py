@@ -133,10 +133,10 @@ class GAN():
         d_loss_history = []
 
 
-        self.generator.opimizer = self.optimizer
+        self.generator.optimizer = self.optimizer
         self.discriminator.optimizer = self.optimizer
-        self.generator.loss_function = self.loss_function
-        self.discriminator.loss_function = self.loss_function
+        # self.generator.loss_function = self.loss_function
+        # self.discriminator.loss_function = self.loss_function
 
         self.generator.set_optimizer()
         self.discriminator.set_optimizer()

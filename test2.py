@@ -11,7 +11,13 @@ from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
 
 
+import tensorflow as tf
 
+inputs = tf.random.normal([1, 28, 28, 3])
+print(inputs.shape)
+conv = tf.keras.layers.Conv2D(6, 3, strides=2, padding='same')
+outputs = conv(inputs)
+print(outputs.shape)
 
 
 
@@ -21,32 +27,39 @@ import torch.nn.functional as F
 
 batch_size = 2
 kernels_num = 2
-kernel_size = 2
+kernel_size = 3
 inputs_num = 3
-input_size = 5
+input_size = 28
 stride_f = 2
 
 
 
-# conv = nn.Conv2d(inputs_num, kernels_num, kernel_size, stride = stride_f, bias=False)
 
-X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
-W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).reshape((kernels_num, inputs_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
-# BIAS = np.random.normal(0, 1, (kernels_num))
 
+# X = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
+# W = np.arange(0.0, (inputs_num * kernels_num * kernel_size * kernel_size)).reshape((kernels_num, inputs_num, kernel_size, kernel_size))#np.ones((kernels_num, inputs_num, kernel_size, kernel_size)) #np.random.normal(0, 1, (kernels_num, inputs_num, kernel_size, kernel_size))
+# # BIAS = np.random.normal(0, 1, (kernels_num))
+# m = nn.Conv2d(inputs_num, kernels_num, kernel_size, padding = "same", stride = stride_f, bias=False)
+# m.weight = nn.Parameter(torch.from_numpy(W).float())
+# #m.bias = nn.Parameter(torch.from_numpy(BIAS).float())
+
+# input = torch.from_numpy(X).float()
+# output = m(input)
+# print(output.shape)
+# print(output)
 # ZP = ZeroPadding2D(padding = 2, input_shape = (inputs_num, input_size, input_size))
 # ZP.build()
-rp = RepeatVector(3)
-XRP = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
-print(XRP.shape)
-print(XRP)
-YRP = rp.forward_prop(XRP, training = True)
-print(YRP.shape)
-print(YRP)
-# print(rp.backward_prop(YRP.shape))
-OUT = rp.backward_prop(YRP)
-print(OUT.shape)
-print(OUT)
+# rp = RepeatVector(3)
+# XRP = np.arange(0.0, (batch_size * inputs_num * input_size * input_size)).reshape((batch_size, inputs_num, input_size, input_size))
+# print(XRP.shape)
+# print(XRP)
+# YRP = rp.forward_prop(XRP, training = True)
+# print(YRP.shape)
+# print(YRP)
+# # print(rp.backward_prop(YRP.shape))
+# OUT = rp.backward_prop(YRP)
+# print(OUT.shape)
+# print(OUT)
 # Y = ZP.forward_prop(X, training = True)
 # print(f"{Y=}\n")
 

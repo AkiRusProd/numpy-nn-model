@@ -16,11 +16,11 @@ class BinaryCrossEntropy():
 
     def loss(self, y, t):
 
-        return -(t * np.log(y) + (1 - t) * np.log(1 - y))
+        return -(t * np.log(y + 1e-8) + (1 - t) * np.log(1 - y + 1e-8))
 
     def derivative(self, y, t):
 
-        return -t / y + (1 - t) / (1 - y)
+        return -t / (y + 1e-8) + (1 - t) / (1 - (y + 1e-8))
 
 
 class CategoricalCrossEntropy():
