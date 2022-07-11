@@ -68,7 +68,7 @@ def recognize():
     data = np.asarray(resized_img)
     inputs = np.reshape(data, (1,784))
 
-    max_output_index, outputs = model.predict_classes(inputs)
+    max_output_index, outputs = model.predict_(inputs)
 
     probability = np.round(((np.max(outputs) / np.sum(outputs)) * 100), 2)
 
