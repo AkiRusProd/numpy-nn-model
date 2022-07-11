@@ -107,7 +107,7 @@ class GRU():
         if self.cprev is None: self.cprev = np.zeros_like(self.cell_states[:, 0, :])
         if self.hprev is None: self.hprev = np.zeros_like(self.hidden_states[:, 0, :])
 
-        if self.cycled_states == True and training == True and self.states[:, -1, :].shape == self.hprev.shape:
+        if self.cycled_states == True and training == True and self.hidden_states[:, -1, :].shape == self.hprev.shape:
             self.cell_states[:, -1, :] = self.cprev.copy()
             self.hidden_states[:, -1, :] = self.hprev.copy()
 
