@@ -32,7 +32,7 @@ class ErrorHandler(Exception):
             def __str__(self):
                 add_message = ""
                 if self.variable_name == "padding":
-                    add_message = ', or string: "same"/"valid"'
+                    add_message = ', or string: "same"/"real same"/"valid"'
 
                 return f' Unable to extract {self.variable_name} values from type {self.variable_type}; {self.variable_name} must be greater than or equal "{self.min_acceptable_value}" integer value, or list/tuple type of size 2 and contain greater than or equal "{self.min_acceptable_value}" integer values {add_message}'
     

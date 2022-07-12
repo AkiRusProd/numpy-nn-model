@@ -15,9 +15,21 @@ import tensorflow as tf
 
 inputs = tf.random.normal([1, 28, 28, 3])
 print(inputs.shape)
-conv = tf.keras.layers.Conv2D(6, 3, strides=2, padding='same')
-outputs = conv(inputs)
+maxpooling = tf.keras.layers.MaxPooling2D(pool_size = (2, 2), padding='same', strides = 3)
+outputs = maxpooling(inputs)
 print(outputs.shape)
+
+
+inputs = np.random.normal(0, 1, size = (1, 3, 28, 28))
+print(inputs.shape)
+maxpooling=MaxPooling2D(pool_size = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
+# maxpooling=Conv2D(1, kernel_shape = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
+maxpooling.build()
+print("padding:", maxpooling.padding)
+# print("conv shape", maxpooling.conv_height, maxpooling.conv_width)
+
+out = maxpooling.forward_prop(inputs, training=True)
+print(out.shape)
 
 
 

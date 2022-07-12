@@ -2,6 +2,15 @@ import numpy as np
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class BatchNormalization():
+    """
+    Applies batch normalization to the input data
+    ---------------------------------------------
+        Args:
+            `momentum` (float): the momentum parameter of the moving mean
+            `epsilon` (float): the epsilon parameter of the algorithm
+        Returns:
+            output: the normalized input data with same shape
+    """
 
     def __init__(self, momentum = 0.99, epsilon = 0.001, input_shape = None):
 

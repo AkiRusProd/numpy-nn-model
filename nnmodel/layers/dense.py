@@ -3,6 +3,16 @@ from nnmodel.activations import activations
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Dense():
+    """
+    Add Dense layer
+    ---------------
+        Args:
+            `units_num` (int): number of neurons in the layer
+            `activation` (str) or (`ActivationFunction` class): activation function
+            `use_bias` (bool):  `True` if used. `False` if not used
+        Returns:
+            output: data with shape (batch_size, units_num)
+    """
 
     def __init__(self, units_num, activation = None, input_shape = None, use_bias = True):
         self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")

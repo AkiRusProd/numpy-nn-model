@@ -3,6 +3,14 @@ from numba import njit
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class UpSampling2D():
+    """
+    Upsampling the input data
+    -------------------------
+        Args:
+            `size` (tuple) or (list): increases by "size" times of the 2d input data with shape: (batchsize, channels, H, W)
+        Returns:
+            output: the upsampled input data with shape: (batchsize, channels, H * size[0], W * size[1])
+    """
     #TODO
      #verify speed of METHODS/unpadding; maybe native numpy is faster than numba
      #add other interpolations, "bicubic", "bilinear", now only nearest 

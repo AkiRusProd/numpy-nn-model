@@ -8,12 +8,13 @@
 2) TanH
 3) Softmax
 4) Softplus
-5) ReLU
-6) LeakyReLU
-7) ELU
-8) SELU
-9) GELU
-10) Identity (default; returns the same argument)
+5) Softsign
+6) ReLU
+7) LeakyReLU
+8) ELU
+9) SELU
+10) GELU
+11) Identity (default; returns the same argument)
 
 ### Implemented Optimizers:
 1) SGD

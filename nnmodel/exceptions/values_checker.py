@@ -28,7 +28,7 @@ class ValuesChecker():
 
             return variable
         elif type(variable) == str and variable_name  == "padding":
-            if variable == "same" or variable == "valid":
+            if variable == "same" or variable == "real same" or variable == "valid":
 
                 return variable
 

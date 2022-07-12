@@ -6,7 +6,29 @@ from nnmodel.exceptions.values_checker import ValuesChecker
 
 
 class Conv2DTranspose():
+    """
+    Add 2d transposed convolutional layer
+    -------------------------------------
+        Args:
+            `kernels_num`: number of kernels
+            `kernel_shape` (tuple), (list) of size 2 or (int): height and width of kernel 
+            `activation` (str) or (`ActivationFunction` class): activation function
+            `padding` (tuple), (list) of size 2 or (int)  or `"same"`, `"real same"`, `"valid"` string value: the "inverted" padding of the input window (removing padding)
+            
+            {
+                `"valid"`: padding is 0
+                `"same"`: keras "same" implementation, that returns the output of size "input_size + stride_size"
+                `"real same"`: my "same" implementation, that returns the output of size "input_size"
+            }
+            `stride` (tuple), (list) of size 2 or (int): the transposed stride (operation similar to dilation) of the 2d input window
+            `dilation` (tuple), (list) of size 2 or (int): the dilation of the sliding kernel
+            `use_bias` (bool):  `True` if used. `False` if not used
 
+        Returns:
+            output: output_layer (numpy.ndarray): the output layer with shape: (batch_size, channels_num, conv_height, conv_width)
+        References:
+            https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
+    """
     
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), output_padding = (0, 0), use_bias = True):
         self.kernels_num    = ValuesChecker.check_integer_variable(kernels_num, "kernels_num")
@@ -61,7 +83,6 @@ class Conv2DTranspose():
             self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(top, bottom, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
     
         
-        #https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
         self.conv_height = (self.input_height - 1) * self.stride[0] - (self.padding[0] + self.padding[1])  +  self.dilation[0] * (self.kernel_height - 1) + self.output_padding[0] + 1
         self.conv_width =  (self.input_width - 1) * self.stride[1] - (self.padding[2] + self.padding[3]) + self.dilation[1] * (self.kernel_width - 1) + self.output_padding[1] + 1
         
@@ -150,7 +171,7 @@ class Conv2DTranspose():
                     :,
                     kernel_height - 1 : conv_height + kernel_height - 1,
                     kernel_width - 1 : conv_width + kernel_width - 1,
-                ] = error # Матрица ошибок нужного размера для прогона по ней весов
+                ] = error
 
         for k in range(kernels_num):
             for c in range(channels_num):

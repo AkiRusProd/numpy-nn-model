@@ -2,6 +2,15 @@ import numpy as np
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Reshape():
+    """
+    Reshape the input data to the desired shape
+    -------------------------------------------
+        Args:
+            `shape` (tuple) or (list): desired shape of the input data 
+            without touching the batch size dimension
+        Returns:
+            output: the reshaped input data with shape: (batchsize, *shape)
+    """
 
     def __init__(self, shape) -> None:
         self.shape = ValuesChecker.check_shape(shape)

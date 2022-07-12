@@ -2,6 +2,12 @@ import numpy as np
 
 
 class Flatten():
+    """
+    Flattens the input data
+    -----------------------
+        Returns:
+            output: the flattened input data with shape: (batchsize, *previous shape)
+    """
 
     def __init__(self) -> None:
         self.input_shape = None

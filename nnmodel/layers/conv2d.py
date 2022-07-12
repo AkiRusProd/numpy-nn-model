@@ -4,6 +4,29 @@ from nnmodel.activations import activations
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class Conv2D():
+    """
+    Add 2d convolutional layer
+    --------------------------
+        Args:
+            `kernels_num`: number of kernels
+            `kernel_shape` (tuple), (list) of size 2 or (int): height and width of kernel 
+            `activation` (str) or (`ActivationFunction` class): activation function
+            `padding` (tuple), (list) of size 2 or (int)  or `"same"`, `"real same"`, `"valid"` string value: the padding of the input window
+            
+            {
+                `"valid"`: padding is 0
+                `"same"`: keras "same" implementation, that returns the output of size "input_size + stride_size"
+                `"real same"`: my "same" implementation, that returns the output of size "input_size"
+            }
+            `stride` (tuple), (list) of size 2 or (int): the stride of the sliding kernel
+            `dilation` (tuple), (list) of size 2 or (int): the dilation of the sliding kernel
+            `use_bias` (bool):  `True` if used. `False` if not used
+
+        Returns:
+            output: output_layer (numpy.ndarray): the output layer with shape: (batch_size, channels_num, conv_height, conv_width)
+        References:
+            https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
+    """
 
 
     def __init__(self, kernels_num, kernel_shape, input_shape = None, activation = None, padding = (0, 0), stride = (1, 1), dilation = (1, 1), use_bias = True):
@@ -51,15 +74,12 @@ class Conv2D():
                 padding_left, padding_right = padding_left_right // 2, padding_left_right - padding_left_right // 2
     
 
-            self.padding = (padding_up, padding_down, padding_left, padding_right)
+            self.padding = (abs(padding_up), abs(padding_down), abs(padding_left), abs(padding_right))
 
         elif len(self.padding) == 2:
             self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(up, down, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
 
 
-
-        
-        #https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
         self.conv_height = (self.input_height + self.padding[0] + self.padding[1] - self.dilation[0] * (self.kernel_height - 1) - 1) // self.stride[0]   + 1
         self.conv_width =  (self.input_width + self.padding[2] + self.padding[3] - self.dilation[1] * (self.kernel_width - 1) - 1) // self.stride[1] + 1
 
@@ -161,7 +181,7 @@ class Conv2D():
                     :,
                     kernel_height - 1 : stride[0] * conv_height - (stride[0] - 1) + kernel_height - 1, #kernel_height - 1 : conv_height + kernel_height - 1,
                     kernel_width - 1 :  stride[0] * conv_width - (stride[0] - 1) + kernel_width - 1,   #kernel_width - 1 :  conv_width  + kernel_width - 1,
-                ] = temp_error # Матрица ошибок нужного размера для прогона по ней весов
+                ] = temp_error
 
         for k in range(kernels_num):
             for c in range(channels_num):

@@ -6,11 +6,20 @@ from nnmodel.loss_functions import *
 from nnmodel.activations import *
 
 class Model():
+    """
+    Model class, that defines a model
+    ---------------------------------
+        Methods:
+            `add` (layer): adds layer to model
+            `compile`: choose optimizer and loss function
+            `fit`: train the model
+            `predict`: test the model
+            `predict_`: predict the model
+            `load`: load the model
+            `save`: save the model
+    """
     #TODO
     #add loss func and optimizers exception + their input values
-    #add gan, vae modules
-    #add examples
-    #maybe something more...
 
     def __init__(self):
         self.layers = []
@@ -20,7 +29,13 @@ class Model():
         self.optimizer = SGD()
 
     def compile(self, optimizer = SGD(), loss = MSE()): 
-
+        """
+        Compile the model
+        -----------------
+            Args:
+                `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
+                `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
+        """
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
         else:
@@ -37,12 +52,24 @@ class Model():
                 layer.set_optimizer(self.optimizer)
 
     def load(self, path):
+        """
+        Load the model
+        --------------
+            Args:
+                `path`: path to the saved model
+        """
         pickle_model = open(path, 'rb')
         self.layers = pkl.load(pickle_model)
         pickle_model.close()
         
 
     def save(self, path):
+        """
+        Save the model
+        --------------
+            Args:
+                `path`: path to the model which will be saved
+        """
         pickle_model = open(path, 'wb')
         pkl.dump(self.layers, pickle_model)
         pickle_model.close()
@@ -50,6 +77,12 @@ class Model():
 
 
     def add(self, layer):
+        """
+        Add layer to model
+        ------------------
+            Args:
+                `layer` : layer to add to model
+        """
         if self.layers: layer.input_shape = self.layers[-1].output_shape #or layer.input_shape == None
 
         if hasattr(layer, 'build'):
@@ -112,6 +145,17 @@ class Model():
 
 
     def fit(self, input_data, data_targets, batch_size, epochs):
+        """
+        Train the model
+        ---------------
+            Args:
+                `input_data`: input data for the model
+                `target_data`: target data for the model
+                `batch_size`: batch size of the model
+                `epochs`: epochs number to train the model
+            Returns:
+                `loss history`
+        """
         input_data = np.asarray(input_data)
         data_targets = np.asarray(data_targets)
         batch_num = len(input_data) // batch_size
@@ -150,6 +194,15 @@ class Model():
         return loss_history
 
     def predict(self, input_data, data_targets):
+        """
+        Predict (Test) the model
+        -----------------
+            Args:
+                `input_data`: input data on which the model will be tested
+                `target_data`: target data of input data for the model
+            Returns:
+                `predictions`: predictions of the model
+        """
         accuracy_history = []
         samples_num = true_samples_num = 0
 
@@ -171,5 +224,14 @@ class Model():
         return accuracy_history
 
     def predict_(self, input_data):
+        """
+        Predict the model
+        -----------------
+            Args:
+                `input_data`: input data for the model
+            Returns:
+                `max pridiction index`: index of the max pridiction
+                `predictions`: predictions of the model
+        """
         predictions = self.forward_prop(input_data.reshape(1, *input_data.shape), training = False)
         return np.argmax(predictions, axis = 1), predictions

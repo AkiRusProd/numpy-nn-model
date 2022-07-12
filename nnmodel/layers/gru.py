@@ -3,11 +3,26 @@ from nnmodel.activations import activations
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class GRU():
-    #References
-    #https://arxiv.org/pdf/1612.07778.pdf
-    #https://github.com/erikvdplas/gru-rnn/blob/master/main.py
+    """
+    Add GRU layer
+    --------------
+        Args:
+            `units_num` (int): number of neurons in the layer
+            `activation` (str) or (`ActivationFunction` class): activation function
+            `recurrent_activation` (str) or (`ActivationFunction` class): activation function
+            `return_sequences` (bool): if `True`, the output of the layer is a sequence of vectors, else the output is a last vector
+            `use_bias` (bool):  `True` if used. `False` if not used
+            `cycled_states` (bool): `True` if future iteration init state equals previous iteration last state. `False` if future iteration init state equals 0
+        Returns:
+            output: data with shape (batch_size, timesteps, units_num)
+        References:
+            https://arxiv.org/pdf/1612.07778.pdf
+            
+            https://github.com/erikvdplas/gru-rnn/blob/master/main.py
+        
+    """
 
-    def __init__(self, units_num, activation = 'tanh', recurrent_activation = 'sigmoid', input_shape = None, return_sequences = False, use_bias = True, cycled_states = False):
+    def __init__(self, units_num, activation = 'tanh', recurrent_activation = 'sigmoid', input_shape = None, return_sequences = False, use_bias = True, cycled_states = True):
         self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 2)
         self.activation  = ValuesChecker.check_activation(activation, activations)

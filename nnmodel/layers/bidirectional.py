@@ -2,6 +2,19 @@ import numpy as np
 import copy as copy_object
 
 class Bidirectional():
+    """
+    Applies the bidirectional architecture to the recurrent layers
+    --------------------------------------------------------------
+        Args:
+            `layer` : the recurrent layer
+            `merge_mode` : the mode of the merge of the forward outputs:
+                `concatenate` : concatenate the forward outputs
+                `sum` : sum the forward outputs
+                `multiply` : multiply the forward outputs
+                `average` : average the forward outputs
+        Returns:
+            output: the recurrent layer output according to the merge_mode
+    """
     #TODO
     #add use access only for RNN, LSTM, GRU layers
     def __init__(self, layer, merge_mode = 'concatenate'):

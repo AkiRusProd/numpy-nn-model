@@ -8,6 +8,22 @@ from nnmodel.activations import *
 
 
 class GAN():
+    """
+    Generative Adversarial Network (GAN) module, thats responsible for training the generator and discriminator
+    -----------------------------------------------------------------------------------------------------------
+        Args:
+            `generator` (Model): Generator model
+            `discriminator` (Model): Discriminator model
+        Methods:
+            `compile`: choose optimizer, loss function and predict mode every epoch
+            `fit`: train the model
+            `predict`: predict the model
+            `load`: load the model
+            `save`: save the model
+            `get_each_epoch_predictions`: get the each epoch predictions of the model, if each_epoch_predict["mode"] is True
+        References:
+            https://arxiv.org/abs/1406.2661
+    """
 
     def __init__(self, generator, discriminator):
         self.generator = generator
@@ -17,7 +33,14 @@ class GAN():
         self.optimizer = SGD()
 
     def compile(self, optimizer = SGD(), loss = MSE(), each_epoch_predict = {"mode" : False, "num" : 0}): 
-
+        """
+        Compile the model
+        -----------------
+            Args:
+                `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
+                `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
+                `each_epoch_predict`: if `each_epoch_predict["mode"]` is `True`, the model will give `num` generator predictions every epoch
+        """
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
         else:
@@ -32,6 +55,12 @@ class GAN():
         self.each_epoch_predict["predictions"] = []
 
     def load(self, path):
+        """
+        Load the model
+        --------------
+            Args:
+                `path`: path to the saved model
+        """
         self.generator = Model()
         self.discriminator = Model()
 
@@ -39,6 +68,12 @@ class GAN():
         self.discriminator.load(f"{path}/discriminator")
 
     def save(self, path):
+        """
+        Save the model
+        --------------
+            Args:
+                `path`: path to the model which will be saved
+        """
         try:
             os.mkdir(path)
         except:
@@ -110,6 +145,18 @@ class GAN():
         
 
     def fit(self, input_data,  batch_size,  epochs, noise_vector_size = 100):
+        """
+        Train the model
+        ---------------
+            Args:
+                `input_data`: input data for the model
+                `batch_size`: batch size of the model
+                `epochs`: epochs number to train the model
+                `noise_vector_size`: noise vector size (default = 100)
+            Returns:
+                `generator loss history`,
+                `discriminator loss history`
+        """
         real_data = np.asarray(input_data)
 
         batches = np.array_split(input_data,  np.arange(batch_size,len(input_data),batch_size))
@@ -187,8 +234,22 @@ class GAN():
         return g_loss_history, d_loss_history
 
     def predict(self, input_noise):
+        """
+        Predict the model
+        -----------------
+            Args:
+                `input_noise`: input noise for the generator model
+            Returns:
+                `predictions`: predictions of the generator model
+        """
         return self.generator.forward_prop(input_noise, training = False)
 
     def get_each_epoch_predictions(self):
+        """
+        Get the predictions of the model for each epoch
+        -----------------------------------------------
+            Returns:
+                `predictions`: if `each_epoch_predict["mode"]` in the 'compile' method is `True`, the model will give `num` generator predictions every epoch
+        """
         return self.each_epoch_predict["predictions"]
                 

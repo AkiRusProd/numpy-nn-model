@@ -20,9 +20,13 @@ class Pooling2D():
 
         if self.padding == "valid":
             self.padding == (0, 0, 0, 0)
-        elif self.padding == "same":
-            padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.pool_height - 1)
-            padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.pool_width  - 1)
+        elif self.padding == "same" or self.padding == "real same":
+            if self.padding == "same": #keras "same" implementation, that returns the output of size "input_size + stride_size"
+                padding_up_down = self.dilation[0] * (self.pool_height - 1) - self.stride[0] + 1 
+                padding_left_right = self.dilation[1] * (self.pool_width  - 1) - self.stride[1] + 1
+            elif self.padding == "real same": # my "same" implementation, that returns the output of size "input_size"
+                padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.pool_height - 1)
+                padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.pool_width  - 1)
 
             if padding_up_down % 2 == 0:
                 padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
@@ -35,7 +39,7 @@ class Pooling2D():
                 padding_left, padding_right = padding_left_right // 2, padding_left_right - padding_left_right // 2
     
 
-            self.padding = (padding_up, padding_down, padding_left, padding_right)
+            self.padding = (abs(padding_up), abs(padding_down), abs(padding_left), abs(padding_right))
 
         elif len(self.padding) == 2:
             self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(up, down, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
@@ -188,6 +192,24 @@ class Pooling2D():
 
 
 class MaxPooling2D(Pooling2D):
+    """
+    Applies MaxPooling to the 2d input data
+    ---------------------------------------
+        Args:
+            `pool_size` (tuple), (list) of size 2 or (int): the size of the sliding pooling window
+            `padding` (tuple), (list) of size 2 or (int) or `"same"`, `"real same"`, `"valid"` string value: the padding of the input window
+            
+            {
+                `"valid"`: padding is 0
+                `"same"`: keras "same" implementation, that returns the output of size "input_size + stride_size"
+                `"real same"`: my "same" implementation, that returns the output of size "input_size"
+            }
+            `stride` (tuple), (list) of size 2 or (int): the stride of the sliding pooling window
+            `dilation` (tuple), (list) of size 2 or (int): the dilation of the sliding pooling window
+
+        Returns:
+            output: output_layer (numpy.ndarray): the output layer of the MaxPooling with shape: (batch_size, channels_num, output_height, output_width)
+    """
 
     def __init__(self,  pool_size=(2, 2), input_shape = None, padding = (0, 0), stride = None, dilation = (1, 1)):
         Pooling2D.__init__(self, pool_size, input_shape, padding, stride, dilation)
@@ -211,6 +233,25 @@ class MaxPooling2D(Pooling2D):
 
 
 class AveragePooling2D(Pooling2D):
+    """
+    Applies AveragePooling to the 2d input data
+    -------------------------------------------
+        Args:
+            `pool_size` (tuple), (list) of size 2 or (int): the size of the sliding pooling window
+            `padding` (tuple), (list) of size 2 or (int) or `"same"`, `"real same"`, `"valid"` string value: the padding of the input window
+            
+            {
+                `"valid"`: padding is 0
+                `"same"`: keras "same" implementation, that returns the output of size "input_size + stride_size"
+                `"real same"`: my "same" implementation, that returns the output of size "input_size"
+            }
+            `stride` (tuple), (list) of size 2 or (int): the stride of the sliding pooling window
+            `dilation` (tuple), (list) of size 2 or (int): the dilation of the sliding pooling window
+
+        Returns:
+            output: output_layer (numpy.ndarray): the output layer of the MaxPooling with shape: (batch_size, channels_num, output_height, output_width)
+    """
+
 
     def __init__(self,  pool_size=(2, 2), input_shape = None, padding = (0, 0), stride = None, dilation = (1, 1)):
         Pooling2D.__init__(self, pool_size, input_shape, padding, stride, dilation)

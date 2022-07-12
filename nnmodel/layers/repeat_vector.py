@@ -2,6 +2,16 @@ import numpy as np
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class RepeatVector():
+    """
+    Repeat the input data multiple times
+    ------------------------------------
+        Args: 
+            `num` (int): number of times to repeat the input data
+        Returns:
+            output: the repeated input data with shape:
+                (batchsize, num, units num): for 1d input data
+                (batchsize, num, channels, H, W): for 2d input data e.g. for convolutional layer
+    """
 
     def __init__(self, num) -> None:
         self.num = ValuesChecker.check_integer_variable(num, "num")

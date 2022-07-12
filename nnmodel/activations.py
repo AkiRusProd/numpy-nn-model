@@ -59,6 +59,16 @@ class Softplus(ActivationFunction):
         
         return 1 / (1 + np.exp(-x))
 
+class Softsign(ActivationFunction):
+
+    def function(self, x):
+        
+        return x / (1 + np.abs(x))
+
+    def derivative(self, x):
+
+        return 1 / np.power(1 + np.abs(x), 2)
+
 
 class ReLU(ActivationFunction):
 
@@ -154,6 +164,7 @@ activations= {
     "tanh": Tanh(),
     "softmax": Softmax(),
     "softplus": Softplus(),
+    "softsign": Softsign(),
     "relu": ReLU(),
     "leaky_relu": LeakyReLU(),
     "elu": ELU(),

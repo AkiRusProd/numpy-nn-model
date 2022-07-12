@@ -3,6 +3,14 @@ from numba import njit
 from nnmodel.exceptions.values_checker import ValuesChecker
 
 class ZeroPadding2D():
+    """
+    Add padding with zeros to the input data
+    ----------------------------------------
+        Args:
+            `padding` (tuple), (list) of size 2 or (int): padding size for 2d input data with shape: (batchsize, channels, H, W)
+        Returns:
+            output: the padded input data with shape: (batchsize, channels, H + 2 * padding[0], W + 2 * padding[1])
+    """
 
     def __init__(self, padding = (0, 0), input_shape = None) -> None:
         self.padding      = ValuesChecker.check_size2_variable(padding, variable_name = "padding", min_acceptable_value = 0)

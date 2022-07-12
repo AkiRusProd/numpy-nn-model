@@ -8,6 +8,22 @@ from nnmodel.activations import *
 
 
 class VAE():
+    """
+    Variational Autoencoder (VAE) module, thats training VAE models
+    ---------------------------------------------------------------
+        Args:
+            'encoder' (Model): Encoder model
+            'decoder' (Model): Decoder model
+        Methods:
+            `compile`: choose optimizer and loss function
+            `fit`: train the model
+            `predict`: predict the model
+            `load`: load the model
+            `save`: save the model
+        References:
+            https://arxiv.org/pdf/1312.6114.pdf
+
+    """
     def __init__(self, encoder, decoder):
         self.encoder = encoder
         self.decoder = decoder
@@ -18,6 +34,13 @@ class VAE():
         self.latent_dim_size = int(0)
 
     def compile(self, optimizer = SGD(), loss = MSE()):
+        """
+        Compile the model
+        -----------------
+            Args:
+                `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
+                `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
+        """
         if type(optimizer) is str:
             self.optimizer = optimizers[optimizer]
         else:
@@ -29,6 +52,12 @@ class VAE():
             self.loss_function = loss
 
     def load(self, path):
+        """
+        Load the model
+        --------------
+            Args:
+                `path`: path to the saved model
+        """
         self.encoder = Model()
         self.decoder = Model()
 
@@ -36,6 +65,12 @@ class VAE():
         self.decoder.load(f"{path}/decoder")
 
     def save(self, path):
+        """
+        Save the model
+        --------------
+            Args:
+                `path`: path to the model which will be saved
+        """
         try:
             os.mkdir(path)
         except:
@@ -82,6 +117,19 @@ class VAE():
     
 
     def fit(self, input_data, target_data, batch_size, epochs):
+        """
+        Train the model
+        ---------------
+            Args:
+                `input_data`: input data for the model
+                `target_data`: target data for the model
+                `batch_size`: batch size of the model
+                `epochs`: epochs number to train the model
+            Returns:
+                `loss history`,
+                `decoder loss history`,
+                `kl loss history`,
+        """
         input_data = np.asarray(input_data)
         target_data = np.asarray(target_data)
 
@@ -140,6 +188,14 @@ class VAE():
         return loss_history, decoder_loss_history, kl_loss_history
 
     def predict(self, input, from_decoder=False):
+        """
+        Predict the model
+        -----------------
+            Args:
+                `input`: if `from_decoder` is `True`, then input will be the noise for the decoder model, otherwise input will be the input data for the encoder model
+            Returns:
+                `predictions`: predictions of the generator model
+        """
 
         if from_decoder == False:
             encoder_output = self.encoder.forward_prop(input, training = False)

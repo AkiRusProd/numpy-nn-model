@@ -2,6 +2,14 @@ import numpy as np
 
 
 class TimeDistributed():
+    """
+    Applies a layer except RNN, LSTM, GRU to every time step of the input data
+    --------------------------------------------------------------------------
+    Args:
+        `layer: layer to apply
+    Returns:
+        output: output of the layer with the same shape (batch_size, timesteps, *shape)
+    """
     #TODO 
     #ADD restriction on the recurrent layers using
     def __init__(self, layer):
