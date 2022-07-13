@@ -1,5 +1,6 @@
 import numpy as np
-
+from nnmodel.exceptions.values_checker import ValuesChecker
+from nnmodel.layers import RNN, LSTM, GRU
 
 class TimeDistributed():
     """
@@ -10,10 +11,8 @@ class TimeDistributed():
     Returns:
         output: output of the layer with the same shape (batch_size, timesteps, *shape)
     """
-    #TODO 
-    #ADD restriction on the recurrent layers using
     def __init__(self, layer):
-        self.layer = layer
+        self.layer = ValuesChecker.check_recurrent_layer(layer, provided_layers = (RNN, LSTM, GRU),access_recurrent = False)
         self.input_shape = None
 
         self.optimizer = None

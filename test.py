@@ -33,6 +33,7 @@ TimeDistributed, RNN, LSTM, GRU, Bidirectional
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
+from nnmodel.loss_functions import MSE
 model = Model()
 
 # from keras import Sequential
@@ -135,19 +136,19 @@ model = Model()
 model.add(Reshape(shape = (28, 28)))
 model.add(Bidirectional(RNN(32, input_shape=(28, 28), return_sequences=False, cycled_states = True)))
 model.add(RepeatVector(28))
-model.add(TimeDistributed(Dense(50, use_bias=False)))
+model.add(TimeDistributed(Dense(50, activation = LeakyReLU(0.2),use_bias=False)))
 model.add(TimeDistributed(BatchNormalization()))
 # discriminator.add(BatchNormalization())
 model.add(Bidirectional(RNN(16,  cycled_states = True)))
 # model.add(BatchNormalization())
 model.add(Dense(10, activation='softmax'))
 
-model.compile(optimizer = "adam", loss = "mse")
+model.compile(optimizer = Adam(), loss = MSE())
 model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 64)
 model.predict(test_inputs, test_targets)
 
-model.save('saved models/bidirectional_rnn_classifier')
-model.load('saved models/bidirectional_rnn_classifier')
+# model.save('saved models/bidirectional_rnn_classifier')
+# model.load('saved models/bidirectional_rnn_classifier')
 model.predict(test_inputs, test_targets)
 
 

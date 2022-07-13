@@ -1,6 +1,38 @@
 
 
 class ErrorHandler(Exception):
+    class InvalidOptimizerType(Exception):
+        def __init__(self, optimizer_type):
+            self.optimizer_type = optimizer_type
+            super().__init__(self.optimizer_type)
+
+        def __str__(self):
+            return f'Optimizer must be a string or Class of existing Optimizers'
+
+    class InvalidOptimizerName(Exception):
+        def __init__(self, optimizer_name):
+            self.optimizer_name = optimizer_name
+            super().__init__(self.optimizer_name)
+
+        def __str__(self):
+            return f'Optimizer with name {self.optimizer_name} does not exist'
+
+    class InvalidLossType(Exception):
+        def __init__(self, loss_type):
+            self.loss_type = loss_type
+            super().__init__(self.loss_type)
+
+        def __str__(self):
+            return f'Loss function must be a string or Class of existing Loss Functions'
+
+    class InvalidLossName(Exception):
+        def __init__(self, loss_name):
+            self.loss_name = loss_name
+            super().__init__(self.loss_name)
+
+        def __str__(self):
+            return f'Loss function with name {self.loss_name} does not exist'
+        
 
     
     class InvalidActivationType(Exception):
@@ -19,7 +51,20 @@ class ErrorHandler(Exception):
                 super().__init__(self.activation_name)
 
             def __str__(self):
-                return f'Activation with this name {self.activation_name} does no exist'
+                return f'Activation with name {self.activation_name} does not exist'
+
+    class InvalidRecurrentLayer(Exception):
+
+            def __init__(self, layer, access_recurrent):
+                self.layer = layer
+                self.access_recurrent = access_recurrent
+                super().__init__(self.layer, self.access_recurrent)
+
+            def __str__(self):
+                if self.access_recurrent:
+                    return f'{self.layer} is not a recurrent layer'
+                else:
+                    return f'{self.layer} is invalid. You can use all layers except recurrent'
 
     class InvalidSize2Variable(Exception):
 

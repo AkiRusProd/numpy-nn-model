@@ -16,7 +16,7 @@ class Dense():
 
     def __init__(self, units_num, activation = None, input_shape = None, use_bias = True):
         self.units_num   = ValuesChecker.check_integer_variable(units_num, "units_num")
-        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 1)
+        self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = 2)
         self.activation  = ValuesChecker.check_activation(activation, activations)
         self.use_bias    = ValuesChecker.check_boolean_type(use_bias, "use_bias")
 

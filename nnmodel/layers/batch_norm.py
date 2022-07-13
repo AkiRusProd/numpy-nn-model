@@ -39,11 +39,11 @@ class BatchNormalization():
         self.beta = np.zeros(self.input_shape)
 
 
-        self.vg, self.mg         = np.zeros_like(self.gamma), np.zeros_like(self.gamma) # optimizers params
-        self.vg_hat, self.mg_hat = np.zeros_like(self.gamma), np.zeros_like(self.gamma) # optimizers params
+        self.vg, self.mg         = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
+        self.vg_hat, self.mg_hat = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
 
-        self.vb, self.mb         = np.zeros_like(self.gamma), np.zeros_like(self.gamma) # optimizers params
-        self.vb_hat, self.mb_hat = np.zeros_like(self.gamma), np.zeros_like(self.gamma) # optimizers params
+        self.vb, self.mb         = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
+        self.vb_hat, self.mb_hat = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
 
         self.output_shape = self.input_shape
 

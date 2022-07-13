@@ -12,7 +12,6 @@ class UpSampling2D():
             output: the upsampled input data with shape: (batchsize, channels, H * size[0], W * size[1])
     """
     #TODO
-     #verify speed of METHODS/unpadding; maybe native numpy is faster than numba
      #add other interpolations, "bicubic", "bilinear", now only nearest 
 
     def __init__(self,  size=(2, 2), input_shape = None) -> None:

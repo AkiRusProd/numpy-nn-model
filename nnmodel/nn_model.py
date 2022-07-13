@@ -4,6 +4,7 @@ from tqdm import tqdm
 from nnmodel.optimizers import *
 from nnmodel.loss_functions import *
 from nnmodel.activations import *
+from nnmodel.exceptions.values_checker import *
 
 class Model():
     """
@@ -18,9 +19,6 @@ class Model():
             `load`: load the model
             `save`: save the model
     """
-    #TODO
-    #add loss func and optimizers exception + their input values
-
     def __init__(self):
         self.layers = []
 
@@ -36,15 +34,8 @@ class Model():
                 `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
                 `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
         """
-        if type(optimizer) is str:
-            self.optimizer = optimizers[optimizer]
-        else:
-            self.optimizer = optimizer
-
-        if type(loss) is str:
-            self.loss_function = loss_functions[loss]
-        else:
-            self.loss_function = loss
+        self.optimizer = ValuesChecker.check_optimizer(optimizer, optimizers)
+        self.loss_function = ValuesChecker.check_loss(loss, loss_functions)
 
     def set_optimizer(self):
         for layer in self.layers:

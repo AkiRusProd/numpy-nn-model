@@ -21,10 +21,10 @@ class Pooling2D():
         if self.padding == "valid":
             self.padding == (0, 0, 0, 0)
         elif self.padding == "same" or self.padding == "real same":
-            if self.padding == "same": #keras "same" implementation, that returns the output of size "input_size + stride_size"
+            if self.padding == "same":
                 padding_up_down = self.dilation[0] * (self.pool_height - 1) - self.stride[0] + 1 
                 padding_left_right = self.dilation[1] * (self.pool_width  - 1) - self.stride[1] + 1
-            elif self.padding == "real same": # my "same" implementation, that returns the output of size "input_size"
+            elif self.padding == "real same":
                 padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.pool_height - 1)
                 padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.pool_width  - 1)
 
@@ -45,10 +45,8 @@ class Pooling2D():
             self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(up, down, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
 
 
-        # self.output_size = (self.input_shape[1] - self.pool_size[0]) // self.stride[0] + 1, (self.input_shape[2] - self.pool_size[1]) // self.stride[1] + 1
         self.output_height = (self.input_shape[1] + self.padding[0] + self.padding[1] - self.dilation[0] * (self.pool_size[0] - 1) - 1) // self.stride[0] + 1
         self.output_width =  (self.input_shape[2] + self.padding[2] + self.padding[3] - self.dilation[1] * (self.pool_size[1] - 1) - 1) // self.stride[1] + 1
-        # self.output_shape = (self.input_shape[0], self.output_height, self.output_width)
 
         self.dilated_pool_height =  self.dilation[0] * (self.pool_height - 1) + 1
         self.dilated_pool_width = self.dilation[1] * (self.pool_width - 1) + 1

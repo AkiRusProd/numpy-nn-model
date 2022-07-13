@@ -1,35 +1,93 @@
 
+from operator import is_
 import numpy as np
 from tqdm import tqdm
 from numba import njit
 
 
 
-from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D, RepeatVector
+from nnmodel.layers import Dense, BatchNormalization, \
+Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, ZeroPadding2D, RepeatVector, GRU, RNN, LSTM
 from nnmodel import Model
-from nnmodel.activations import LeakyReLU
+from nnmodel.activations import LeakyReLU, Sigmoid
 from nnmodel.optimizers import SGD, Adam
 
-
-import tensorflow as tf
-
-inputs = tf.random.normal([1, 28, 28, 3])
-print(inputs.shape)
-maxpooling = tf.keras.layers.MaxPooling2D(pool_size = (2, 2), padding='same', strides = 3)
-outputs = maxpooling(inputs)
-print(outputs.shape)
+from nnmodel.activations import activations
+from nnmodel.exceptions.values_checker import ValuesChecker
 
 
-inputs = np.random.normal(0, 1, size = (1, 3, 28, 28))
-print(inputs.shape)
-maxpooling=MaxPooling2D(pool_size = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
-# maxpooling=Conv2D(1, kernel_shape = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
-maxpooling.build()
-print("padding:", maxpooling.padding)
-# print("conv shape", maxpooling.conv_height, maxpooling.conv_width)
+activation  = ValuesChecker.check_activation(LeakyReLU(alpha=0.05), activations)
+print(activation)
 
-out = maxpooling.forward_prop(inputs, training=True)
-print(out.shape)
+# def check_activation(activation):
+#     for activation_class in activations:
+#         if activation == activation_class:
+#             return activation_class
+
+# if Sigmoid() in activations.values():
+#     print("Sigmoid is in activations")
+# else:
+#     print("Sigmoid is not in activations")
+
+def check_if_activation_is_in_activations(activation):
+    provided_classes = tuple(activations.values())
+    
+    for provided_class in provided_classes:
+        if isinstance(Sigmoid(), type(provided_class)):
+            return True
+    return False
+
+print("OLD")
+print(check_if_activation_is_in_activations(Sigmoid))
+print("NEW")
+
+class A(object):
+    pass
+print(any(isinstance(Sigmoid(), type(x)) for x in tuple(activations.values())))
+
+
+
+
+
+#check if class is GRU
+def is_gru(layer):
+    return isinstance(layer, GRU)
+
+print(is_gru(GRU(256, input_shape=(28, 28), return_sequences=False, cycled_states = True)))
+print(is_gru(Dense(256, activation = 'sigmoid', input_shape=(1, 28))))
+
+#check if class is GRU, RNN, LSTM
+provided_classes = [RNN, LSTM, GRU]
+
+def is_rnn(layer):
+    for provided_class in provided_classes:
+        if isinstance(layer, provided_class):
+            return True
+    return False
+
+print(is_rnn(GRU(256, input_shape=(28, 28), return_sequences=False, cycled_states = True)))
+
+
+
+# import tensorflow as tf
+
+# inputs = tf.random.normal([1, 28, 28, 3])
+# print(inputs.shape)
+# maxpooling = tf.keras.layers.MaxPooling2D(pool_size = (2, 2), padding='same', strides = 3)
+# outputs = maxpooling(inputs)
+# print(outputs.shape)
+
+
+# inputs = np.random.normal(0, 1, size = (1, 3, 28, 28))
+# print(inputs.shape)
+# maxpooling=MaxPooling2D(pool_size = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
+# # maxpooling=Conv2D(1, kernel_shape = (2, 2), padding='same', input_shape=(3, 28, 28), stride = 3)
+# maxpooling.build()
+# print("padding:", maxpooling.padding)
+# # print("conv shape", maxpooling.conv_height, maxpooling.conv_width)
+
+# out = maxpooling.forward_prop(inputs, training=True)
+# print(out.shape)
 
 
 

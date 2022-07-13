@@ -70,43 +70,43 @@ class LSTM():
         self.b_c = np.zeros(self.units_num)
 
 
-        self.v_f, self.m_f         = np.zeros_like(self.w_f), np.zeros_like(self.w_f) # optimizers params
-        self.v_hat_f, self.m_hat_f = np.zeros_like(self.w_f), np.zeros_like(self.w_f) # optimizers params
+        self.v_f, self.m_f         = np.zeros_like(self.w_f), np.zeros_like(self.w_f)
+        self.v_hat_f, self.m_hat_f = np.zeros_like(self.w_f), np.zeros_like(self.w_f)
 
-        self.v_i, self.m_i         = np.zeros_like(self.w_i), np.zeros_like(self.w_i) # optimizers params
-        self.v_hat_i, self.m_hat_i = np.zeros_like(self.w_i), np.zeros_like(self.w_i) # optimizers params
+        self.v_i, self.m_i         = np.zeros_like(self.w_i), np.zeros_like(self.w_i)
+        self.v_hat_i, self.m_hat_i = np.zeros_like(self.w_i), np.zeros_like(self.w_i)
 
-        self.v_o, self.m_o         = np.zeros_like(self.w_o), np.zeros_like(self.w_o) # optimizers params
-        self.v_hat_o, self.m_hat_o = np.zeros_like(self.w_o), np.zeros_like(self.w_o) # optimizers params
+        self.v_o, self.m_o         = np.zeros_like(self.w_o), np.zeros_like(self.w_o)
+        self.v_hat_o, self.m_hat_o = np.zeros_like(self.w_o), np.zeros_like(self.w_o)
 
-        self.v_c, self.m_c         = np.zeros_like(self.w_c), np.zeros_like(self.w_c) # optimizers params
-        self.v_hat_c, self.m_hat_c = np.zeros_like(self.w_c), np.zeros_like(self.w_c) # optimizers params
-
-
-        self.vh_f, self.mh_f         = np.zeros_like(self.wh_f), np.zeros_like(self.wh_f) # optimizers params
-        self.vh_hat_f, self.mh_hat_f = np.zeros_like(self.wh_f), np.zeros_like(self.wh_f) # optimizers params
-
-        self.vh_i, self.mh_i         = np.zeros_like(self.wh_i), np.zeros_like(self.wh_i) # optimizers params
-        self.vh_hat_i, self.mh_hat_i = np.zeros_like(self.wh_i), np.zeros_like(self.wh_i) # optimizers params
-
-        self.vh_o, self.mh_o         = np.zeros_like(self.wh_o), np.zeros_like(self.wh_o) # optimizers params
-        self.vh_hat_o, self.mh_hat_o = np.zeros_like(self.wh_o), np.zeros_like(self.wh_o) # optimizers params
-
-        self.vh_c, self.mh_c         = np.zeros_like(self.wh_c), np.zeros_like(self.wh_c) # optimizers params
-        self.vh_hat_c, self.mh_hat_c = np.zeros_like(self.wh_c), np.zeros_like(self.wh_c) # optimizers params
+        self.v_c, self.m_c         = np.zeros_like(self.w_c), np.zeros_like(self.w_c)
+        self.v_hat_c, self.m_hat_c = np.zeros_like(self.w_c), np.zeros_like(self.w_c)
 
 
-        self.vb_f, self.mb_f         = np.zeros_like(self.b_f), np.zeros_like(self.b_f) # optimizers params
-        self.vb_hat_f, self.mb_hat_f = np.zeros_like(self.b_f), np.zeros_like(self.b_f) # optimizers params
+        self.vh_f, self.mh_f         = np.zeros_like(self.wh_f), np.zeros_like(self.wh_f)
+        self.vh_hat_f, self.mh_hat_f = np.zeros_like(self.wh_f), np.zeros_like(self.wh_f)
 
-        self.vb_i, self.mb_i         = np.zeros_like(self.b_i), np.zeros_like(self.b_i) # optimizers params
-        self.vb_hat_i, self.mb_hat_i = np.zeros_like(self.b_i), np.zeros_like(self.b_i) # optimizers params
+        self.vh_i, self.mh_i         = np.zeros_like(self.wh_i), np.zeros_like(self.wh_i)
+        self.vh_hat_i, self.mh_hat_i = np.zeros_like(self.wh_i), np.zeros_like(self.wh_i)
 
-        self.vb_o, self.mb_o         = np.zeros_like(self.b_o), np.zeros_like(self.b_o) # optimizers params
-        self.vb_hat_o, self.mb_hat_o = np.zeros_like(self.b_o), np.zeros_like(self.b_o) # optimizers params
+        self.vh_o, self.mh_o         = np.zeros_like(self.wh_o), np.zeros_like(self.wh_o)
+        self.vh_hat_o, self.mh_hat_o = np.zeros_like(self.wh_o), np.zeros_like(self.wh_o)
 
-        self.vb_c, self.mb_c         = np.zeros_like(self.b_c), np.zeros_like(self.b_c) # optimizers params
-        self.vb_hat_c, self.mb_hat_c = np.zeros_like(self.b_c), np.zeros_like(self.b_c) # optimizers params
+        self.vh_c, self.mh_c         = np.zeros_like(self.wh_c), np.zeros_like(self.wh_c)
+        self.vh_hat_c, self.mh_hat_c = np.zeros_like(self.wh_c), np.zeros_like(self.wh_c)
+
+
+        self.vb_f, self.mb_f         = np.zeros_like(self.b_f), np.zeros_like(self.b_f)
+        self.vb_hat_f, self.mb_hat_f = np.zeros_like(self.b_f), np.zeros_like(self.b_f)
+
+        self.vb_i, self.mb_i         = np.zeros_like(self.b_i), np.zeros_like(self.b_i)
+        self.vb_hat_i, self.mb_hat_i = np.zeros_like(self.b_i), np.zeros_like(self.b_i)
+
+        self.vb_o, self.mb_o         = np.zeros_like(self.b_o), np.zeros_like(self.b_o)
+        self.vb_hat_o, self.mb_hat_o = np.zeros_like(self.b_o), np.zeros_like(self.b_o)
+
+        self.vb_c, self.mb_c         = np.zeros_like(self.b_c), np.zeros_like(self.b_c)
+        self.vb_hat_c, self.mb_hat_c = np.zeros_like(self.b_c), np.zeros_like(self.b_c)
 
         self.cprev = None
         self.hprev = None

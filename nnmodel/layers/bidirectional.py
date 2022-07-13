@@ -1,5 +1,7 @@
 import numpy as np
 import copy as copy_object
+from nnmodel.exceptions.values_checker import ValuesChecker
+from nnmodel.layers import RNN, LSTM, GRU
 
 class Bidirectional():
     """
@@ -15,10 +17,8 @@ class Bidirectional():
         Returns:
             output: the recurrent layer output according to the merge_mode
     """
-    #TODO
-    #add use access only for RNN, LSTM, GRU layers
     def __init__(self, layer, merge_mode = 'concatenate'):
-        self.layer = layer
+        self.layer = ValuesChecker.check_recurrent_layer(layer, provided_layers = (RNN, LSTM, GRU), access_recurrent = True)
         self.direct_layer = copy_object.copy(layer)
         self.reverse_layer = copy_object.copy(layer)
 

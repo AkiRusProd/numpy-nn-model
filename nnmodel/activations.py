@@ -2,18 +2,11 @@ import numpy as np
 
 
 #References: https://mlfromscratch.com/activation-functions-explained/
-class ActivationFunction():
-
-    def __init__(self):
-        pass
-
-    def parent_name(self): 
-        
-        return "ActivationFunction"
 
 
 
-class Sigmoid(ActivationFunction):
+
+class Sigmoid():
 
     def function(self, x):
 
@@ -25,7 +18,7 @@ class Sigmoid(ActivationFunction):
         return f_x * (1.0 - f_x)
 
 
-class Tanh(ActivationFunction):
+class Tanh():
 
     def function(self, x):
 
@@ -36,7 +29,7 @@ class Tanh(ActivationFunction):
         return 1.0 - np.power(self.function(x), 2)
 
 
-class Softmax(ActivationFunction):
+class Softmax():
 
     def function(self, x):
         e_x = np.exp(x - np.max(x, axis = -1, keepdims=True))
@@ -49,7 +42,7 @@ class Softmax(ActivationFunction):
         return f_x * (1.0 - f_x)
 
 
-class Softplus(ActivationFunction):
+class Softplus():
 
     def function(self, x):
         
@@ -59,7 +52,7 @@ class Softplus(ActivationFunction):
         
         return 1 / (1 + np.exp(-x))
 
-class Softsign(ActivationFunction):
+class Softsign():
 
     def function(self, x):
         
@@ -70,7 +63,7 @@ class Softsign(ActivationFunction):
         return 1 / np.power(1 + np.abs(x), 2)
 
 
-class ReLU(ActivationFunction):
+class ReLU():
 
     def function(self, x):
 
@@ -81,7 +74,7 @@ class ReLU(ActivationFunction):
         return np.where(x <= 0, 0, 1)
 
 
-class LeakyReLU(ActivationFunction):
+class LeakyReLU():
 
     def __init__(self, alpha = 0.01):
         self.alpha = alpha
@@ -95,7 +88,7 @@ class LeakyReLU(ActivationFunction):
         return np.where(x <= 0, self.alpha, 1)
 
 
-class ELU(ActivationFunction):
+class ELU():
 
     def __init__(self, alpha = 0.1):
         self.alpha = alpha 
@@ -109,7 +102,7 @@ class ELU(ActivationFunction):
         return np.where(x <= 0, self.alpha + self.function(x), 1)
 
 
-class SELU(ActivationFunction):
+class SELU():
 
     def __init__(self):
         self.alpha = 1.6732632423543772848170429916717
@@ -122,7 +115,7 @@ class SELU(ActivationFunction):
         return self.lmbda * np.where(x > 0, 1, self.alpha * np.exp(x))
 
 
-class GELU(ActivationFunction):
+class GELU():
 
     def function(self, x):
 
@@ -147,7 +140,7 @@ class GELU(ActivationFunction):
             + 0.5
         )
 
-class Identity(ActivationFunction):
+class Identity():
 
     def function(self, x):
 

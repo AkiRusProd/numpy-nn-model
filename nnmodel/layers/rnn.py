@@ -42,14 +42,14 @@ class RNN():
         self.wh = np.random.normal(0, pow(self.units_num, -0.5), (self.units_num, self.units_num))
         self.b = np.zeros(self.units_num)
 
-        self.v, self.m         = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
-        self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w) # optimizers params
+        self.v, self.m         = np.zeros_like(self.w), np.zeros_like(self.w)
+        self.v_hat, self.m_hat = np.zeros_like(self.w), np.zeros_like(self.w)
 
-        self.vh, self.mh         = np.zeros_like(self.wh), np.zeros_like(self.wh) # optimizers params
-        self.vh_hat, self.mh_hat = np.zeros_like(self.wh), np.zeros_like(self.wh) # optimizers params
+        self.vh, self.mh         = np.zeros_like(self.wh), np.zeros_like(self.wh)
+        self.vh_hat, self.mh_hat = np.zeros_like(self.wh), np.zeros_like(self.wh)
 
-        self.vb, self.mb         = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
-        self.vb_hat, self.mb_hat = np.zeros_like(self.b), np.zeros_like(self.b) # optimizers params
+        self.vb, self.mb         = np.zeros_like(self.b), np.zeros_like(self.b)
+        self.vb_hat, self.mb_hat = np.zeros_like(self.b), np.zeros_like(self.b)
         self.hprev = None
 
         self.output_shape = (1, self.units_num) if self.return_sequences == False else (self.timesteps, self.units_num)

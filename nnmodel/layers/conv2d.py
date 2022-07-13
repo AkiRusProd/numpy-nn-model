@@ -56,10 +56,10 @@ class Conv2D():
             self.padding == (0, 0, 0, 0)
         elif self.padding == "same" or self.padding == "real same":
 
-            if self.padding == "same": #keras "same" implementation, that returns the output of size "input_size + stride_size"
+            if self.padding == "same":
                 padding_up_down = self.dilation[0] * (self.kernel_height - 1) - self.stride[0] + 1 
                 padding_left_right = self.dilation[1] * (self.kernel_width  - 1) - self.stride[1] + 1
-            elif self.padding == "real same": # my "same" implementation, that returns the output of size "input_size"
+            elif self.padding == "real same":
                 padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[0] * (self.kernel_height - 1)
                 padding_left_right = (self.stride[1] - 1) * (self.input_width- 1) + self.dilation[1] * (self.kernel_width  - 1)
 

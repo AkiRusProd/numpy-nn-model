@@ -5,6 +5,7 @@ from nnmodel import Model
 from nnmodel.optimizers import *
 from nnmodel.loss_functions import *
 from nnmodel.activations import *
+from nnmodel.exceptions.values_checker import *
 
 
 class VAE():
@@ -41,15 +42,8 @@ class VAE():
                 `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
                 `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
         """
-        if type(optimizer) is str:
-            self.optimizer = optimizers[optimizer]
-        else:
-            self.optimizer = optimizer
-
-        if type(loss) is str:
-            self.loss_function = loss_functions[loss]
-        else:
-            self.loss_function = loss
+        self.optimizer = ValuesChecker.check_optimizer(optimizer, optimizers)
+        self.loss_function = ValuesChecker.check_loss(loss, loss_functions)
 
     def load(self, path):
         """

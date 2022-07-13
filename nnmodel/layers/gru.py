@@ -64,34 +64,34 @@ class GRU():
         self.b_h = np.zeros(self.units_num)
 
 
-        self.v_z, self.m_z         = np.zeros_like(self.w_z), np.zeros_like(self.w_z) # optimizers params
-        self.v_hat_z, self.m_hat_z = np.zeros_like(self.w_z), np.zeros_like(self.w_z) # optimizers params
+        self.v_z, self.m_z         = np.zeros_like(self.w_z), np.zeros_like(self.w_z)
+        self.v_hat_z, self.m_hat_z = np.zeros_like(self.w_z), np.zeros_like(self.w_z)
 
-        self.v_r, self.m_r         = np.zeros_like(self.w_r), np.zeros_like(self.w_r) # optimizers params
-        self.v_hat_r, self.m_hat_r = np.zeros_like(self.w_r), np.zeros_like(self.w_r) # optimizers params
+        self.v_r, self.m_r         = np.zeros_like(self.w_r), np.zeros_like(self.w_r)
+        self.v_hat_r, self.m_hat_r = np.zeros_like(self.w_r), np.zeros_like(self.w_r)
 
-        self.v_h, self.m_h         = np.zeros_like(self.w_h), np.zeros_like(self.w_h) # optimizers params
-        self.v_hat_h, self.m_hat_h = np.zeros_like(self.w_h), np.zeros_like(self.w_h) # optimizers params
-
-
-        self.vh_z, self.mh_z         = np.zeros_like(self.wh_z), np.zeros_like(self.wh_z) # optimizers params
-        self.vh_hat_z, self.mh_hat_z = np.zeros_like(self.wh_z), np.zeros_like(self.wh_z) # optimizers params
-
-        self.vh_r, self.mh_r         = np.zeros_like(self.wh_r), np.zeros_like(self.wh_r) # optimizers params
-        self.vh_hat_r, self.mh_hat_r = np.zeros_like(self.wh_r), np.zeros_like(self.wh_r) # optimizers params
-
-        self.vh_h, self.mh_h         = np.zeros_like(self.wh_h), np.zeros_like(self.wh_h) # optimizers params
-        self.vh_hat_h, self.mh_hat_h = np.zeros_like(self.wh_h), np.zeros_like(self.wh_h) # optimizers params
+        self.v_h, self.m_h         = np.zeros_like(self.w_h), np.zeros_like(self.w_h)
+        self.v_hat_h, self.m_hat_h = np.zeros_like(self.w_h), np.zeros_like(self.w_h)
 
 
-        self.vb_z, self.mb_z         = np.zeros_like(self.b_z), np.zeros_like(self.b_z) # optimizers params
-        self.vb_hat_z, self.mb_hat_z = np.zeros_like(self.b_z), np.zeros_like(self.b_z) # optimizers params
+        self.vh_z, self.mh_z         = np.zeros_like(self.wh_z), np.zeros_like(self.wh_z)
+        self.vh_hat_z, self.mh_hat_z = np.zeros_like(self.wh_z), np.zeros_like(self.wh_z)
 
-        self.vb_r, self.mb_r         = np.zeros_like(self.b_r), np.zeros_like(self.b_r) # optimizers params
-        self.vb_hat_r, self.mb_hat_r = np.zeros_like(self.b_r), np.zeros_like(self.b_r) # optimizers params
+        self.vh_r, self.mh_r         = np.zeros_like(self.wh_r), np.zeros_like(self.wh_r)
+        self.vh_hat_r, self.mh_hat_r = np.zeros_like(self.wh_r), np.zeros_like(self.wh_r)
 
-        self.vb_h, self.mb_h         = np.zeros_like(self.b_h), np.zeros_like(self.b_h) # optimizers params
-        self.vb_hat_h, self.mb_hat_h = np.zeros_like(self.b_h), np.zeros_like(self.b_h) # optimizers paramss
+        self.vh_h, self.mh_h         = np.zeros_like(self.wh_h), np.zeros_like(self.wh_h)
+        self.vh_hat_h, self.mh_hat_h = np.zeros_like(self.wh_h), np.zeros_like(self.wh_h)
+
+
+        self.vb_z, self.mb_z         = np.zeros_like(self.b_z), np.zeros_like(self.b_z)
+        self.vb_hat_z, self.mb_hat_z = np.zeros_like(self.b_z), np.zeros_like(self.b_z)
+
+        self.vb_r, self.mb_r         = np.zeros_like(self.b_r), np.zeros_like(self.b_r)
+        self.vb_hat_r, self.mb_hat_r = np.zeros_like(self.b_r), np.zeros_like(self.b_r)
+
+        self.vb_h, self.mb_h         = np.zeros_like(self.b_h), np.zeros_like(self.b_h)
+        self.vb_hat_h, self.mb_hat_h = np.zeros_like(self.b_h), np.zeros_like(self.b_h)
 
         self.cprev = None
         self.hprev = None

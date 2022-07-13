@@ -5,6 +5,7 @@ from nnmodel import Model
 from nnmodel.optimizers import *
 from nnmodel.loss_functions import *
 from nnmodel.activations import *
+from nnmodel.exceptions.values_checker import *
 
 
 class GAN():
@@ -41,15 +42,8 @@ class GAN():
                 `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
                 `each_epoch_predict`: if `each_epoch_predict["mode"]` is `True`, the model will give `num` generator predictions every epoch
         """
-        if type(optimizer) is str:
-            self.optimizer = optimizers[optimizer]
-        else:
-            self.optimizer = optimizer
-
-        if type(loss) is str:
-            self.loss_function = loss_functions[loss]
-        else:
-            self.loss_function = loss
+        self.optimizer = ValuesChecker.check_optimizer(optimizer, optimizers)
+        self.loss_function = ValuesChecker.check_loss(loss, loss_functions)
 
         self.each_epoch_predict = each_epoch_predict
         self.each_epoch_predict["predictions"] = []

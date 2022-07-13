@@ -1,26 +1,50 @@
 from nnmodel.exceptions.error_handler import ErrorHandler
 
 class ValuesChecker():
-
-    def check_activation(activation_function, activations):
-        
-        if type(activation_function) == str or activation_function == None:
+    def check_optimizer(optimizer, optimizers):
+        if type(optimizer) == str:
             try:
-                activation = activations[activation_function]
-
-            except: 
-                raise ErrorHandler.InvalidActivationName(activation_function)
+                optimizer = optimizers[optimizer]
+            except:
+                raise ErrorHandler.InvalidOptimizerName(optimizer)
         else:
-            try:
-                
-                if activation_function.parent_name() == "ActivationFunction":
-                    activation = activation_function
-            except: 
-                
-                raise ErrorHandler.InvalidActivationType(type(activation_function))
+            if not any(isinstance(optimizer, type(optimizer)) for optimizer in tuple(optimizers.values())):
+                raise ErrorHandler.InvalidOptimizerType(type(optimizer))
+
+        return optimizer
+
                 
 
+    def check_loss(loss_function, loss_functions):
+        if type(loss_function) == str:
+            try:
+                loss_function = loss_functions[loss_function]
+            except:
+                raise ErrorHandler.InvalidLossName(loss_function)
+        else:
+            if not any(isinstance(loss_function, type(loss)) for loss in tuple(loss_functions.values())):
+                raise ErrorHandler.InvalidLossType(type(loss_function))
+
+        return loss_function
+
+    def check_activation(activation, activations):
+        
+        if type(activation) == str or activation == None:
+            try:
+                activation = activations[activation]
+            except: 
+                raise ErrorHandler.InvalidActivationName(activation)
+        else:  
+            if not any(isinstance(activation, type(activation)) for activation in tuple(activations.values())):
+                raise ErrorHandler.InvalidActivationType(type(activation))
+   
         return activation
+
+    def check_recurrent_layer(layer, provided_layers, access_recurrent):
+        if any(isinstance(layer, provided_layer) for provided_layer in provided_layers) == access_recurrent:
+            return layer
+        else:
+            raise ErrorHandler.InvalidRecurrentLayer(layer, access_recurrent)
 
     def check_size2_variable(variable, variable_name = None, min_acceptable_value = 0):
         if type(variable) == int:
