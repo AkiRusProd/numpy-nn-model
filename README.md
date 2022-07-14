@@ -1,9 +1,9 @@
 # numpy-nn-model (in the pipeline)
-Сustom numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line (2 version)
+Сustom numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line
 
 ## Some information and features:
 
-### Implemented activation functions:
+### Implemented Activation Functions:
 1) Sigmoid
 2) TanH
 3) Softmax
@@ -16,12 +16,24 @@
 10) GELU
 11) Identity (default; returns the same argument)
 
+*[See Activation Functions...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/activations.py)*
+
 ### Implemented Optimizers:
 1) SGD
 2) Momentum
 3) RMSProp
 4) Adam
 5) Nadam
+
+*[See Optimizers...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/optimizers.py)*
+
+### Implemented Loss Functions:
+1) MSE
+2) BinaryCrossEntropy
+3) CategoricalCrossEntropy
+4) MiniMaxCrossEntropy (used only for GANs)
+
+*[See Loss Functions...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/loss_functions.py)*
 
 ### Implemented Layers (still needs to be tested and improved in some places):
 1) Dense
@@ -43,11 +55,14 @@
 17) AveragePooling2D
 18) UpSamling2D
 
+*[See Layers...](https://github.com/AkiRusProd/numpy-nn-model/tree/master/nnmodel/layers)*
 
-### Model Examples:
+
+### Some Model Examples:
+Code:   
+*[Base training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/nn_model.py)*
 
 #### Convolutional Classifier
-
 ```python
 from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, MaxPooling2D, Activation
 from nnmodel.activations import LeakyReLU
@@ -70,7 +85,12 @@ model.add(Activation(activation = "softmax"))
 model.compile(optimizer = "adam", loss = "mse")
 model.fit(training_inputs,  training_targets, epochs = 3, batch_size = 100)
 model.predict(test_inputs, test_targets)
+
+model.save("saved models/convolutional_digits_classifier")
 ```
+
+Code:   
+*[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/convolutional_digits_classifier.py)*
 
 #### Bidirectional GRU Classifier
 ```python
@@ -86,7 +106,11 @@ model.add(Dense(10, activation='softmax'))
 model.compile(optimizer = "adam", loss = "mse")
 model.fit(training_inputs,  training_targets, epochs = 5, batch_size = 200)
 model.predict(test_inputs, test_targets)
+
+model.save("saved models/bidirectional_recurrent_digits_classifier")
 ```
+Code:   
+*[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/bidirectional_recurrent_digits_classifier.py)*
 
 #### Simple Denoising AutoEncoder
 ```python
@@ -97,7 +121,14 @@ model.add(Dense(64,  activation='relu'))
 model.add(Dense(128, activation='relu'))
 model.add(Dense(256, activation='relu'))
 model.add(Dense(784, activation='sigmoid'))
+
+model.compile(optimizer = Adam(), loss = 'binary_crossentropy')
+loss = model.fit(noisy_inputs, inputs, epochs = 100, batch_size = 100)
+
+model.save("saved models/AE")
 ```
+Code:   
+*[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/simple_autoencoder.py)*
 
 #### Denoising Variational Autoencoder (VAE)
 ```python
@@ -121,7 +152,13 @@ decoder.add(Dense(784, activation='sigmoid', use_bias=True))
 vae = VAE(encoder, decoder)
 vae.compile(optimizer = Adam(), loss = 'binary_crossentropy')
 loss, decoder_loss, kl_loss = vae.fit(noisy_inputs[0:10000], inputs[0:10000], epochs = 100, batch_size = 100)
+
+vae.save("saved models/VAE")
 ```
+Code:   
+*[Model example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/variational_autoencoder.py)*   
+*[VAE training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/modules/vae.py)*   
+
 ##### VAE Results:
 Noisy Data Example | Noise Removed Data Example
 :-------------------------:|:-------------------------:
@@ -152,7 +189,13 @@ discriminator.add(Activation('sigmoid'))
 gan = GAN(generator, discriminator)
 gan.compile(optimizer = Nadam(alpha = 0.001, beta = 0.5), loss = 'minimax_crossentropy', each_epoch_predict={"mode": True, "num" : x_num * y_num})
 G_loss, D_loss = gan.fit(data, epochs = 30, batch_size = 64, noise_vector_size = noise_vector_size)
+
+gan.save(f'saved models/GAN')
 ```
+Code:   
+*[Model example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/generative_adversarial_network.py)*   
+*[GAN training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/modules/gan.py)*   
+
 ##### GAN Results:
 Training process Example | Interpolation between images Example
 :-------------------------:|:-------------------------:
