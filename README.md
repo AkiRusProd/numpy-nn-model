@@ -153,7 +153,7 @@ gan = GAN(generator, discriminator)
 gan.compile(optimizer = Nadam(alpha = 0.001, beta = 0.5), loss = 'minimax_crossentropy', each_epoch_predict={"mode": True, "num" : x_num * y_num})
 G_loss, D_loss = gan.fit(data, epochs = 30, batch_size = 64, noise_vector_size = noise_vector_size)
 ```
-#### GAN Results:
+##### GAN Results:
 Training process Example | Interpolation between images Example
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/training%20process.gif)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/generated%20images/images%20latent%20dim.gif)
