@@ -1,5 +1,5 @@
 # numpy-nn-model (in the pipeline)
-Сustom numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line
+Сustom CPU numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line
 
 ## Some information and features:
 
@@ -59,6 +59,8 @@
 
 
 ### Some Model Examples:
+All examples was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
+
 Code:   
 *[Base training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/nn_model.py)*
 
@@ -88,6 +90,7 @@ model.predict(test_inputs, test_targets)
 
 model.save("saved models/convolutional_digits_classifier")
 ```
+###### (prediction on test MNIST data with this model is 94.19 %)
 
 Code:   
 *[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/convolutional_digits_classifier.py)*
@@ -109,6 +112,8 @@ model.predict(test_inputs, test_targets)
 
 model.save("saved models/bidirectional_recurrent_digits_classifier")
 ```
+###### (prediction on test MNIST data with this model is 98.38 %)
+
 Code:   
 *[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/bidirectional_recurrent_digits_classifier.py)*
 
