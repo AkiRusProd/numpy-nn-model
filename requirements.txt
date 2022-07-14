@@ -1,0 +1,6 @@
+imageio==2.9.0 # create gifs
+matplotlib==3.5.1 # visualize data
+numba==0.54.1 # speed up code
+numpy==1.19.5 # work with arrays
+Pillow==8.3.2 # save images
+tqdm==4.62.2 # progress bar
