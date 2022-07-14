@@ -1,5 +1,7 @@
 import sys
-sys.path.append("../nnmodel")
+from pathlib import Path
+sys.path[0] = str(Path(sys.path[0]).parent)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import imageio
