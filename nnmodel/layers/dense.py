@@ -45,7 +45,9 @@ class Dense():
         self.output_shape = (1, self.units_num)
 
     def forward_prop(self, X, training):
-        self.input_data = np.squeeze(X)
+        self.input_data = X
+        if len(X.shape) == 3 and X.shape[1] == 1:
+            self.input_data = np.squeeze(X)
        
         self.batch_size = len(self.input_data)
 
