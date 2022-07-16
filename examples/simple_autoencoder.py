@@ -8,7 +8,7 @@ import imageio
 from tqdm import tqdm
 from PIL import Image
 
-from nnmodel.layers import Dense
+from nnmodel.layers import Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, Activation
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam, Nadam
@@ -54,7 +54,21 @@ model.add(Dense(128, activation='relu'))
 model.add(Dense(256, activation='relu'))
 model.add(Dense(784, activation='sigmoid'))
 
-
+"""Convolutional AutoEncoder model topology example (works much slower):"""
+# model.add(Reshape((1, 28, 28)))
+# model.add(Conv2D(kernels_num = 16, kernel_shape=(3,3), stride=(2, 2), padding='same', input_shape=(1, 28, 28)))
+# model.add(Activation(LeakyReLU(alpha=0.2)))
+# model.add(Conv2D(16, (3,3), stride=(2, 2), padding='same'))
+# model.add(Activation(LeakyReLU(alpha=0.2)))
+# model.add(Flatten())
+# model.add(Dense(32 * 7 * 7, activation='relu'))
+# model.add(Reshape((32, 7, 7)))
+# model.add(Conv2DTranspose(16, (4,4), stride=(2,2), padding='same'))
+# model.add(Activation(LeakyReLU(alpha=0.2)))
+# model.add(Conv2DTranspose(16, (4,4), stride=(2,2), padding='same'))
+# model.add(Activation(LeakyReLU(alpha=0.2)))
+# model.add(Conv2D(1, (7,7), activation='sigmoid', padding='same'))
+# model.add(Flatten())
 
 model.compile(optimizer = Adam(), loss = 'binary_crossentropy')
 loss = model.fit(noisy_inputs, inputs, epochs = 100, batch_size = 100)

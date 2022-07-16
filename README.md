@@ -132,6 +132,24 @@ loss = model.fit(noisy_inputs, inputs, epochs = 100, batch_size = 100)
 
 model.save("saved models/AE")
 ```
+
+```python
+"""Convolutional AutoEncoder model topology example (works much slower):"""
+model.add(Reshape((1, 28, 28)))
+model.add(Conv2D(kernels_num = 16, kernel_shape=(3,3), stride=(2, 2), padding='same', input_shape=(1, 28, 28)))
+model.add(Activation(LeakyReLU(alpha=0.2)))
+model.add(Conv2D(16, (3,3), stride=(2, 2), padding='same'))
+model.add(Activation(LeakyReLU(alpha=0.2)))
+model.add(Flatten())
+model.add(Dense(32 * 7 * 7, activation='relu'))
+model.add(Reshape((32, 7, 7)))
+model.add(Conv2DTranspose(16, (4,4), stride=(2,2), padding='same'))
+model.add(Activation(LeakyReLU(alpha=0.2)))
+model.add(Conv2DTranspose(16, (4,4), stride=(2,2), padding='same'))
+model.add(Activation(LeakyReLU(alpha=0.2)))
+model.add(Conv2D(1, (7,7), activation='sigmoid', padding='same'))
+model.add(Flatten())
+```
 Code:   
 *[Model Example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/simple_autoencoder.py)*
 
@@ -197,6 +215,29 @@ G_loss, D_loss = gan.fit(data, epochs = 30, batch_size = 64, noise_vector_size =
 
 gan.save(f'saved models/GAN')
 ```
+```python
+'''Convolutional GAN model topology example (works much slower):'''
+generator.add(Dense(128, input_shape = (noise_vector_size), use_bias=False))
+generator.add(Activation('leaky_relu'))
+generator.add(Dense(8 * 7 * 7, use_bias=False))
+generator.add(Reshape((8, 7, 7)))
+generator.add(Conv2DTranspose(8, (4,4), stride=(2,2), padding='same'))
+generator.add(Activation(LeakyReLU(alpha=0.2)))
+generator.add(Conv2DTranspose(8, (4,4), stride=(2,2), padding='same'))
+generator.add(Activation(LeakyReLU(alpha=0.2)))
+generator.add(Conv2D(1, (7,7), activation='tanh', padding='same'))
+
+discriminator = Model()
+discriminator.add(Reshape((1, 28, 28)))
+discriminator.add(Conv2D(kernels_num = 64, kernel_shape=(3,3), stride=(2, 2), input_shape=(1, 28, 28)))
+discriminator.add(Activation(LeakyReLU(alpha=0.2)))
+discriminator.add(Dropout(0.4))
+discriminator.add(Conv2D(16, (3,3), stride=(2, 2)))
+discriminator.add(Flatten())
+discriminator.add(Dense(1, activation='sigmoid'))
+```
+
+
 Code:   
 *[Model example](https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/generative_adversarial_network.py)*   
 *[GAN training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/modules/gan.py)*   

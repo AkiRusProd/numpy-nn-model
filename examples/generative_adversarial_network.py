@@ -67,6 +67,7 @@ discriminator.add(Dense(2, use_bias=False))
 discriminator.add(Activation('sigmoid'))
 
 
+"""RNN Discriminator model topology example:"""
 # discriminator.add(Reshape(shape = (28, 28)))
 # discriminator.add(Bidirectional(RNN(32, input_shape=(28, 28), return_sequences=False, cycled_states = True)))
 # discriminator.add(RepeatVector(28))
@@ -74,6 +75,26 @@ discriminator.add(Activation('sigmoid'))
 # discriminator.add(TimeDistributed(BatchNormalization()))
 # discriminator.add(Bidirectional(RNN(16,  cycled_states = True)))
 # discriminator.add(Dense(2, activation='sigmoid'))
+
+'''Convolutional GAN model topology example (works much slower):'''
+# generator.add(Dense(128, input_shape = (noise_vector_size), use_bias=False))
+# generator.add(Activation('leaky_relu'))
+# generator.add(Dense(8 * 7 * 7, use_bias=False))
+# generator.add(Reshape((8, 7, 7)))
+# generator.add(Conv2DTranspose(8, (4,4), stride=(2,2), padding='same'))
+# generator.add(Activation(LeakyReLU(alpha=0.2)))
+# generator.add(Conv2DTranspose(8, (4,4), stride=(2,2), padding='same'))
+# generator.add(Activation(LeakyReLU(alpha=0.2)))
+# generator.add(Conv2D(1, (7,7), activation='tanh', padding='same'))
+
+# discriminator = Model()
+# discriminator.add(Reshape((1, 28, 28)))
+# discriminator.add(Conv2D(kernels_num = 64, kernel_shape=(3,3), stride=(2, 2), input_shape=(1, 28, 28)))
+# discriminator.add(Activation(LeakyReLU(alpha=0.2)))
+# discriminator.add(Dropout(0.4))
+# discriminator.add(Conv2D(16, (3,3), stride=(2, 2)))
+# discriminator.add(Flatten())
+# discriminator.add(Dense(1, activation='sigmoid'))
 
 gan = GAN(generator, discriminator)
 gan.compile(optimizer = Nadam(alpha = 0.001, beta = 0.5), loss = 'minimax_crossentropy', each_epoch_predict={"mode": True, "num" : x_num * y_num})
