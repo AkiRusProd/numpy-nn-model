@@ -113,8 +113,8 @@ noised_images, denoised_images = [], []
 for i in range(x_num * y_num):
     rand_i = np.random.randint(0, len(inputs))
 
-    outputs = vae.predict(noisy_inputs[rand_i].reshape(1, 784))
-
+    outputs = vae.predict(noisy_inputs[rand_i].reshape(1, 784)) #from encoder; input: image
+    #outputs = vae.predict(np.random.normal(0, 1, (1, latent_dim)), from_decoder=True) #from decoder; input: latent vector
     noised_images.append(np.reshape(noisy_inputs[rand_i], (image_size, image_size)) * 255)
     denoised_images.append(np.reshape(outputs, (image_size, image_size)) * 255)
 

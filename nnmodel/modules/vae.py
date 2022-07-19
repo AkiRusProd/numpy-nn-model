@@ -25,7 +25,7 @@ class VAE():
             https://arxiv.org/pdf/1312.6114.pdf
 
     """
-    def __init__(self, encoder, decoder):
+    def __init__(self, encoder = None, decoder = None):
         self.encoder = encoder
         self.decoder = decoder
 
