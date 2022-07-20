@@ -107,31 +107,33 @@ class Model():
     def prepare_targets(self, batch_targets):
         prepared_batch_targets = []
 
+        try:
+            last_layer_activation = self.layers[-1].activation
+        except:
+            last_layer_activation = activations[None] #for layers thats has no activation
+
+        last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
+
         for target in batch_targets:
             
             try:
                 correct_target = int(target)
-                
-                try:
-                    last_layer_activation = self.layers[-1].activation
-                except:
-                    last_layer_activation = activations[None] #for layers thats has no activation
+                                
+                if last_layer_units_num != 1:
+                    targets_list = np.zeros(last_layer_units_num)
+                    if last_layer_activation == activations["tanh"]:
+                        targets_list = np.full(last_layer_units_num, -1)
 
-                last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
-
-                
-                targets_list = np.zeros(last_layer_units_num)
-                if last_layer_activation == activations["tanh"]:
-                    targets_list = np.full(last_layer_units_num, -1)
-
-                targets_list[correct_target] = 1
+                    targets_list[correct_target] = 1
+                elif last_layer_units_num == 1:
+                    targets_list = [correct_target]
 
             except:
                 targets_list = target
 
             prepared_batch_targets.append(targets_list)
             
-
+        # print(prepared_batch_targets)
         return np.asarray(prepared_batch_targets)
 
 
@@ -184,7 +186,7 @@ class Model():
 
         return loss_history
 
-    def predict(self, input_data, data_targets):
+    def predict(self, input_data, data_targets = None):
         """
         Predict (Test) the model
         -----------------
@@ -192,16 +194,48 @@ class Model():
                 `input_data`: input data on which the model will be tested
                 `target_data`: target data of input data for the model
             Returns:
-                `predictions`: predictions of the model
+                `predictions`: predictions of the model on input data if 'data_targets' is None
+                'prediction' and 'max pridiction index` if 'data_targets' is not None
         """
+
+        if data_targets == None:
+            predictions = self.forward_prop(np.asarray(input_data).reshape(1, *np.asarray(input_data).shape), training = False)
+            return np.argmax(predictions, axis = 1), predictions
+            
         accuracy_history = []
         samples_num = true_samples_num = 0
+        
+        input_data = np.asarray(input_data)
+        data_targets = np.asarray(data_targets)
+
+        try:
+            last_layer_activation = self.layers[-1].activation
+        except:
+            last_layer_activation = activations[None] #for layers thats has no activation
+
+
 
         for i, (input, target) in tqdm(enumerate(zip(input_data, data_targets)), desc = "testing", total = len(input_data)):
             predictions = self.forward_prop(input.reshape(1, *input.shape), training = False)
             
-            max_output_index = np.argmax(predictions)
+            
+            if len(predictions[0]) != 1:
+                max_output_index = np.argmax(predictions)
 
+            elif len(predictions[0]) == 1:
+               
+                if last_layer_activation == activations["tanh"]:
+                    if predictions[0][0] > 0:
+                        max_output_index = 1
+                    else:
+                        max_output_index = 0
+                if last_layer_activation == activations["sigmoid"]:
+                    
+                    if predictions[0][0] > 0.5:
+                        max_output_index = 1
+                    else:
+                        max_output_index = 0
+                        
             samples_num += 1
 
             if max_output_index == int(target):
@@ -213,16 +247,3 @@ class Model():
 
         print(f"> {accuracy_history[-1] * 100} %")
         return accuracy_history
-
-    def predict_(self, input_data):
-        """
-        Predict the model
-        -----------------
-            Args:
-                `input_data`: input data for the model
-            Returns:
-                `max pridiction index`: index of the max pridiction
-                `predictions`: predictions of the model
-        """
-        predictions = self.forward_prop(input_data.reshape(1, *input_data.shape), training = False)
-        return np.argmax(predictions, axis = 1), predictions

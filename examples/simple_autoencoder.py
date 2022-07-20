@@ -105,7 +105,7 @@ noised_images, denoised_images = [], []
 for i in range(x_num * y_num):
     rand_i = np.random.randint(0, len(inputs))
 
-    _, outputs = model.predict_(noisy_inputs[rand_i].reshape(1, 784))
+    _, outputs = model.predict(noisy_inputs[rand_i].reshape(1, 784))
 
     noised_images.append(np.reshape(noisy_inputs[rand_i], (image_size, image_size)) * 255)
     denoised_images.append(np.reshape(outputs, (image_size, image_size)) * 255)

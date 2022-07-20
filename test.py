@@ -29,12 +29,24 @@ test_inputs, test_targets = prepare_data(test_data)
 
 
 from nnmodel.layers import Dense, BatchNormalization, Dropout, Flatten, Reshape, Conv2D, Conv2DTranspose, MaxPooling2D, AveragePooling2D, UpSampling2D, Activation, RepeatVector, \
-TimeDistributed, RNN, LSTM, GRU, Bidirectional
+TimeDistributed, RNN, LSTM, GRU, Bidirectional, Embedding
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
 from nnmodel.loss_functions import MSE
 model = Model()
+
+
+"""Embedding TEST"""
+# inp = np.array([[1,2,3,4,0], [1,1,3,0, 0]])
+# max_length = 5
+
+# emb = Embedding(5, 2, input_length=max_length)
+# emb.build()
+
+
+# out = emb.forward_prop(inp, training = True)
+# print(out)
 
 # from keras import Sequential
 # from keras.layers import Dense, TimeDistributed, RepeatVector, Flatten, Reshape, Conv2D, BatchNormalization

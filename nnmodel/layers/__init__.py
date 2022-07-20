@@ -1,6 +1,7 @@
 from nnmodel.layers.dense import Dense
 from nnmodel.layers.conv2d import Conv2D
 from nnmodel.layers.conv2d_transpose import Conv2DTranspose
+from nnmodel.layers.embedding import Embedding
 from nnmodel.layers.rnn import RNN
 from nnmodel.layers.lstm import LSTM
 from nnmodel.layers.gru import GRU
