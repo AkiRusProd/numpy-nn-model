@@ -104,8 +104,8 @@ class Model():
 
 
 
-    def prepare_targets(self, batch_targets):
-        prepared_batch_targets = []
+    def prepare_labels(self, batch_labels):
+        prepared_batch_labels = []
 
         try:
             last_layer_activation = self.layers[-1].activation
@@ -114,67 +114,67 @@ class Model():
 
         last_layer_units_num = self.layers[-1].output_shape[-1] #NOTE: Units num that correctly works with Last Dense Layer
 
-        for target in batch_targets:
+        for label in batch_labels:
             
             try:
-                correct_target = int(target)
+                correct_label = int(label)
                                 
                 if last_layer_units_num != 1:
-                    targets_list = np.zeros(last_layer_units_num)
+                    labels_list = np.zeros(last_layer_units_num)
                     if last_layer_activation == activations["tanh"]:
-                        targets_list = np.full(last_layer_units_num, -1)
+                        labels_list = np.full(last_layer_units_num, -1)
 
-                    targets_list[correct_target] = 1
+                    labels_list[correct_label] = 1
                 elif last_layer_units_num == 1:
-                    targets_list = [correct_target]
+                    labels_list = [correct_label]
 
             except:
-                targets_list = target
+                labels_list = label
 
-            prepared_batch_targets.append(targets_list)
+            prepared_batch_labels.append(labels_list)
             
-        # print(prepared_batch_targets)
-        return np.asarray(prepared_batch_targets)
+        # print(prepared_batch_labels)
+        return np.asarray(prepared_batch_labels)
 
 
-    def fit(self, input_data, data_targets, batch_size, epochs):
+    def fit(self, input_data, label_data, batch_size, epochs):
         """
         Train the model
         ---------------
             Args:
                 `input_data`: input data for the model
-                `target_data`: target data for the model
+                `label_data`: label for the model
                 `batch_size`: batch size of the model
                 `epochs`: epochs number to train the model
             Returns:
                 `loss history`
         """
         input_data = np.asarray(input_data)
-        data_targets = np.asarray(data_targets)
+        label_data = np.asarray(label_data)
         batch_num = len(input_data) // batch_size
 
         batches = np.array_split(input_data, np.arange(batch_size,len(input_data),batch_size))#np.stack
-        batches_targets = np.array_split(data_targets, np.arange(batch_size,len(input_data),batch_size))#np.stack
+        label_batches = np.array_split(label_data, np.arange(batch_size,len(input_data),batch_size))#np.stack
 
         if len(batches[-1]) < batch_size:
             indexes = np.random.choice(len(input_data), size = batch_size - len(batches[-1]), replace=False)
             new_samples = input_data[indexes]
-            new_samples_target = data_targets[indexes]
+            new_samples_label = label_data[indexes]
             batches[-1] = np.concatenate((batches[-1], new_samples))
-            batches_targets[-1] = np.concatenate((batches_targets[-1], new_samples_target))
+            label_batches[-1] = np.concatenate((label_batches[-1], new_samples_label))
 
         self.set_optimizer()
 
         loss_history = []
         for i in range(epochs):
-            tqdm_range = tqdm(enumerate(zip(batches, batches_targets)), total = len(batches))
-            for j, (batch, batch_targets) in tqdm_range:
+            tqdm_range = tqdm(enumerate(zip(batches, label_batches)), total = len(batches))
+            for j, (batch, label_batch) in tqdm_range:
                 predictions = self.forward_prop(batch, training = True)
                 
-                targets =     self.prepare_targets(batch_targets)
-                # print("pred", predictions.shape,"tar", targets.shape)
-                error = self.loss_function.derivative(predictions, targets)
-                loss_history.append(self.loss_function.loss(predictions, targets).mean())
+                labels =     self.prepare_labels(label_batch)
+                # print("pred", predictions.shape,"tar", labels.shape)
+                error = self.loss_function.derivative(predictions, labels)
+                loss_history.append(self.loss_function.loss(predictions, labels).mean())
 
                 self.backward_prop(error)
 
@@ -186,19 +186,19 @@ class Model():
 
         return loss_history
 
-    def predict(self, input_data, data_targets = None):
+    def predict(self, input_data, label_data = None):
         """
         Predict (Test) the model
         -----------------
             Args:
                 `input_data`: input data on which the model will be tested
-                `target_data`: target data of input data for the model
+                `label_data`: label data of input data for the model
             Returns:
-                `predictions`: predictions of the model on input data if 'data_targets' is None
-                'prediction' and 'max pridiction index` if 'data_targets' is not None
+                `predictions`: predictions of the model on input data if 'label_data' is not None
+                'prediction' and 'max pridiction index` if 'label_data' is None
         """
 
-        if data_targets == None:
+        if label_data == None:
             predictions = self.forward_prop(np.asarray(input_data).reshape(1, *np.asarray(input_data).shape), training = False)
             return np.argmax(predictions, axis = 1), predictions
             
@@ -206,7 +206,7 @@ class Model():
         samples_num = true_samples_num = 0
         
         input_data = np.asarray(input_data)
-        data_targets = np.asarray(data_targets)
+        label_data = np.asarray(label_data)
 
         try:
             last_layer_activation = self.layers[-1].activation
@@ -215,7 +215,7 @@ class Model():
 
 
 
-        for i, (input, target) in tqdm(enumerate(zip(input_data, data_targets)), desc = "testing", total = len(input_data)):
+        for i, (input, label) in tqdm(enumerate(zip(input_data, label_data)), desc = "testing", total = len(input_data)):
             predictions = self.forward_prop(input.reshape(1, *input.shape), training = False)
             
             
@@ -238,12 +238,12 @@ class Model():
                         
             samples_num += 1
 
-            if max_output_index == int(target):
+            if max_output_index == int(label):
                 true_samples_num += 1
 
             accuracy_history.append(true_samples_num / samples_num)
 
-            # print(f'inputs: {inputs[j]}, targets: {targets[j]}, output: {max_output_index}, output neurons values : {layers_outputs[len(layers_outputs)-1]}')
+            # print(f'inputs: {inputs[j]}, labels: {labels[j]}, output: {max_output_index}, output neurons values : {layers_outputs[len(layers_outputs)-1]}')
 
         print(f"> {accuracy_history[-1] * 100} %")
         return accuracy_history

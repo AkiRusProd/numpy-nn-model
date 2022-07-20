@@ -73,7 +73,7 @@ model.add(Bidirectional(LSTM(50, return_sequences=False)))
 model.add(Dense(1, activation='sigmoid'))
 
 model.compile(optimizer='adam', loss='binary_crossentropy')
-loss = model.fit(padded_document, labels, batch_size=1, epochs=100)
+loss = model.fit(padded_document, labels, batch_size = 1, epochs = 100)
 acc = model.predict(padded_document, labels)
 
 # print(model.predict(padded_document[0]))
@@ -85,5 +85,5 @@ import matplotlib.pyplot as plt
 plt.plot(loss)
 plt.title('Model loss')
 plt.ylabel('loss')
-plt.xlabel('epoch')
+plt.xlabel('iterations')
 plt.show()

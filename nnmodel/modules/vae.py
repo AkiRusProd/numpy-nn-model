@@ -188,7 +188,7 @@ class VAE():
             Args:
                 `input`: if `from_decoder` is `True`, then input will be the noise for the decoder model, otherwise input will be the input data for the encoder model
             Returns:
-                `predictions`: predictions of the generator model
+                `predictions`: predictions of the decoder model
         """
 
         if from_decoder == False:

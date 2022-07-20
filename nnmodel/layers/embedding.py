@@ -72,10 +72,8 @@ class Embedding():
         
         return self.output_data
 
-    def backward_prop(self, error):
-        # print(error.shape, self.input_data.shape)
-        
-        self.grad_w = np.dot(np.transpose(self.input_data, axes = (0, 2, 1)), error).reshape(self.w.shape)
+    def backward_prop(self, error):        
+        self.grad_w = np.dot(np.transpose(self.input_data, axes = (0, 2, 1)), error).sum(axis = 0).sum(axis = 1).reshape(self.w.shape)
 
         # output_error = np.dot(error, self.w.T)
 
