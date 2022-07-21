@@ -9,12 +9,13 @@
 3) Softmax
 4) Softplus
 5) Softsign
-6) ReLU
-7) LeakyReLU
-8) ELU
-9) SELU
-10) GELU
-11) Identity (default; returns the same argument)
+6) Swish
+7) ReLU
+8) LeakyReLU
+9) ELU
+10) SELU
+11) GELU
+12) Identity (default; returns the same argument)
 
 *[See Activation Functions...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/activations.py)*
 

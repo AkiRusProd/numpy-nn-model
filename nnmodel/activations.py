@@ -62,6 +62,21 @@ class Softsign():
 
         return 1 / np.power(1 + np.abs(x), 2)
 
+class Swish():
+
+    def __init__(self, beta = 1):
+        self.beta = beta
+
+    def function(self, x):
+        self.sigmoid = lambda z: 1 / (1 + np.exp(-z)) 
+
+        return x * self.sigmoid(self.beta * x)
+
+    def derivative(self, x):
+        f_x = self.function(x)
+
+        return self.beta * f_x + self.sigmoid(self.beta * x) * (1 - self.beta * f_x)
+
 
 class ReLU():
 
@@ -158,6 +173,7 @@ activations= {
     "softmax": Softmax(),
     "softplus": Softplus(),
     "softsign": Softsign(),
+    "swish": Swish(),
     "relu": ReLU(),
     "leaky_relu": LeakyReLU(),
     "elu": ELU(),
