@@ -1,7 +1,11 @@
 import numpy as np
 
 
-#References: https://mlfromscratch.com/activation-functions-explained/
+"""
+References:
+    https://mlfromscratch.com/activation-functions-explained/
+    https://arxiv.org/vc/arxiv/papers/1908/1908.08681v1.pdf
+"""
 
 
 
@@ -76,6 +80,26 @@ class Swish():
         f_x = self.function(x)
 
         return self.beta * f_x + self.sigmoid(self.beta * x) * (1 - self.beta * f_x)
+
+class Mish():
+
+    def function(self, x):
+
+        return x * np.tanh(np.log(1 + np.exp(x)))
+
+    def derivative(self, x):
+        
+        return np.exp(x) * (4 * (x + 1) + 4 * np.exp(2 * x) + np.exp(3 * x) + np.exp(x) * (4 * x + 6)) / np.power((2 * np.exp(x) + np.exp(2 * x) + 2), 2)
+
+class TanhExp():
+
+    def function(self, x):
+
+        return x * np.tanh(np.exp(x))
+
+    def derivative(self, x):
+
+        return np.tanh(np.exp(x)) - x * np.exp(x) * (np.power(np.tanh(np.exp(x)), 2) - 1)
 
 
 class ReLU():
@@ -174,6 +198,8 @@ activations= {
     "softplus": Softplus(),
     "softsign": Softsign(),
     "swish": Swish(),
+    "mish": Mish(),
+    "tanh_exp": TanhExp(),
     "relu": ReLU(),
     "leaky_relu": LeakyReLU(),
     "elu": ELU(),
