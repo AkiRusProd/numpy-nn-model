@@ -189,6 +189,12 @@ Noisy Data Example | Noise Removed Data Example
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/vae%20noised%20set%20of%20images.jpeg)  |  ![](https://raw.githubusercontent.com/AkiRusProd/numpy-nn-model/master/examples/autoencoder%20images/vae%20denoised%20set%20of%20images.jpeg)
 
+##### VAE 2D latent dim Plots:
+Digits location in 2D latent space:   
+<img src="https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/autoencoder%20images/vae%202d%20latent%20space.jpeg" width=75% height=75%>
+
+Digits labels in 2D latent space:   
+<img src="https://github.com/AkiRusProd/numpy-nn-model/blob/master/examples/autoencoder%20images/vae%202d%20latent%20labels%20clusters%20space.png" width=75% height=75%>
 
 #### Generative Adversarial Network (GAN)
 ```python
