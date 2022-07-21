@@ -5,7 +5,7 @@
 
 ### Implemented Activation Functions:
 1) Sigmoid
-2) TanH
+2) Tanh
 3) Softmax
 4) Softplus
 5) Softsign
