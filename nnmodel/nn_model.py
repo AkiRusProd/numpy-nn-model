@@ -194,8 +194,8 @@ class Model():
                 `input_data`: input data on which the model will be tested
                 `label_data`: label data of input data for the model
             Returns:
-                `predictions`: predictions of the model on input data if 'label_data' is not None
-                'prediction' and 'max pridiction index` if 'label_data' is None
+                `predictions`: predictions of the model on input data if 'label_data' is not None;
+                `prediction` and 'max pridiction index` if 'label_data' is None
         """
 
         if label_data == None:

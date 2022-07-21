@@ -58,6 +58,8 @@ class VAE():
         self.encoder.load(f"{path}/encoder")
         self.decoder.load(f"{path}/decoder")
 
+        self.latent_dim_size = self.decoder.layers[0].input_shape[-1]
+
     def save(self, path):
         """
         Save the model
@@ -181,25 +183,52 @@ class VAE():
 
         return loss_history, decoder_loss_history, kl_loss_history
 
-    def predict(self, input, from_decoder=False):
+    def predict(self, input):
         """
         Predict the model
         -----------------
             Args:
-                `input`: if `from_decoder` is `True`, then input will be the noise for the decoder model, otherwise input will be the input data for the encoder model
+                `input`: input data for the encoder model
             Returns:
                 `predictions`: predictions of the decoder model
         """
 
-        if from_decoder == False:
-            encoder_output = self.encoder.forward_prop(input, training = False)
+        encoder_output = self.encoder.forward_prop(input, training = False)
+        reparametrized_output, _, _, _ = self.reparametrize(encoder_output)
 
-            reparametrized_output, _, _, _ = self.reparametrize(encoder_output)
+        decoder_output = self.decoder.forward_prop(reparametrized_output, training = False)
 
-            decoder_output = self.decoder.forward_prop(reparametrized_output, training = False)
-        else:
-            decoder_output = self.decoder.forward_prop(input, training = False)
 
         return decoder_output
+
+    def predict_encoder(self, input):
+        """
+        Predict the model
+        -----------------
+            Args:
+                `input`: input data for the encoder model
+            Returns:
+                `predictions`: predictions of the encoder model
+        """
+        encoder_output = self.encoder.forward_prop(input, training = False)
+        reparametrized_output, _, _, _ = self.reparametrize(encoder_output)
+
+        return reparametrized_output
+
+    def predict_decoder(self, input):
+        """
+        Predict the model
+        -----------------
+            Args:
+                `input`: input data for the decoder model
+            Returns:
+                `predictions`: predictions of the decoder model
+        """
+        decoder_output = self.decoder.forward_prop(input, training = False)
+
+        return decoder_output
+
+
+
 
 
