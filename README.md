@@ -1,5 +1,5 @@
 # numpy-nn-model (in the pipeline)
-Сustom CPU numpy neural network model implementation in which you can add fully connected  and convolutional layers by one line
+Сustom CPU numpy neural network model implementation in which you can add different layers by one line
 
 ## Some information and features:
 
