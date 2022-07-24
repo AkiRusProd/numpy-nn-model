@@ -7,6 +7,7 @@ from nnmodel.layers.lstm import LSTM
 from nnmodel.layers.gru import GRU
 from nnmodel.layers.time_distributed import TimeDistributed
 from nnmodel.layers.bidirectional import Bidirectional
+from nnmodel.layers.layer_norm import LayerNormalization
 from nnmodel.layers.batch_norm import BatchNormalization
 from nnmodel.layers.pooling2d import MaxPooling2D, AveragePooling2D
 from nnmodel.layers.upsampling2d import UpSampling2D

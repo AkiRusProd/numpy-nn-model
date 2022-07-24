@@ -51,12 +51,12 @@ class TimeDistributed():
         self._get_grads = self._default_get_grads
         self._set_grads = self._default_set_grads
 
-        if self.layer.__class__.__name__ == "BatchNormalization":
-           self._backward_prop = self._batchnorm_backward_prop
-           self._forward_prop  = self._batchnorm_forward_prop
-           self._update_weights = self._batchnorm_update_weights
-           self._get_grads = self._batchnorm_get_grads
-           self._set_grads = self._batchnorm_set_grads
+        if self.layer.__class__.__name__ == "BatchNormalization" or self.layer.__class__.__name__ == "LayerNormalization":
+           self._backward_prop = self._norm_backward_prop
+           self._forward_prop  = self._norm_forward_prop
+           self._update_weights = self._norm_update_weights
+           self._get_grads = self._norm_get_grads
+           self._set_grads = self._norm_set_grads
 
     def forward_prop(self, X, training):
 
@@ -78,7 +78,7 @@ class TimeDistributed():
         
         return self.forward_states
 
-    def _batchnorm_forward_prop(self, X, training):
+    def _norm_forward_prop(self, X, training):
         self.input_data = X
         self.X_centered = np.zeros_like(self.input_data)
         self.stddev_inv = np.zeros_like(self.input_data)
@@ -135,7 +135,7 @@ class TimeDistributed():
         return self.backward_states
 
 
-    def _batchnorm_backward_prop(self, error):
+    def _norm_backward_prop(self, error):
         self.grads_gamma = 0
         self.grads_beta = 0
 
@@ -164,7 +164,7 @@ class TimeDistributed():
             self.layer.update_weights(layer_num)
 
 
-    def _batchnorm_update_weights(self, layer_num):
+    def _norm_update_weights(self, layer_num):
 
         self.layer.grad_gamma = self.grads_gamma
         self.layer.grad_beta = self.grads_beta
@@ -177,7 +177,7 @@ class TimeDistributed():
     def _default_get_grads(self):
         return self.grads_w, self.grads_b
 
-    def _batchnorm_get_grads(self):
+    def _norm_get_grads(self):
         return self.grads_gamma, self.grads_beta
 
     def set_grads(self, grads):
@@ -186,7 +186,7 @@ class TimeDistributed():
     def _default_set_grads(self, grads):
         self.grads_w, self.grads_b = grads
 
-    def _batchnorm_set_grads(self, grads):
+    def _norm_set_grads(self, grads):
         self.grads_gamma, self.grads_beta = grads
     
            

@@ -53,7 +53,7 @@ class BatchNormalization():
         self.batch_size = X.shape[0]
         
         if self.moving_mean is None: self.moving_mean = np.mean(self.input_data, axis = 0)
-        if self.moving_var is None: self.moving_var = np.mean(self.input_data, axis = 0)
+        if self.moving_var is None: self.moving_var = np.var(self.input_data, axis = 0)
         
         if training == True:
             self.mean = np.mean(self.input_data, axis = 0)
