@@ -35,8 +35,8 @@ class LayerNormalization():
     
 
     def build(self):
-        self.gamma = np.ones(self.input_shape)
-        self.beta = np.zeros(self.input_shape)
+        self.gamma = np.ones((1))
+        self.beta = np.zeros((1))
 
 
         self.vg, self.mg         = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
@@ -80,8 +80,8 @@ class LayerNormalization():
             )
 
         X_hat = self.X_centered * self.stddev_inv
-        self.grad_gamma = np.sum(error * X_hat, axis = self.axis, keepdims = True)
-        self.grad_beta = np.sum(error, axis = self.axis, keepdims = True)
+        self.grad_gamma = np.sum(error * X_hat)
+        self.grad_beta = np.sum(error)
 
         
         return output_error

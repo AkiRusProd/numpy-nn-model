@@ -47,17 +47,18 @@
 6) RepeatVector
 7) Dropout
 8) BatchNormalization
-9) Embedding
-10) RNN
-11) LSTM
-12) GRU
-13) TimeDistributed
-14) Bidirectional
-15) Conv2D
-16) Conv2DTranspose
-17) MaxPooling2D
-18) AveragePooling2D
-19) UpSamling2D
+9) LayerNormalization
+10) Embedding
+11) RNN
+12) LSTM
+13) GRU
+14) TimeDistributed
+15) Bidirectional
+16) Conv2D
+17) Conv2DTranspose
+18) MaxPooling2D
+19) AveragePooling2D
+20) UpSamling2D
 
 *[See Layers...](https://github.com/AkiRusProd/numpy-nn-model/tree/master/nnmodel/layers)*
 
