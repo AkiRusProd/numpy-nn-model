@@ -2,7 +2,7 @@ import numpy as np
 import pickle as pkl
 from tqdm import tqdm
 from nnmodel.optimizers import *
-from nnmodel.loss_functions import *
+from nnmodel.losses import *
 from nnmodel.activations import *
 from nnmodel.exceptions.values_checker import *
 
@@ -32,10 +32,10 @@ class Model():
         -----------------
             Args:
                 `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
-                `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
+                `loss`: loss function defined in `nnmodel.losses`; default is `MSE`
         """
         self.optimizer = ValuesChecker.check_optimizer(optimizer, optimizers)
-        self.loss_function = ValuesChecker.check_loss(loss, loss_functions)
+        self.loss_function = ValuesChecker.check_loss(loss, losses)
 
     def set_optimizer(self):
         for layer in self.layers:

@@ -3,7 +3,7 @@ import os
 from tqdm import tqdm
 from nnmodel import Model
 from nnmodel.optimizers import *
-from nnmodel.loss_functions import *
+from nnmodel.losses import *
 from nnmodel.activations import *
 from nnmodel.exceptions.values_checker import *
 
@@ -39,11 +39,11 @@ class GAN():
         -----------------
             Args:
                 `optimizer`: optimizer defined in `nnmodel.optimizers`; default is `SGD`
-                `loss`: loss function defined in `nnmodel.loss_functions`; default is `MSE`
+                `loss`: loss function defined in `nnmodel.losses`; default is `MSE`
                 `each_epoch_predict`: if `each_epoch_predict["mode"]` is `True`, the model will give `num` generator predictions every epoch
         """
         self.optimizer = ValuesChecker.check_optimizer(optimizer, optimizers)
-        self.loss_function = ValuesChecker.check_loss(loss, loss_functions)
+        self.loss_function = ValuesChecker.check_loss(loss, losses)
 
         self.each_epoch_predict = each_epoch_predict
         self.each_epoch_predict["predictions"] = []

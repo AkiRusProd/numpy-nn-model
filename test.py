@@ -33,7 +33,7 @@ TimeDistributed, RNN, LSTM, GRU, Bidirectional, Embedding
 from nnmodel import Model
 from nnmodel.activations import LeakyReLU
 from nnmodel.optimizers import SGD, Adam
-from nnmodel.loss_functions import MSE
+from nnmodel.losses import MSE
 model = Model()
 
 
