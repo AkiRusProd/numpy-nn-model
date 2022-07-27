@@ -43,7 +43,7 @@ words = set([word.lower() for line in filtered_document for word in line.split()
 print(f'Words: {words}')
 
 
-words_labels = np.random.choice(vocab_size, len(words), replace=False)
+words_labels = np.random.choice(range(1, vocab_size + 1), len(words), replace=False)
 vocab = dict(zip(words, words_labels))
 
 encoded_document = []
