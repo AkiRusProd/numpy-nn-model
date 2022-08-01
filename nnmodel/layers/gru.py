@@ -19,6 +19,8 @@ class GRU():
             https://arxiv.org/pdf/1612.07778.pdf
             
             https://github.com/erikvdplas/gru-rnn/blob/master/main.py
+
+            https://shuby.de/blog/post/comp_graphs/
         
     """
 
