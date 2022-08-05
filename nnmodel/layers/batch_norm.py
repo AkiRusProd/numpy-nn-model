@@ -10,6 +10,10 @@ class BatchNormalization():
             `epsilon` (float): the epsilon parameter of the algorithm
         Returns:
             output: the normalized input data with same shape
+        References:
+            https://kevinzakka.github.io/2016/09/14/batch_normalization/
+
+            https://agustinus.kristia.de/techblog/2016/07/04/batchnorm/
     """
 
     def __init__(self, momentum = 0.99, epsilon = 0.001, input_shape = None):
@@ -79,13 +83,30 @@ class BatchNormalization():
 
     def backward_prop(self, error):
         
+        X_hat = self.X_centered * self.stddev_inv
+
+        #first variant
         output_error = (1 / self.batch_size) * self.gamma * self.stddev_inv * (
             self.batch_size * error
             - np.sum(error, axis = 0)
             - self.X_centered * np.power(self.stddev_inv, 2) * np.sum(error * self.X_centered, axis = 0)
             )
 
-        X_hat = self.X_centered * self.stddev_inv
+        #second variant
+        # dX_hat = error * self.gamma
+        # output_error = (1 / self.batch_size) * self.stddev_inv * (
+        #     self.batch_size * dX_hat
+        #     - np.sum(dX_hat, axis = 0)
+        #     - X_hat * np.sum(dX_hat * X_hat, axis = 0)
+        # )
+
+        #third (naive slow )variant
+        # dX_norm = error * self.gamma
+        # dvar = np.sum(dX_norm * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
+        # dmu = np.sum(dX_norm * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
+
+        # output_error = (dX_norm * self.stddev_inv) + (dvar * 2 * self.X_centered / self.batch_size) + (dmu / self.batch_size)
+
         self.grad_gamma = np.sum(error * X_hat, axis = 0)
         self.grad_beta = np.sum(error, axis = 0)
 
