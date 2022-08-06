@@ -100,12 +100,12 @@ class BatchNormalization():
         #     - X_hat * np.sum(dX_hat * X_hat, axis = 0)
         # )
 
-        #third (naive slow )variant
-        # dX_norm = error * self.gamma
-        # dvar = np.sum(dX_norm * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
-        # dmu = np.sum(dX_norm * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
+        #third (naive slow) variant
+        # dX_hat = error * self.gamma
+        # dvar = np.sum(dX_hat * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
+        # dmu = np.sum(dX_hat * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
 
-        # output_error = (dX_norm * self.stddev_inv) + (dvar * 2 * self.X_centered / self.batch_size) + (dmu / self.batch_size)
+        # output_error = (dX_hat * self.stddev_inv) + (dvar * 2 * self.X_centered / self.batch_size) + (dmu / self.batch_size)
 
         self.grad_gamma = np.sum(error * X_hat, axis = 0)
         self.grad_beta = np.sum(error, axis = 0)
