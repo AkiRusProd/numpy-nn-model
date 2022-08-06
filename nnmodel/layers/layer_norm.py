@@ -52,9 +52,9 @@ class LayerNormalization():
 
     def forward_prop(self, X, training):
         self.input_data = X
-        self.feature_size = np.prod(x_T.shape[:-1])
-
         x_T = self.input_data.T
+        self.feature_size = np.prod(x_T.shape[:-1]) #x_T.shape[0]
+
         
         self.mean = np.mean(x_T, axis = 0)
         self.var = np.var(x_T,axis = 0)
@@ -75,8 +75,6 @@ class LayerNormalization():
     def backward_prop(self, error):
         error_T = error.T
 
-        X_hat = self.X_centered * self.stddev_inv
-
         #first variant
         output_error = (1 / self.feature_size) * self.gamma[np.newaxis, :].T * self.stddev_inv * (
             self.feature_size * error_T
@@ -95,17 +93,17 @@ class LayerNormalization():
         #third (naive slow) variant
         # x_T = self.input_data.T
 
-        # dX_norm = error_T * self.gamma[np.newaxis, :].T
-        # dvar = np.sum(dX_norm * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
-        # dmu = np.sum(dX_norm * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
+        # dX_hat = error_T * self.gamma[np.newaxis, :].T
+        # dvar = np.sum(dX_hat * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
+        # dmu = np.sum(dX_hat * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
 
-        # output_error = (dX_norm * self.stddev_inv) + (dvar * 2 * self.X_centered / self.feature_size) + (dmu / self.feature_size)
+        # output_error = (dX_hat * self.stddev_inv) + (dvar * 2 * self.X_centered / self.feature_size) + (dmu / self.feature_size)
 
         output_error = output_error.T
 
         
-        self.grad_gamma = np.sum(error * X_hat)
-        self.grad_beta = np.sum(error)
+        self.grad_gamma = np.sum(error * self.X_hat, axis = 0)
+        self.grad_beta = np.sum(error, axis = 0)
 
         
         return output_error
