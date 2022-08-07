@@ -83,6 +83,10 @@ class TimeDistributed():
         self.X_centered = np.zeros_like(self.input_data)
         self.stddev_inv = np.zeros_like(self.input_data)
 
+        if self.layer.__class__.__name__ == "LayerNormalization": # temporary solution
+            self.X_centered = self.X_centered.T
+            self.stddev_inv = self.stddev_inv.T
+
         if  self.layer.moving_mean is None:
             self.moving_var = np.zeros((self.input_data.shape[1:]))
             self.moving_mean = np.zeros((self.input_data.shape[1:]))

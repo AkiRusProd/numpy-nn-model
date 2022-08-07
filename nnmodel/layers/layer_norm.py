@@ -74,9 +74,10 @@ class LayerNormalization():
 
     def backward_prop(self, error):
         error_T = error.T
+        gamma = self.gamma[np.newaxis, :] if len(error.shape) != 2 else self.gamma
 
         #first variant
-        output_error = (1 / self.feature_size) * self.gamma[np.newaxis, :].T * self.stddev_inv * (
+        output_error = (1 / self.feature_size) * gamma.T * self.stddev_inv * ( #self.gamma[np.newaxis, :].T
             self.feature_size * error_T
             - np.sum(error_T, axis = 0)
             - self.X_centered * np.power(self.stddev_inv, 2) * np.sum(error_T * self.X_centered, axis = 0)
@@ -91,8 +92,6 @@ class LayerNormalization():
         # )
 
         #third (naive slow) variant
-        # x_T = self.input_data.T
-
         # dX_hat = error_T * self.gamma[np.newaxis, :].T
         # dvar = np.sum(dX_hat * self.X_centered, axis=0) * -.5 * self.stddev_inv**3
         # dmu = np.sum(dX_hat * -self.stddev_inv, axis=0) + dvar * np.mean(-2. * self.X_centered, axis=0)
