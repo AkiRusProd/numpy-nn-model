@@ -12,7 +12,7 @@ class LayerNormalization():
             output: the normalized input data with same shape
     """
 
-    def __init__(self, epsilon = 0.001, input_shape = None):
+    def __init__(self, normalized_shape = None, epsilon = 0.001, input_shape = None):
 
         self.epsilon  = ValuesChecker.check_float_variable(epsilon, "epsilon")
 
@@ -29,14 +29,18 @@ class LayerNormalization():
 
         self.axis = None
         self.input_shape = ValuesChecker.check_input_dim(input_shape, input_dim = None)
+        self.normalized_shape = ValuesChecker.check_input_dim(normalized_shape, input_dim = None)
     
     def set_optimizer(self, optimizer):
         self.optimizer = optimizer
     
 
     def build(self):
-        self.gamma = np.ones(self.input_shape)
-        self.beta = np.zeros(self.input_shape)
+        if self.normalized_shape is None:
+            self.normalized_shape = self.input_shape
+
+        self.gamma = np.ones(self.normalized_shape)
+        self.beta = np.zeros(self.normalized_shape)
 
 
         self.vg, self.mg         = np.zeros_like(self.gamma), np.zeros_like(self.gamma)
@@ -53,7 +57,9 @@ class LayerNormalization():
     def forward_prop(self, X, training):
         self.input_data = X
         x_T = self.input_data.T
-        self.feature_size = np.prod(x_T.shape[:-1]) #x_T.shape[0]
+        # self.feature_size = np.prod(x_T.shape[:-1]) #x_T.shape[0]
+        self.normalized_axis = tuple(np.arange(self.input_data.ndim - self.gamma.ndim)) 
+        self.feature_size = self.gamma.size
 
         
         self.mean = np.mean(x_T, axis = 0)
@@ -74,10 +80,10 @@ class LayerNormalization():
 
     def backward_prop(self, error):
         error_T = error.T
-        gamma = self.gamma[np.newaxis, :] if len(error.shape) != 2 else self.gamma
+
 
         #first variant
-        output_error = (1 / self.feature_size) * gamma.T * self.stddev_inv * ( #self.gamma[np.newaxis, :].T
+        output_error = (1 / self.feature_size) * np.expand_dims(self.gamma, axis = self.normalized_axis).T * self.stddev_inv * ( #self.gamma[np.newaxis, :].T
             self.feature_size * error_T
             - np.sum(error_T, axis = 0)
             - self.X_centered * np.power(self.stddev_inv, 2) * np.sum(error_T * self.X_centered, axis = 0)
@@ -101,8 +107,8 @@ class LayerNormalization():
         output_error = output_error.T
 
         
-        self.grad_gamma = np.sum(error * self.X_hat, axis = 0)
-        self.grad_beta = np.sum(error, axis = 0)
+        self.grad_gamma = np.sum(error * self.X_hat, axis = self.normalized_axis) #axis = 0
+        self.grad_beta = np.sum(error, axis = self.normalized_axis) #axis = 0
 
         
         return output_error
