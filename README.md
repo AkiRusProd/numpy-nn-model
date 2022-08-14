@@ -36,7 +36,7 @@
 3) CategoricalCrossEntropy
 4) MiniMaxCrossEntropy (used only for GANs)
 
-*[See Loss Functions...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/loss_functions.py)*
+*[See Loss Functions...](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/losses.py)*
 
 ### Implemented Layers (still needs to be tested and improved in some places):
 1) Dense
