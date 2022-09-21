@@ -133,6 +133,7 @@ class Conv2D():
 
 
     def backward_prop(self, error):
+        error *= self.activation.derivative(self.output_data)
 
         error_pattern = np.zeros((
                         self.batch_size,
