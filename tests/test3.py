@@ -88,20 +88,57 @@ model = Model()
 
 
 
+# in_channels = 1
+# out_channels = 1
+# kernel_size = (3, 2)
+# x_size = 7
+# stride = (2, 3)
+# padding = 0
+
+
+# conv2d = Conv2D(kernels_num = out_channels, kernel_shape = kernel_size, input_shape = (in_channels, x_size, x_size), padding = padding, stride = stride, dilation = (2, 2), use_bias = False)
+# conv2d.build()
+
+# X = np.arange(x_size*x_size*in_channels).reshape(1, in_channels, x_size, x_size)
+# W = np.arange(kernel_size[1]*kernel_size[0]*in_channels*out_channels).reshape(out_channels, in_channels, kernel_size[0], kernel_size[1])
+
+
+# conv2d.w = W
+
+# naive_Y = conv2d.naive_forward_prop(X, training = True)
+# print("default conv:\n", naive_Y)
+
+# Y = conv2d.naive_backward_prop(naive_Y)
+# print("default conv grad:\n", Y)
+# print("default weights grad:\n", conv2d.grad_w)
+# print("default bias grad:\n", conv2d.grad_b)
+
+# vec_Y = conv2d.forward_prop(X, training = True)
+# print("vec conv:\n", vec_Y)
+
+# Y = conv2d.backward_prop(vec_Y)
+# print("vec conv grad:\n", Y)
+# print("vec weights grad:\n", conv2d.grad_w)
+# print("vec bias grad:\n", conv2d.grad_b)
+
+
+
+
 in_channels = 1
 out_channels = 1
-kernel_size = (3, 2)
-x_size = 7
-stride = (2, 3)
+kernel_size = (2, 2)
+x_size = 3
+stride = (1, 1)
 padding = 0
 
 
-conv2d = Conv2D(kernels_num = out_channels, kernel_shape = kernel_size, input_shape = (in_channels, x_size, x_size), padding = padding, stride = stride, dilation = (2, 2), use_bias = False)
+conv2d = Conv2DTranspose(kernels_num = out_channels, kernel_shape = kernel_size, input_shape = (in_channels, x_size, x_size), padding = padding, stride = stride, dilation = (1, 1), use_bias = False)
 conv2d.build()
 
 X = np.arange(x_size*x_size*in_channels).reshape(1, in_channels, x_size, x_size)
 W = np.arange(kernel_size[1]*kernel_size[0]*in_channels*out_channels).reshape(out_channels, in_channels, kernel_size[0], kernel_size[1])
-
+print("X\n", X)
+print("W\n", W)
 
 conv2d.w = W
 
@@ -120,6 +157,8 @@ Y = conv2d.backward_prop(vec_Y)
 print("vec conv grad:\n", Y)
 print("vec weights grad:\n", conv2d.grad_w)
 print("vec bias grad:\n", conv2d.grad_b)
+
+
 # Y = conv2d.vect_forward_prop(X, training = True)
 # print("conv:\n", Y)
 

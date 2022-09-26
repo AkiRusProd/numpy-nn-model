@@ -104,20 +104,85 @@ class Conv2DTranspose():
         self.output_shape = (self.kernels_num, self.conv_width, self.conv_height)
         
 
+    #Vectorized Forward and Backward Methods #######################################################################
     def forward_prop(self, X, training):
+
+        self.input_data = self.prepare_inputs(X)
+        self.w = self.set_stride(self.w, self.dilation)
+
+        self.batch_size = len(self.input_data)
+        
+
+        batch_str, channel_str, kern_h_str, kern_w_str = self.input_data.strides
+        self.windows = np.lib.stride_tricks.as_strided(
+            self.input_data,
+            (self.batch_size, self.channels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width),
+            (batch_str, channel_str, kern_h_str, kern_w_str, kern_h_str, kern_w_str)
+        )
+
+        self.output_data = np.einsum('bihwkl,oikl->bohw', self.windows, self.w)
+
+        self.output_data += self.b[None, :, None, None]
+
+        return self.activation.function(self.output_data)
+
+
+    def backward_prop(self, error):
+
+        error *= self.activation.derivative(self.output_data)
+
+        error_pattern = np.zeros((
+                self.batch_size,
+                self.kernels_num, 
+                self.prepared_input_height + np.max(np.array([self.conv_height, self.dilated_kernel_height])) - 1, 
+                self.prepared_input_width + np.max(np.array([self.conv_width, self.dilated_kernel_width])) - 1
+                ))
+
+        error_pattern[
+            :,
+            :,
+            self.dilated_kernel_height - 1 : self.conv_height + self.dilated_kernel_height - 1,
+            self.dilated_kernel_width - 1 : self.conv_width + self.dilated_kernel_width - 1,
+        ] = error
+
+        batch_str, channel_str, kern_h_str, kern_w_str = error_pattern.strides
+        error_windows = np.lib.stride_tricks.as_strided(error_pattern,
+            (self.batch_size, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.dilated_kernel_height, self.dilated_kernel_width),
+            (batch_str, channel_str, kern_h_str, kern_w_str, kern_h_str, kern_w_str)
+        )
+
+        w_rot_180 = np.rot90(self.w, 2, axes=(2, 3))
+
+        self.grad_w = np.einsum('bihwkl,bohw->oikl', self.windows, error)
+        self.grad_b = np.sum(error, axis=(0, 2, 3))
+
+        conv_backprop_error = np.einsum('bohwkl,oikl->bihw', error_windows, w_rot_180)
+        conv_backprop_error = self.prepare_error(conv_backprop_error)
+
+        self.w = self.remove_stride(self.w, self.dilation)
+        self.grad_w = self.remove_stride(self.grad_w, self.dilation)
+
+        
+        return conv_backprop_error
+    ###############################################################################################################
+
+
+
+    #Naive Forward and Backward methods ###########################################################################
+    def naive_forward_prop(self, X, training):
         self.input_data = self.prepare_inputs(X)
         self.w = self.set_stride(self.w, self.dilation) #prepare dilated kernels
 
         self.batch_size = len(self.input_data)
         
-        self.output_data = self._forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        self.output_data = self._naive_forward_prop(self.input_data, self.w, self.b, self.batch_size, self.channels_num, self.kernels_num, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
 
         return self.activation.function(self.output_data)
 
 
     @staticmethod
     @njit
-    def _forward_prop(input_data, weights, bias, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
+    def _naive_forward_prop(input_data, weights, bias, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
         conv_layer = np.zeros((batch_size, kernels_num, conv_height, conv_width))
 
         for b in range(batch_size):
@@ -134,13 +199,13 @@ class Conv2DTranspose():
         
         return conv_layer
 
-    def backward_prop(self, error):
+    def naive_backward_prop(self, error):
         error *= self.activation.derivative(self.output_data)
         
         self.grad_w = self.compute_weights_gradients(error, self.input_data, self.w, self.batch_size, self.channels_num, self.kernels_num,  self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
         self.grad_b = self.compute_bias_gradients(error)
         
-        conv_backprop_error = self._backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
+        conv_backprop_error = self._naive_backward_prop(error, self.w, self.batch_size, self.channels_num, self.kernels_num, self.prepared_input_height, self.prepared_input_width, self.conv_height, self.conv_width, self.dilated_kernel_height, self.dilated_kernel_width)
         conv_backprop_error = self.prepare_error(conv_backprop_error)
 
         self.w = self.remove_stride(self.w, self.dilation)
@@ -151,7 +216,7 @@ class Conv2DTranspose():
 
     @staticmethod
     @njit
-    def _backward_prop(error, weights, batch_size, channels_num, kernels_num, input_height, input_width, conv_height, conv_width, kernel_height, kernel_width):
+    def _naive_backward_prop(error, weights, batch_size, channels_num, kernels_num, input_height, input_width, conv_height, conv_width, kernel_height, kernel_width):
 
         w_rot_180 = weights.copy()
         
@@ -188,8 +253,40 @@ class Conv2DTranspose():
                                 error_pattern[b, k, h : h + kernel_height, w : w + kernel_width] * w_rot_180[k, c]
                             )
     
-        return conv_backprop_error
-    
+        return conv_backprop_error 
+
+    @staticmethod
+    @njit
+    def compute_weights_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
+        
+        gradient = np.zeros((weights.shape))
+
+        for b in range(batch_size):
+            for k in range(kernels_num):
+                for c in range(channels_num):
+                    for h in range(kernel_height):
+                        for w in range(kernel_width):
+                            
+                            gradient[k, c, h, w] += np.sum(
+                                error[b, k]
+                                * input_data[b, c, h : h + conv_height, w : w + conv_width]
+                            )
+
+        return gradient
+
+
+    @staticmethod
+    def compute_bias_gradients(error):
+
+        return np.sum(error, axis = (0, 2, 3))
+
+    ###############################################################################################################
+
+
+    def update_weights(self, layer_num):
+        self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
+        if self.use_bias == True:
+            self.b, self.vb, self.mb, self.vb_hat, self.mb_hat  = self.optimizer.update(self.grad_b, self.b, self.vb, self.mb, self.vb_hat, self.mb_hat, layer_num)
 
     def prepare_inputs(self, input_data):
 
@@ -226,42 +323,6 @@ class Conv2DTranspose():
         unstrided_error = self.remove_stride(error, self.stride)
         
         return unstrided_error
-
-
-        
-
-    @staticmethod
-    @njit
-    def compute_weights_gradients(error, input_data, weights, batch_size, channels_num, kernels_num, conv_height, conv_width, kernel_height, kernel_width):
-        
-        gradient = np.zeros((weights.shape))
-
-        for b in range(batch_size):
-            for k in range(kernels_num):
-                for c in range(channels_num):
-                    for h in range(kernel_height):
-                        for w in range(kernel_width):
-                            
-                            gradient[k, c, h, w] += np.sum(
-                                error[b, k]
-                                * input_data[b, c, h : h + conv_height, w : w + conv_width]
-                            )
-
-        return gradient
-
-
-    @staticmethod
-    def compute_bias_gradients(error):
-
-        return np.sum(error, axis = (0, 2, 3))
-
-
-    def update_weights(self, layer_num):
-        self.w, self.v, self.m, self.v_hat, self.m_hat  = self.optimizer.update(self.grad_w, self.w, self.v, self.m, self.v_hat, self.m_hat, layer_num)
-        if self.use_bias == True:
-            self.b, self.vb, self.mb, self.vb_hat, self.mb_hat  = self.optimizer.update(self.grad_b, self.b, self.vb, self.mb, self.vb_hat, self.mb_hat, layer_num)
-
-
 
 
     @staticmethod
