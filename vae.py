@@ -1,14 +1,10 @@
-
-from torch.nn import Linear, MSELoss, Sigmoid, Sequential, ReLU, LeakyReLU, Tanh, BCELoss
-from torch import nn
-from torch.optim import Adam
-from torch import Tensor
+from autograd import Tensor
+from nn import Linear, Sequential, Module, MSELoss, Sigmoid, ReLU, BCELoss
+from optim import SGD, Adam
 from tqdm import tqdm
 import numpy as np
 import os
 from PIL import Image
-import torch
-
 
 
 
@@ -16,7 +12,6 @@ training_data = open('datasets/mnist/mnist_train.csv','r').readlines()
 test_data = open('datasets/mnist/mnist_test.csv','r').readlines()
 
 image_size = (1, 28, 28)
-
 
 def prepare_data(data, number_to_take = None):
     inputs = []
@@ -27,105 +22,123 @@ def prepare_data(data, number_to_take = None):
 
         if number_to_take != None:
             if str(line[0]) == number_to_take:
-                inputs.append(np.asfarray(line[1:]) / 255)
+                inputs.append(np.asfarray(line[1:]))
         else:
-            inputs.append(np.asfarray(line[1:]) / 255)
+            inputs.append(np.asfarray(line[1:]))
         
     return inputs
 
 
 
-dataset = np.asfarray(prepare_data(test_data, '0'))
+mnist_data_path = "datasets/mnist/"
+
+if not os.path.exists(mnist_data_path + "mnist_train.npy") or not os.path.exists(mnist_data_path + "mnist_test.npy"):
+    train_inputs = np.asfarray(prepare_data(training_data))
+    test_inputs = np.asfarray(prepare_data(test_data))
+
+    np.save(mnist_data_path + "mnist_train.npy", train_inputs)
+    np.save(mnist_data_path + "mnist_test.npy", test_inputs)
+else:
+    train_inputs = np.load(mnist_data_path + "mnist_train.npy")
+    test_inputs = np.load(mnist_data_path + "mnist_test.npy")
 
 
-# mnist vae
+dataset = train_inputs / 255 #/ 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
-class VAE(nn.Module):
-    def __init__(self, image_size, latent_size, hidden_size = 256):
+
+class VAE(Module):
+    def __init__(self, input_size, latent_size):
         super().__init__()
-
-        self.image_size = image_size
+        self.input_size = input_size
         self.latent_size = latent_size
-        self.hidden_size = hidden_size
 
         self.encoder = Sequential(
-            Linear(np.prod(image_size), hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, 2 * latent_size)
+            Linear(input_size, 256),
+            ReLU(),
+            Linear(256, 128),
+            ReLU(),
+            Linear(128, latent_size),
+            ReLU(),
         )
 
         self.decoder = Sequential(
-            Linear(latent_size, hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, hidden_size),
-            LeakyReLU(),
-            Linear(hidden_size, np.prod(image_size)),
+            Linear(latent_size, 128),
+            ReLU(),
+            Linear(128, 256),
+            ReLU(),
+            Linear(256, input_size),
             Sigmoid()
         )
+        self.mu_encoder = Linear(latent_size, latent_size)
+        self.logvar_encoder = Linear(latent_size, latent_size)
 
-    def forward(self, x):
-        z = self.encoder(x)
-       
-        mu, logvar = z[:, :self.latent_size], z[:, self.latent_size:]
-        z = self.reparameterize(mu, logvar)
-        return self.decoder(z), mu, logvar
+        self.loss_fn = BCELoss(reduction='sum')
 
     def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std)
-        return mu + eps * std
+        std = logvar.mul(0.5).exp()
+        eps = Tensor(np.random.normal(0, 1, size=std.shape))
+        z = mu + eps * std
+        return z
+
+    def forward(self, x):
+        x = self.encoder(x)
+
+        # mu, logvar = x_enc[:, :self.latent_size], x_enc[:, self.latent_size:] #
+        mu = self.mu_encoder(x)
+        logvar = self.logvar_encoder(x)
+
+        z = self.reparameterize(mu, logvar)
+
+        return self.decoder(z), mu, logvar
+
+    def loss_function(self, x, x_recon, mu, logvar):
+        MSE = self.loss_fn(x_recon, x)
+        KLD = -0.5 * Tensor.sum(1 + logvar - mu.power(2) - logvar.exp())
+        return MSE + KLD
+    
+    def train(self, x, optimizer):
+        x_recon, mu, logvar = self.forward(x)
+
+        loss = self.loss_function(x, x_recon, mu, logvar)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        return loss
+        
 
     def generate(self, z):
         return self.decoder(z)
 
-    def loss(self, x, x_hat, mu, logvar):
-        reconstruction_loss = MSELoss()(x_hat, x)
-        kl_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        return reconstruction_loss + kl_divergence
+    def reconstruct(self, x):
+        return self.forward(x)[0]
 
-    def save(self, path):
-        torch.save(self.state_dict(), path)
+vae = VAE(28 * 28, 64)
+optimizer = Adam(vae.parameters(), lr=0.001)
 
-    def load(self, path):
-        self.load_state_dict(torch.load(path))
 
-    def generate_and_save_image(self, epoch, path = 'vae_images'):
-        if not os.path.exists(path):
-            os.makedirs(path)
+batch_size = 100
+epochs = 100
 
-        z = torch.randn(64, self.latent_size)
-        samples = self.generate(z).detach().numpy()
+for epoch in range(epochs):
+    
+    tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = 'epoch %d' % epoch)
+    for i in tqdm_range:
+        batch = dataset[i:i+batch_size]
+        batch = Tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        loss = vae.train(batch, optimizer)
         
-        figure = np.zeros((28 * 8, 28 * 8))
-        for i, sample in enumerate(samples):
-            row = i // 8
-            col = i % 8
-            figure[row * 28:(row + 1) * 28, col * 28:(col + 1) * 28] = sample.reshape(28, 28)
-
-        Image.fromarray(figure * 255).convert('RGB').save(f'{path}/image_at_epoch_{epoch:04d}.png')
-
-vae = VAE(image_size, 128)
-optimizer = Adam(vae.parameters(), lr = 1e-3)
-
-batch_size = 128
-
-for epoch in range(100):
-    for i in range(0, len(dataset), batch_size):
-        batch = dataset[i:i + batch_size]
-        batch = torch.from_numpy(batch).float()
-        x_hat, mu, logvar = vae(batch)
-        loss = vae.loss(batch, x_hat, mu, logvar)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-    print(f'epoch: {epoch}, loss: {loss.item()}')
-    vae.generate_and_save_image(epoch)
+        tqdm_range.set_description('epoch %d, loss: %.4f' % (epoch, loss.data))
 
 
+
+    generated = vae.generate(Tensor(np.random.normal(0, 1, size=(100, 64)), requires_grad=False))
+    # generated = vae.reconstruct(Tensor(dataset[:100], requires_grad=False).reshape(-1, 28 * 28))
+    generated = generated.data
+
+    for i in range(100):
+        image = generated[i] * 255
+        image = image.astype(np.uint8)
+        image = image.reshape(28, 28)
+        image = Image.fromarray(image)
+        image.save(f'generated_images/{i}.png')
 

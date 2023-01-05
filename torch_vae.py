@@ -1,10 +1,19 @@
-from autograd import Tensor, MSELoss, Sigmoid, ReLU, BCELoss
-from nn import Linear, Sequential, Module
-from optim import SGD, Adam
+# from autograd import Tensor, MSELoss, Sigmoid, Sequential, SGD, Adam, ReLU
+# from layers import Linear
+# from tqdm import tqdm
+# import numpy as np
+# import os
+# from PIL import Image
+from torch.nn import Linear, MSELoss, Sigmoid, Sequential, ReLU, LeakyReLU, Tanh, BCELoss
+from torch import nn
+from torch.optim import Adam
+from torch import Tensor
 from tqdm import tqdm
 import numpy as np
 import os
 from PIL import Image
+import torch
+
 
 
 
@@ -57,22 +66,17 @@ def prepare_data(data, number_to_take = None):
 #     training_targets = np.load("datasets/mnist/mnist_train_targets.npy")
 
 # test_inputs = np.asfarray(prepare_data(test_data, number_to_take = '3'))
-# dataset = test_inputs
+# test_inputs = np.asfarray(prepare_data(test_data, number_to_take = '3'))
+
 
 
 dataset = np.asfarray(prepare_data(training_data))
-# dataset = np.asfarray(prepare_data(training_data, '7'))
+# dataset = np.asfarray(prepare_data(test_data, '0'))
 
 
-        
-
-        
-    
-
-
-class VAE(Module):
+class VAE(nn.Module):
     def __init__(self, input_size, latent_size):
-        super().__init__()
+        super(VAE, self).__init__()
         self.input_size = input_size
         self.latent_size = latent_size
 
@@ -81,7 +85,7 @@ class VAE(Module):
             ReLU(),
             Linear(256, 128),
             ReLU(),
-            Linear(128, latent_size * 2),
+            Linear(128, latent_size * 1),
             ReLU(),
         )
 
@@ -93,12 +97,39 @@ class VAE(Module):
             Linear(256, input_size),
             Sigmoid()
         )
-        self.loss_fn = BCELoss()
+        self.loss_fn = BCELoss(reduction='sum')
+
+        self.mu_encoder = Linear(latent_size, latent_size)
+        self.logvar_encoder = Linear(latent_size, latent_size)
+
+        
+    # def train(self, x, optimizer):
+    #     x_enc = self.encoder(x)
+    #     x_recon = self.decoder(x_enc)
+
+    #     loss = self.loss_fn(x_recon, x)
+    #     optimizer.zero_grad()
+    #     loss.backward()
+    #     optimizer.step()
+    #     return loss
+
+    # def generate(self, n):
+    #     z = Tensor(np.random.normal(0, 1, size=(n, self.latent_size)))
+    #     return self.decoder(z)
+
+    # def reconstruct(self, x):
+    #     x_enc = self.encoder(x)
+    #     return self.decoder(x_enc)
+
+
 
     def forward(self, x):
         x_enc = self.encoder(x)
 
-        mu, logvar = x_enc[:, :self.latent_size], x_enc[:, self.latent_size:] #
+        # mu, logvar = x_enc[:, :self.latent_size], x_enc[:, self.latent_size:] #
+        mu = self.mu_encoder(x_enc)
+        logvar = self.logvar_encoder(x_enc)
+        
         std = logvar.mul(0.5).exp()
         eps = Tensor(np.random.normal(0, 1, size=std.shape))
         z = mu + eps * std
@@ -114,7 +145,7 @@ class VAE(Module):
 
     def loss_function(self, x, x_recon, mu, logvar):
         MSE = self.loss_fn(x_recon, x)
-        KLD = Tensor(-0.5) * Tensor.sum(Tensor(1) + logvar - mu.power(2) - logvar.exp())
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         return MSE + KLD
     
     # train without KL divergence
@@ -136,8 +167,8 @@ class VAE(Module):
     def reconstruct(self, x):
         return self.forward(x)[0]
 
-vae = VAE(28 * 28, 2)
-optimizer = Adam(vae.parameters(), lr=0.001)
+vae = VAE(28 * 28, 64)
+optimizer = Adam(vae.parameters(), lr=0.001) 
 
 
 batch_size = 100
@@ -148,7 +179,7 @@ for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = 'epoch %d' % epoch)
     for i in tqdm_range:
         batch = dataset[i:i+batch_size]
-        batch = Tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        batch = Tensor(batch).reshape(-1, 28 * 28)
         loss = vae.train(batch, optimizer)
         
         tqdm_range.set_description('epoch %d, loss: %.4f' % (epoch, loss.data))
@@ -156,12 +187,12 @@ for epoch in range(epochs):
 
 
     # generated = vae.generate(100)
-    generated = vae.reconstruct(Tensor(dataset[:100], requires_grad=False).reshape(-1, 28 * 28))
+    generated = vae.reconstruct(Tensor(dataset[0:100]).reshape(-1, 28 * 28))
     generated = generated.data
 
     for i in range(100):
         image = generated[i] * 255
-        image = image.astype(np.uint8)
+        image = image.numpy().astype(np.uint8)
         image = image.reshape(28, 28)
         image = Image.fromarray(image)
         image.save(f'generated_images/{i}.png')

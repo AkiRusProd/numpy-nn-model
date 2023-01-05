@@ -13,37 +13,38 @@ test_data = open('datasets/mnist/mnist_test.csv','r').readlines()
 
 image_size = (1, 28, 28)
 
-def prepare_data(data):
-    inputs, targets = [], []
+def prepare_data(data, number_to_take = None):
+    inputs = []
 
     for raw_line in tqdm(data, desc = 'preparing data'):
 
         line = raw_line.split(',')
-    
-        inputs.append(np.asfarray(line[1:]).reshape(1, 28, 28) / 127.5-1)#/ 255 [0; 1]  #/ 127.5-1 [-1; 1]
-        targets.append(int(line[0]))
+
+        if number_to_take != None:
+            if str(line[0]) == number_to_take:
+                inputs.append(np.asfarray(line[1:]))
+        else:
+            inputs.append(np.asfarray(line[1:]))
+        
+    return inputs
 
 
-    # one hot encoding
-    targets = np.eye(10)[targets]
 
-    return inputs, targets
+mnist_data_path = "datasets/mnist/"
 
-if not os.path.exists("datasets/mnist/mnist_train.npy"):
-    training_inputs, training_targets = prepare_data(training_data)
-    np.save("datasets/mnist/mnist_train.npy", training_inputs)
-    np.save("datasets/mnist/mnist_train_targets.npy", training_targets)
+if not os.path.exists(mnist_data_path + "mnist_train.npy") or not os.path.exists(mnist_data_path + "mnist_test.npy"):
+    train_inputs = np.asfarray(prepare_data(training_data))
+    test_inputs = np.asfarray(prepare_data(test_data))
+
+    np.save(mnist_data_path + "mnist_train.npy", train_inputs)
+    np.save(mnist_data_path + "mnist_test.npy", test_inputs)
 else:
-    training_inputs = np.load("datasets/mnist/mnist_train.npy")
-    training_targets = np.load("datasets/mnist/mnist_train_targets.npy")
+    train_inputs = np.load(mnist_data_path + "mnist_train.npy")
+    test_inputs = np.load(mnist_data_path + "mnist_test.npy")
 
 
+dataset = train_inputs / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
-# test_inputs, test_targets = prepare_data(test_data)
-# test_inputs = test_inputs[:1000]
-
-# dataset = training_inputs
-dataset = prepare_data(training_data)[0]
 
 
 generator = Sequential(

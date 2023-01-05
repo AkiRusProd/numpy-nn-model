@@ -72,15 +72,16 @@ class Tensor:
         t = self.tensor(t)
         return Tensor(np.minimum(self.data, t.data), [self, t], "minimum", requires_grad=self.requires_grad or t.requires_grad)
 
-    def concatenate(self, t, axis = 0):
-        t = self.tensor(t)
-        return Tensor(np.concatenate((self.data, t.data), axis = axis), [self, t], "concatenate", requires_grad=self.requires_grad or t.requires_grad)
+    def concatenate(self, *tensors, axis = 0):
+        tensors = [self.tensor(t) for t in tensors]
+        return Tensor(np.concatenate([self.data] + [t.data for t in tensors], axis = axis), [self] + tensors + [axis], "concatenate", requires_grad=self.requires_grad or any([t.requires_grad for t in tensors]))
 
     def reshape(self, *shape):
         return Tensor(self.data.reshape(shape), [self], "reshape", requires_grad=self.requires_grad)
 
-    def split(self, n, axis = 0):
-        return Tensor(np.split(self.data, n, axis = axis), [self], "split", requires_grad=self.requires_grad)
+    # def split(self, n, axis = 0):
+    #     # return Tensor(np.split(self.data, n, axis = axis), [self], "split", requires_grad=self.requires_grad)
+    #     return [Tensor(t, [self], "split", requires_grad=self.requires_grad) for t in np.split(self.data, n, axis = axis)]
 
     def abs(self):
         return Tensor(np.abs(self.data), [self], "abs", requires_grad=self.requires_grad)
@@ -119,6 +120,24 @@ class Tensor:
 
     def __repr__(self):
         return str(self.data)
+
+    def __radd__(self, t):
+        return self.add(t)
+
+    def __rsub__(self, t):
+        return self.sub(t)
+
+    def __rmul__(self, t):
+        return self.mul(t)
+
+    def __rtruediv__(self, t):
+        return self.div(t)
+
+    def __rmatmul__(self, t):
+        return self.dot(t)
+
+    def __rpow__(self, t):
+        return self.power(t)
 
     # add unpacking of split tensors
     def __iter__(self):
@@ -210,14 +229,23 @@ class Tensor:
             self.args[1].backward(grad * (self.args[0].data >= self.args[1].data))
 
         elif self.op == "concatenate":
-            self.args[0].backward(grad[:self.args[0].data.shape[0]])
-            self.args[1].backward(grad[self.args[0].data.shape[0]:])
+            if grad == 1:
+                grad = np.ones_like(self.data)
 
+            axis = self.args[-1]
+            args = self.args[:-1]
+            args_shapes = [arg.data.shape for arg in args]
+
+            grads = np.split(grad, np.cumsum([arg_shape[axis] for arg_shape in args_shapes])[:-1], axis=axis)
+        
+            for i, arg in enumerate(args):
+                arg.backward(grads[i])
+                
         elif self.op == "reshape":
             self.args[0].backward(grad.reshape(self.args[0].data.shape))
 
-        elif self.op == "split":
-            self.args[0].backward(np.concatenate(grad, axis = 0))
+        # elif self.op == "split":
+        #     self.args[0].backward(np.concatenate(grad, axis = 0))
 
         elif self.op == "getitem":
             self.args[0].backward(np.zeros_like(self.args[0].data))
@@ -234,62 +262,6 @@ class Tensor:
 
         elif self.op == "abs":
             self.args[0].backward(grad * np.sign(self.args[0].data))
-
-
-
-
-
-
-
-
-# class Module(Tensor):
-#     def __init__(self):
-#         self.params = []
-
-#     def __call__(self, *args, **kwargs):
-#         return self.forward(*args, **kwargs)
-
-#     def forward(self, *args, **kwargs):
-#         raise NotImplementedError
-
-#     def zero_grad(self):
-#         for param in self.params:
-#             param.grad = None
-
-#     def parameters(self):
-#         params = []
-#         for layer in self.layers:
-#             if hasattr(layer, "weight"):
-#                 params.append(layer.weight)
-#             if hasattr(layer, "bias"):
-#                 params.append(layer.bias)
-#         return params
-
-
-
-
-# class Sequential:
-#     def __init__(self, *layers):
-#         self.layers = layers
-
-#     def forward(self, X, training = True):
-#         for layer in self.layers:
-#             X = layer(X, training)
-#         return X
-
-#     def __call__(self, X, training = True):
-#         return self.forward(X, training)
-
-#     def parameters(self):
-#         params = []
-#         for layer in self.layers:
-#             if hasattr(layer, "weight"):
-#                 if layer.weight.requires_grad:
-#                     params.append(layer.weight)
-#             if hasattr(layer, "bias"):
-#                 if layer.bias.requires_grad:
-#                     params.append(layer.bias)
-#         return params
 
 
 

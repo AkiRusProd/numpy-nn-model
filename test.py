@@ -349,14 +349,38 @@ print(layer2.bias.grad)
 
 
 
-x = torch.tensor([[1, 0], [0, 1], [1, 1], [0, 0]], dtype=torch.float32)
-x = torch.tensor(x)
+# x = torch.tensor([[1, 0], [0, 1], [1, 1], [0, 0]], dtype=torch.float32)
+# x = torch.tensor(x)
 
 
-x = Tensor([[1, 0], [0, 1], [1, 1], [0, 0]])
-print(x)
-print(x.T)
-print(x.shape)
-x = Tensor(x)
-print(x.shape)
+# x = Tensor([[1, 0], [0, 1], [1, 1], [0, 0]])
+# print(x)
+# print(x.T)
+# print(x.shape)
+# x = Tensor(x)
+# print(x.shape)
 
+print("####################")
+x = Tensor(np.array([[1, 2, 3, 4], [5, 6, 7, 8]]))
+# y = x + 2
+# z = y * y * 3
+# out = z.mean()
+print(x[:, 1], x[:, 0])
+out, out2 = x[:, 1], x[:, 0]
+out.backward()
+# print(x.grad)
+# print(out.grad)
+from torch.autograd import Variable
+x = Variable(torch.tensor([[1, 2, 3, 4], [5, 6, 7, 8]], dtype=torch.float32), requires_grad=True)
+
+print(x[:, 1], x[:, 0])
+out, out2 = x[:, 1], x[:, 0]
+out.backward()
+# print(x.grad)
+# print(out.grad)
+
+# BUG GETITEM; ITER
+# BUG STATIC TENSOR
+# => BUG VAE
+# BUG SPLIT
+# BUG LINEAR at th end from encoder to decoder
