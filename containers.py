@@ -30,13 +30,13 @@ class Sequential:
     def __init__(self, *layers):
         self.layers = layers
 
-    def forward(self, X, training = True):
+    def forward(self, X):
         for layer in self.layers:
-            X = layer(X, training)
+            X = layer(X)
         return X
 
-    def __call__(self, X, training = True):
-        return self.forward(X, training)
+    def __call__(self, X):
+        return self.forward(X)
 
     def parameters(self):
         params = []

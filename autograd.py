@@ -89,7 +89,7 @@ class Tensor:
     def transpose(self, *axes):
         if len(axes) == 0:
             axes = range(self.data.ndim)[::-1]
-        return Tensor(self.data.transpose(axes), [self], "transpose", requires_grad=self.requires_grad)
+        return Tensor(self.data.transpose(axes), [self, axes], "transpose", requires_grad=self.requires_grad)
 
     def __neg__(self):
         return Tensor(-self.data, [self], "neg", requires_grad=self.requires_grad)
@@ -229,7 +229,7 @@ class Tensor:
             self.args[1].backward(grad * (self.args[0].data >= self.args[1].data))
 
         elif self.op == "concatenate":
-            if grad == 1:
+            if type(grad) == int and grad == 1:
                 grad = np.ones_like(self.data)
 
             axis = self.args[-1]
@@ -242,6 +242,8 @@ class Tensor:
                 arg.backward(grads[i])
                 
         elif self.op == "reshape":
+            if type(grad) == int and grad == 1:
+                grad = np.ones_like(self.data)
             self.args[0].backward(grad.reshape(self.args[0].data.shape))
 
         # elif self.op == "split":
@@ -252,6 +254,8 @@ class Tensor:
             self.args[0].grad[self.args[1]] = grad
 
         elif self.op == "transpose":
+            if type(grad) == int and grad == 1:
+                grad = np.ones_like(self.data)
             self.args[0].backward(grad.transpose(self.args[1]))
 
         elif self.op == "neg":

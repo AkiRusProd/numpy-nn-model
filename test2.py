@@ -119,20 +119,20 @@ class Dense(Tensor):
         self.out_features = out_features
 
         stdv = 1. / np.sqrt(in_features)
-        self.weight = Tensor(np.random.uniform(-stdv, stdv, (in_features, out_features)))
-        self.bias = Tensor(np.zeros((1, out_features)))
+        self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)))
+        #self.bias = Tensor(np.zeros((1, out_features)))
 
     def forward(self, x):
-        return x.mm(self.weight).add(self.bias)
+        return x.mm(self.weight.transpose())#.add(self.bias)
 
-    def __call__(self, x, training=True):
+    def __call__(self, x):
         return self.forward(x)
 
 
 
 
 latent_size = 2
-multiplier = 1
+multiplier = 2
 x = Tensor(np.array([[1, 0], [0, 1]]))
 y = Tensor(np.array([[1], [0]]))
 
@@ -145,13 +145,17 @@ relu = ReLU()
 sigmoid = Tanh()
 loss_fn= MSELoss()
 
-encoder = Sequential(Linear1, relu)
+# encoder = Sequential(Linear1, relu)
+dense1 = Dense(2, latent_size * multiplier)
+encoder = Sequential(dense1)
 
 
 Linear2_weight = np.arange(latent_size * 2).reshape((2, latent_size))
 Linear2 = Linear(latent_size, 2)
 Linear2.weight.data = Linear2_weight
-decoder = Sequential(Linear2, sigmoid)
+# decoder = Sequential(Linear2, sigmoid)
+dense2 = Dense(latent_size, 2)
+decoder = Sequential(dense2)
 
 print("Linear2.weight.data: ", Linear2.weight.data)
 
@@ -166,8 +170,9 @@ logvar_encoder.weight.data = np.ones((latent_size, latent_size))
 def forward(x):
     x_enc = encoder(x)
  
-    mu = mu_encoder(x_enc)
-    logvar = logvar_encoder(x_enc)
+    # mu = mu_encoder(x_enc)
+    # logvar = logvar_encoder(x_enc)
+    mu, logvar = x_enc[:, :latent_size], x_enc[:, latent_size:]
 
     
     std = logvar.mul(0.5).exp()
@@ -196,11 +201,15 @@ def train(x):
     loss = loss_function(x, x_recon, mu, logvar)
     loss.backward()
     print("grad1")
-    print(Linear1.weight.grad)
+    # print(Linear1.weight.grad)
+    print(dense1.weight.grad)
     print("grad2")
-    print(Linear2.weight.grad)
+    print(dense2.weight.grad)
 
 
     return loss
 
 train(x)
+
+
+

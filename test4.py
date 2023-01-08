@@ -110,3 +110,35 @@ def reverse_concatenate(shapes, axis=0):
     return slices
 
 print(reverse_concatenate([x.shape, x2.shape, x2.shape, x3.shape], axis=1))
+
+# x = Tensor([[1, 0], [0, 1], [1, 1], [0, 0]])
+
+# x0, x1 = x[:, 0], x[:, 1]
+# print(x0, x1)
+# y = x0 * x1
+# y = y.reshape(4, 1)
+
+
+# print(x.shape, y.shape)
+
+# y.backward()
+
+# print(f"x.grad: {x.grad}")
+
+# x = np.array([[1, 0], [0, 1], [1, 1], [0, 0]])
+# x0, x1 = x[:, 0], x[:, 1]
+# print(x0, x1)
+# y = x0 * x1
+# y = y.reshape(4, 1)
+
+
+
+# x = Tensor(1)
+# y = Tensor(2)
+
+# z = x + y
+
+# z.backward()
+
+# print(f'x.grad: {x.grad}')
+

@@ -27,16 +27,15 @@ class Linear():
         self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)))
         self.bias = Tensor(np.zeros((1, out_features)), requires_grad = bias)
 
-    def forward(self, X, training = True): 
+    def forward(self, X): 
         self.X = X
         
-        self.output_data = np.dot(self.X.data, self.weight.data.T) + self.bias.data
+        self.O = np.dot(self.X.data, self.weight.data.T) + self.bias.data
         
-        return _LinearTensor(self.output_data, [self.X, self.weight, self.bias], "linear")
+        return _LinearTensor(self.O, [self.X, self.weight, self.bias], "linear")
 
-    def __call__(self, X, training = True):
-       
-        return self.forward(X, training)
+    def __call__(self, X):
+        return self.forward(X)
 
 
 # class Dense(Tensor):
@@ -79,13 +78,13 @@ class Linear():
 #         # self.weight = Tensor(np.random.normal(0, pow(out_features, -0.5), (in_features, out_features)))
 #         # self.bias = Tensor(np.zeros((1, out_features)))
 
-#     def forward(self, X, training = True): 
+#     def forward(self, X): 
 #         self.X = X
 
-#         self.output_data = np.dot(self.X.data, self.weight.data) + self.bias.data
+#         self.O = np.dot(self.X.data, self.weight.data) + self.bias.data
         
-#         return LinearTensor(self.output_data, [self.X, self.weight, self.bias], "linear")
+#         return LinearTensor(self.O, [self.X, self.weight, self.bias], "linear")
 
-#     def __call__(self, X, training = True):
+#     def __call__(self, X):
        
-#         return self.forward(X, training)
+#         return self.forward(X)
