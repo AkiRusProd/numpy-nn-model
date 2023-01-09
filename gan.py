@@ -1,5 +1,5 @@
 from autograd import Tensor
-from nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU
+from nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU, Dropout, BatchNorm1d
 from optim import SGD, Adam
 from tqdm import tqdm
 import numpy as np
@@ -50,7 +50,10 @@ dataset = train_inputs / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 =>
 generator = Sequential(
     Linear(100, 256),
     LeakyReLU(),
+    BatchNorm1d(256),
     Linear(256, 512),
+    Dropout(0.2),
+    BatchNorm1d(512),
     LeakyReLU(),
     Linear(512, 784),
     Tanh()
