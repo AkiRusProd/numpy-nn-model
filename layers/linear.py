@@ -4,9 +4,9 @@ import numpy as np
 
 
 
+# Y = X dot W.T + b
 
-
-class _LinearTensor(Tensor):
+class _LinearTensor(Tensor): # tensor for static backpropagation
     def __init__(self, data, args, op):
         super().__init__(data, args, op)
 
@@ -18,7 +18,7 @@ class _LinearTensor(Tensor):
         self.args[2].backward(np.sum(grad, axis = 0, keepdims = True))
 
 
-class Linear():
+class Linear(): # layer with static backpropagation
     def __init__(self, in_features, out_features, bias = True):
         self.in_features = in_features
         self.out_features = out_features
@@ -38,7 +38,7 @@ class Linear():
         return self.forward(X)
 
 
-# class Linear(Tensor):
+# class Linear(): # layer with dynamic backpropagation
 #     def __init__(self, in_features, out_features):
 #         self.in_features = in_features
 #         self.out_features = out_features

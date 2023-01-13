@@ -2,7 +2,7 @@ from autograd import Tensor
 import numpy as np
 
 
-class _BatchNorm1dTensor(Tensor): #Static BatchNorm1d tensor for backpropagation
+class _BatchNorm1dTensor(Tensor): # tensor for static backpropagation
     def __init__(self, data, args, op):
         super().__init__(data, args, op)
 
@@ -27,7 +27,7 @@ class _BatchNorm1dTensor(Tensor): #Static BatchNorm1d tensor for backpropagation
 
 
 
-class BatchNorm1d(): #Static layer
+class BatchNorm1d(): # layer with static backpropagation
     def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
         self.num_features = num_features
         self.eps = eps
@@ -86,7 +86,7 @@ class BatchNorm1d(): #Static layer
 # print(bn.weight.grad)
 # print(bn.bias.grad)
 
-# class BatchNorm1d(): #Dynamic backward layer
+# class BatchNorm1d(): #layer with dynamic backpropagation
 #     def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
 #         self.num_features = num_features
 #         self.eps = eps
@@ -118,14 +118,12 @@ class BatchNorm1d(): #Static layer
 #         powvaraddeps = varaddeps.power(0.5)
 #         stddev_inv = Tensor(1).div(powvaraddeps) #1 / np.sqrt(var + self.eps) BUG
 
-#         X_hat = X_centered * stddev_inv
+#         O = X_centered * stddev_inv
 
 #         if self.affine:
-#             output = self.weight * X_hat + self.bias
-#         else:
-#             output = X_hat
+#             O = self.weight * O + self.bias
 
-#         return output
+#         return O
 
 #     def __call__(self, X):
 #         return self.forward(X)
