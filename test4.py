@@ -70,7 +70,7 @@ print(y.shape)
 
 print(f'y: {y}')
 
-y.backward()
+y.backward(np.ones_like(y.data))
 
 print(f'x.grad: {x.grad}')
 print(f'x2.grad: {x2.grad}')
@@ -142,3 +142,12 @@ print(reverse_concatenate([x.shape, x2.shape, x2.shape, x3.shape], axis=1))
 
 # print(f'x.grad: {x.grad}')
 
+x = Tensor(np.random.randn(2, 3))
+y = Tensor(np.random.randn(1, 3))
+z = x / y
+print(z.shape)
+print(x.data.shape)
+z.backward(np.ones_like(z.data))
+print(x.grad)
+print(y.grad)
+# print(np.sum(x.grad, axis=0))

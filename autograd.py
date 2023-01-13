@@ -52,7 +52,10 @@ class Tensor:
         return Tensor(self.data.sum(axis = axis), [self], "sum", requires_grad=self.requires_grad)
 
     def mean(self, axis = None):
-        return Tensor(self.data.mean(axis = axis), [self], "mean", requires_grad=self.requires_grad)
+        return Tensor(self.data.mean(axis = axis), [self, axis], "mean", requires_grad=self.requires_grad)
+
+    def var(self, axis = None):
+        return Tensor(self.data.var(axis = axis), [self, axis], "var", requires_grad=self.requires_grad) #ddof = 0;
         
     def power(self, n):
         n = self.tensor(n)
@@ -171,12 +174,22 @@ class Tensor:
 
 
 
-    def backward(self, grad=1):
+    def backward(self, grad=np.array(1)):
         if not self.requires_grad:
             return
 
+        
+        if grad.size != self.data.size:
+            # print(f"grad {grad.shape} {grad.size} != data {self.data.shape} {self.data.size}")
+            if self.data.size == 1:
+                grad = grad.sum()
+            elif self.data.ndim == 1:
+                grad = grad.sum(axis=0)   
+            elif self.data.shape[0] == 1:
+                grad = grad.sum(axis=0, keepdims=True)
+        # print(f"backward {self.op} {self.data.shape} {grad.shape}, {self.grad.shape if self.grad is not None else None}")   
         if self.grad is None:
-            self.grad = grad # np.ones_like(self.data)
+            self.grad = grad
         else:
             self.grad += grad
 
@@ -209,7 +222,32 @@ class Tensor:
             self.args[0].backward(np.ones_like(self.args[0].data) * grad)
 
         elif self.op == "mean":
-            self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
+            axis = self.args[1]
+
+            if grad.ndim == 1:
+                grad = grad[0]
+
+            if axis is None:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
+            elif type(axis) is int:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.shape[axis])
+            else:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod([self.args[0].data.shape[i] for i in axis]))
+            
+        elif self.op == "var":
+            axis = self.args[1]
+          
+            if grad.ndim == 1:
+                grad = grad[0]
+   
+            if axis is None:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean()) / self.args[0].data.size)
+            elif type(axis) is int:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / self.args[0].data.shape[axis])
+            else:
+                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod([self.args[0].data.shape[i] for i in axis]))
+
+            
 
         elif self.op == "power":
             self.args[0].backward(grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1))
@@ -273,3 +311,7 @@ class Tensor:
 
 
 
+# BUGS:
+# 1 / Tensor(x)
+# gettitem, iter; lists slices
+# overflow memory when use * between non grad tensor and grad tensor many times (check batchnorm moving mean and var)

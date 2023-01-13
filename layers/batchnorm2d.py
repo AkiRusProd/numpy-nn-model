@@ -9,7 +9,7 @@ class _BatchNorm2dTensor(Tensor):
     def backward(self, grad=1):
         self.X, self.weight, self.bias, self.X_centered, self.stddev_inv = self.args
         
-        X_hat = self.X_centered * self.stddev_inv
+        X_hat = self.X_centered * self.stddev_inv[..., None, None]
         batch_size = self.X.data.shape[0] * self.X.data.shape[2] * self.X.data.shape[3]
 
         dX_hat =  grad * self.weight.data[..., None, None]
@@ -27,10 +27,8 @@ class _BatchNorm2dTensor(Tensor):
 
 
 
-
-
 class BatchNorm2d():
-    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, track_running_stats=True):
+    def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
@@ -64,11 +62,47 @@ class BatchNorm2d():
         self.O = self.X_centered * self.stddev_inv[..., None, None]
 
         if self.affine:
-            print(self.weight[:, :, None, None].shape)
-            self.O = self.weight[..., None, None] * self.O + self.bias[..., None, None]
+            self.O = self.weight.data[..., None, None] * self.O + self.bias.data[..., None, None]
 
-
+        
         return _BatchNorm2dTensor(self.O, [self.X, self.weight, self.bias, self.X_centered, self.stddev_inv], "batchnorm2d")
 
     def __call__(self, X):
         return self.forward(X)
+
+
+# x_rand = np.random.randn(2, 3, 2, 2)
+x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
+x = Tensor(x_rand)
+bn = BatchNorm2d(3)
+
+bn.train = True
+y = bn(x)
+
+print(y.data)
+
+y.backward(np.ones_like(y.data))
+
+# print(x.grad)
+
+import torch
+import torch.nn as nn
+
+
+x = torch.tensor(x_rand, requires_grad=True, dtype=torch.float32)
+bn = nn.BatchNorm2d(3)
+
+bn.train()
+y = bn(x)
+# print(y)
+
+y.backward(torch.ones_like(y))
+
+# print(x.grad)
+
+
+
+
+
+
+

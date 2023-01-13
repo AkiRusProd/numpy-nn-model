@@ -38,17 +38,17 @@ class Linear():
         return self.forward(X)
 
 
-# class Dense(Tensor):
+# class Linear(Tensor):
 #     def __init__(self, in_features, out_features):
 #         self.in_features = in_features
 #         self.out_features = out_features
 
 #         stdv = 1. / np.sqrt(in_features)
-#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (in_features, out_features)))
+#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)))
 #         self.bias = Tensor(np.zeros((1, out_features)))
 
 #     def forward(self, x):
-#         return x.mm(self.weight).add(self.bias)
+#         return x.mm(self.weight.T).add(self.bias)
 
 #     def __call__(self, x):
 #         return self.forward(x)
