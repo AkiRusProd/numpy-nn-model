@@ -17,8 +17,8 @@ class Tensor:
         self.args = args
         self.requires_grad = requires_grad
 
-    def tensor(self, t):
-        return t if isinstance(t, Tensor) else Tensor(t)
+    def tensor(self, t, requires_grad=False):
+        return t if isinstance(t, Tensor) else Tensor(t, requires_grad) #TODO: Just add requires_grad=False (lately)
 
     def add(self, t):
         t = self.tensor(t)
@@ -48,14 +48,17 @@ class Tensor:
         n = self.tensor(n)
         return Tensor(np.dot(self.data, n.data), [self, n], "mm", requires_grad=self.requires_grad or n.requires_grad)
 
-    def sum(self, axis = None):
-        return Tensor(self.data.sum(axis = axis), [self], "sum", requires_grad=self.requires_grad)
+    def sum(self, *args, **kwargs):
+        axis = kwargs.get("axis", None)
+        return Tensor(self.data.sum(*args, **kwargs), [self, axis], "sum", requires_grad=self.requires_grad)
 
-    def mean(self, axis = None):
-        return Tensor(self.data.mean(axis = axis), [self, axis], "mean", requires_grad=self.requires_grad)
+    def mean(self, *args, **kwargs):
+        axis = kwargs.get("axis", None)
+        return Tensor(self.data.mean(*args, **kwargs), [self, axis], "mean", requires_grad=self.requires_grad)
 
-    def var(self, axis = None):
-        return Tensor(self.data.var(axis = axis), [self, axis], "var", requires_grad=self.requires_grad) #ddof = 0;
+    def var(self, *args, **kwargs):
+        axis = kwargs.get("axis", None)
+        return Tensor(self.data.var(*args, **kwargs), [self, axis], "var", requires_grad=self.requires_grad) #ddof = 0;
         
     def power(self, n):
         n = self.tensor(n)
@@ -122,7 +125,10 @@ class Tensor:
         return self.power(t)
 
     def __repr__(self):
-        return str(self.data)
+        return f"Tensor({self.data}, requires_grad={self.requires_grad})"
+
+    # def __str__(self):
+    #     return f"Tensor({self.data}, requires_grad={self.requires_grad})"
 
     def __radd__(self, t):
         return self.add(t)
@@ -170,28 +176,38 @@ class Tensor:
         return self.data.size
 
     
-    
-
-
-
-    def backward(self, grad=np.array(1)):
+    def backward(self, grad = None):#grad=np.array(1) # TODO: ASSERT GRAD SHAPE == DATA SHAPE
         if not self.requires_grad:
             return
-
         
-        if grad.size != self.data.size:
+        if grad is None:
+            grad = np.ones_like(self.data)
+
+        if type(grad) is not np.ndarray:
+            grad = np.array(grad)
+
+        if grad.size != self.data.size or grad.ndim != self.data.ndim or grad.shape != self.data.shape: #TODO : MAYBE MOVE IT TO ANOTHER PLACE
             # print(f"grad {grad.shape} {grad.size} != data {self.data.shape} {self.data.size}")
             if self.data.size == 1:
                 grad = grad.sum()
-            elif self.data.ndim == 1:
-                grad = grad.sum(axis=0)   
-            elif self.data.shape[0] == 1:
-                grad = grad.sum(axis=0, keepdims=True)
+            # elif self.data.ndim == 1:
+            #     grad = grad.sum(axis=0)   
+          
+            elif self.data.ndim == grad.ndim:
+                grad = grad.sum(axis=tuple(np.where(np.array(self.data.shape) != np.array(grad.shape))[0]), keepdims=True)
+            # elif self.data.ndim < grad.ndim:
+            #     grad = grad.sum(axis=tuple(range(grad.ndim - self.data.ndim)))
+            else: # self.data.ndim < grad.ndim:
+                data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
+                axis = tuple(np.where(np.array(data_shape) != np.array(grad.shape))[0])
+                grad = grad.sum(axis=axis).reshape(self.data.shape)
+           
         # print(f"backward {self.op} {self.data.shape} {grad.shape}, {self.grad.shape if self.grad is not None else None}")   
+        # print(f"backward {self.op} {self.data = } {self.grad = } {grad = } {type(grad) =}")  
         if self.grad is None:
             self.grad = grad
         else:
-            self.grad += grad
+            self.grad = self.grad + grad # += BUG FIX
 
         if self.op == "add":
             self.args[0].backward(grad)
@@ -219,13 +235,18 @@ class Tensor:
             self.args[1].backward(np.dot(self.args[0].data.T, grad))
 
         elif self.op == "sum":
+            axis = self.args[1]
+            if grad.ndim != self.args[0].data.ndim and axis is not None:
+                grad = np.expand_dims(grad, axis)
             self.args[0].backward(np.ones_like(self.args[0].data) * grad)
 
         elif self.op == "mean":
             axis = self.args[1]
 
-            if grad.ndim == 1:
-                grad = grad[0]
+            # if grad.ndim == 1:
+            #     grad = grad[0]
+            if grad.ndim != self.args[0].data.ndim  and axis is not None:
+                grad = np.expand_dims(grad, axis)
 
             if axis is None:
                 self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
@@ -237,8 +258,10 @@ class Tensor:
         elif self.op == "var":
             axis = self.args[1]
           
-            if grad.ndim == 1:
-                grad = grad[0]
+            # if grad.ndim == 1:
+            #     grad = grad[0]
+            if grad.ndim != self.args[0].data.ndim and axis is not None:
+                grad = np.expand_dims(grad, axis)
    
             if axis is None:
                 self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean()) / self.args[0].data.size)
@@ -315,3 +338,30 @@ class Tensor:
 # 1 / Tensor(x)
 # gettitem, iter; lists slices
 # overflow memory when use * between non grad tensor and grad tensor many times (check batchnorm moving mean and var)
+# without explicitly specifying arguments in mean, var, sum, the function does not receive them
+# grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation
+
+
+
+    # def repeat_to_match_shape(self, g, shape, dtype, axis, keepdims): same
+    # https://github.com/HIPS/autograd/blob/master/autograd/numpy/numpy_vjps.py
+    #     """Returns the array g repeated along axis to fit vector space vs.
+    #     Also returns the number of repetitions of the array."""
+    #     if shape == ():
+    #         return g, 1
+    #     axis = list(axis) if isinstance(axis, tuple) else axis
+    #     new_shape = np.array(shape)
+    #     new_shape[axis] = 1
+    #     num_reps = np.prod(np.array(shape)[axis])
+    #     # Can't use broadcast_to because of numpy bug: https://github.com/numpy/numpy/issues/9165
+    #     # return anp.broadcast_to(anp.reshape(g, new_shape), shape), num_reps
+    #     return np.reshape(g, new_shape) + np.zeros(shape, dtype=dtype), num_reps
+
+    # elif self.op == "mean":
+        # shape = self.args[0].data.shape
+        # axis = self.args[1]
+        # dtype = np.result_type(self.args[0].data)
+        # g_repeated, num_reps = self.repeat_to_match_shape(grad, shape, dtype, axis, None)
+        # print(f"g_repeated {g_repeated}")
+        # self.args[0].backward(g_repeated / num_reps)
+

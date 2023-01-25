@@ -71,34 +71,34 @@ class BatchNorm2d():
         return self.forward(X)
 
 
-# x_rand = np.random.randn(2, 3, 2, 2)
-x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
-x = Tensor(x_rand)
-bn = BatchNorm2d(3)
+# # x_rand = np.random.randn(2, 3, 2, 2)
+# x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
+# x = Tensor(x_rand)
+# bn = BatchNorm2d(3)
 
-bn.train = True
-y = bn(x)
+# bn.train = True
+# y = bn(x)
 
-print(y.data)
+# print(y.data)
 
-y.backward(np.ones_like(y.data))
+# y.backward(np.ones_like(y.data))
 
-# print(x.grad)
+# # print(x.grad)
 
-import torch
-import torch.nn as nn
+# import torch
+# import torch.nn as nn
 
 
-x = torch.tensor(x_rand, requires_grad=True, dtype=torch.float32)
-bn = nn.BatchNorm2d(3)
+# x = torch.tensor(x_rand, requires_grad=True, dtype=torch.float32)
+# bn = nn.BatchNorm2d(3)
 
-bn.train()
-y = bn(x)
-# print(y)
+# bn.train()
+# y = bn(x)
+# # print(y)
 
-y.backward(torch.ones_like(y))
+# y.backward(torch.ones_like(y))
 
-# print(x.grad)
+# # print(x.grad)
 
 
 
