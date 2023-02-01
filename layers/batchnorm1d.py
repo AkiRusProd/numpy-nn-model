@@ -7,23 +7,23 @@ class _BatchNorm1dTensor(Tensor): # tensor for static backpropagation
         super().__init__(data, args, op)
 
     def backward(self, grad=1):
-        self.X, self.weight, self.bias, self.X_centered, self.stddev_inv = self.args
+        X, weight, bias, X_centered, stddev_inv = self.args
         
-        X_hat = self.X_centered * self.stddev_inv
-        batch_size = self.X.data.shape[0]
+        X_hat = X_centered * stddev_inv
+        batch_size = X.data.shape[0]
 
-        grad_O = (1 / batch_size) * self.weight.data * self.stddev_inv * (
+        grad_X = (1 / batch_size) * weight.data * stddev_inv * (
             batch_size * grad
             - np.sum(grad, axis = 0)
-            - self.X_centered * np.power(self.stddev_inv, 2) * np.sum(grad * self.X_centered, axis = 0)
+            - X_centered * np.power(stddev_inv, 2) * np.sum(grad * X_centered, axis = 0)
             )
 
         grad_weight = np.sum(grad * X_hat, axis = 0, keepdims = True)
         grad_bias = np.sum(grad, axis = 0, keepdims = True)
 
-        self.X.backward(grad_O)
-        self.weight.backward(grad_weight)
-        self.bias.backward(grad_bias)
+        X.backward(grad_X)
+        weight.backward(grad_weight)
+        bias.backward(grad_bias)
 
 
 
@@ -43,36 +43,36 @@ class BatchNorm1d(): # layer with static backpropagation
         self.train = True
 
     def forward(self, X):
-        self.X = X
 
         if self.train:
-            self.mean = np.mean(self.X.data, axis = 0, keepdims = True)
-            self.var = np.var(self.X.data, axis = 0, keepdims = True)
+            mean = np.mean(X.data, axis = 0, keepdims = True)
+            var = np.var(X.data, axis = 0, keepdims = True)
 
-            self.running_mean.data = self.momentum * self.running_mean.data + (1 - self.momentum) * self.mean
-            self.running_var.data = self.momentum * self.running_var.data + (1 - self.momentum) * self.var
+            self.running_mean.data = self.momentum * self.running_mean.data + (1 - self.momentum) * mean
+            self.running_var.data = self.momentum * self.running_var.data + (1 - self.momentum) * var
         else:
-            self.mean = self.running_mean.data
-            self.var = self.running_var.data
+            mean = self.running_mean.data
+            var = self.running_var.data
 
-        self.X_centered = self.X.data - self.mean
-        self.stddev_inv = 1 / np.sqrt(self.var + self.eps)
+        X_centered = X.data - mean
+        stddev_inv = 1 / np.sqrt(var + self.eps)
         
-        self.O = self.X_centered * self.stddev_inv
+        O = X_centered * stddev_inv
        
         if self.affine:
-            self.O = self.weight.data * self.O + self.bias.data
+            O = self.weight.data * O + self.bias.data
         
-        return _BatchNorm1dTensor(self.O, [self.X, self.weight, self.bias, self.X_centered, self.stddev_inv], "batchnorm")
+        return _BatchNorm1dTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv], "batchnorm")
 
     def __call__(self, X):
         return self.forward(X)
 
 
 
-# x = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
+# x_arr = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
+# x_arr = np.random.rand(5, 3)
 
-# x = Tensor(x)
+# x = Tensor(x_arr)
 # bn = BatchNorm1d(3)
 
 # bn.train = True
@@ -81,7 +81,7 @@ class BatchNorm1d(): # layer with static backpropagation
 # print(f"y: {y.data}")
 
 # y.backward(np.ones_like(y.data))
-
+# x_grad = x.grad
 # print(x.grad)
 # print(bn.weight.grad)
 # print(bn.bias.grad)
@@ -130,9 +130,9 @@ class BatchNorm1d(): # layer with static backpropagation
 
 
 
-# x = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
+# # x = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
 
-# x = Tensor(x)
+# x = Tensor(x_arr)
 # bn = BatchNorm1d(3)
 
 # bn.train = True
@@ -146,4 +146,4 @@ class BatchNorm1d(): # layer with static backpropagation
 # print(bn.weight.grad)
 # print(bn.bias.grad)
 
-    
+# print(np.allclose(x.grad, x_grad))

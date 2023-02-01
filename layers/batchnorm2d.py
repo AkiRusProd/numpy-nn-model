@@ -7,23 +7,23 @@ class _BatchNorm2dTensor(Tensor):
         super().__init__(data, args, op)
 
     def backward(self, grad=1):
-        self.X, self.weight, self.bias, self.X_centered, self.stddev_inv = self.args
+        X, weight, bias, X_centered, stddev_inv = self.args
         
-        X_hat = self.X_centered * self.stddev_inv[..., None, None]
-        batch_size = self.X.data.shape[0] * self.X.data.shape[2] * self.X.data.shape[3]
+        X_hat = X_centered * stddev_inv[..., None, None]
+        batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
-        dX_hat =  grad * self.weight.data[..., None, None]
-        dvar = (-0.5 * dX_hat * self.X_centered).sum((0, 2, 3), keepdims=True)  * (self.stddev_inv[..., None, None] ** 3.0)
-        dmu = (- self.stddev_inv[..., None, None] * dX_hat).sum((0, 2, 3), keepdims = True) + (dvar * (-2.0 * self.X_centered).sum((0, 2, 3), keepdims = True) / batch_size)
+        dX_hat =  grad * weight.data[..., None, None]
+        dvar = (-0.5 * dX_hat * X_centered).sum((0, 2, 3), keepdims=True)  * (stddev_inv[..., None, None] ** 3.0)
+        dmu = (- stddev_inv[..., None, None] * dX_hat).sum((0, 2, 3), keepdims = True) + (dvar * (-2.0 * X_centered).sum((0, 2, 3), keepdims = True) / batch_size)
 
-        grad_O = self.stddev_inv[..., None, None] * dX_hat + dvar * (2.0 * self.X_centered / batch_size) + dmu / batch_size
+        grad_X = stddev_inv[..., None, None] * dX_hat + dvar * (2.0 * X_centered / batch_size) + dmu / batch_size
 
-        grad_weight = np.sum(grad * X_hat, axis = (0, 2, 3), keepdims = True)
-        grad_bias = np.sum(grad, axis = (0, 2, 3), keepdims = True)
+        grad_weight = np.sum(grad * X_hat, axis = (0, 2, 3), keepdims = True).reshape(weight.data.shape)
+        grad_bias = np.sum(grad, axis = (0, 2, 3), keepdims = True).reshape(bias.data.shape)
 
-        self.X.backward(grad_O)
-        self.weight.backward(grad_weight)
-        self.bias.backward(grad_bias)
+        X.backward(grad_X)
+        weight.backward(grad_weight)
+        bias.backward(grad_bias)
 
 
 
@@ -43,35 +43,34 @@ class BatchNorm2d():
         self.train = True
 
     def forward(self, X):
-        self.X = X
 
         if self.train:
-            self.mean = np.mean(self.X.data, axis = (0, 2, 3))
-            self.var = np.var(self.X.data, axis = (0, 2, 3))
+            mean = np.mean(X.data, axis = (0, 2, 3))
+            var = np.var(X.data, axis = (0, 2, 3))
  
 
-            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * self.mean
-            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * self.var
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
         else:
-            self.mean = self.running_mean
-            self.var = self.running_var
+            mean = self.running_mean
+            var = self.running_var
 
-        self.X_centered = self.X.data - self.mean[..., None, None]
-        self.stddev_inv = 1 / np.sqrt(self.var + self.eps)
+        X_centered = X.data - mean[..., None, None]
+        stddev_inv = 1 / np.sqrt(var + self.eps)
 
-        self.O = self.X_centered * self.stddev_inv[..., None, None]
+        O = X_centered * stddev_inv[..., None, None]
 
         if self.affine:
-            self.O = self.weight.data[..., None, None] * self.O + self.bias.data[..., None, None]
+            O = self.weight.data[..., None, None] * O + self.bias.data[..., None, None]
 
         
-        return _BatchNorm2dTensor(self.O, [self.X, self.weight, self.bias, self.X_centered, self.stddev_inv], "batchnorm2d")
+        return _BatchNorm2dTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv], "batchnorm2d")
 
     def __call__(self, X):
         return self.forward(X)
 
 
-# # x_rand = np.random.randn(2, 3, 2, 2)
+# x_rand = np.random.randn(2, 3, 2, 2)
 # x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
 # x = Tensor(x_rand)
 # bn = BatchNorm2d(3)
@@ -83,7 +82,7 @@ class BatchNorm2d():
 
 # y.backward(np.ones_like(y.data))
 
-# # print(x.grad)
+# print(x.grad)
 
 # import torch
 # import torch.nn as nn
@@ -98,7 +97,7 @@ class BatchNorm2d():
 
 # y.backward(torch.ones_like(y))
 
-# # print(x.grad)
+# print(x.grad)
 
 
 

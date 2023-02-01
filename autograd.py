@@ -49,15 +49,15 @@ class Tensor:
         return Tensor(np.dot(self.data, n.data), [self, n], "mm", requires_grad=self.requires_grad or n.requires_grad)
 
     def sum(self, *args, **kwargs):
-        axis = kwargs.get("axis", None)
+        axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(self.data.sum(*args, **kwargs), [self, axis], "sum", requires_grad=self.requires_grad)
 
     def mean(self, *args, **kwargs):
-        axis = kwargs.get("axis", None)
+        axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(self.data.mean(*args, **kwargs), [self, axis], "mean", requires_grad=self.requires_grad)
 
     def var(self, *args, **kwargs):
-        axis = kwargs.get("axis", None)
+        axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(self.data.var(*args, **kwargs), [self, axis], "var", requires_grad=self.requires_grad) #ddof = 0;
         
     def power(self, n):
@@ -243,32 +243,32 @@ class Tensor:
         elif self.op == "mean":
             axis = self.args[1]
 
-            # if grad.ndim == 1:
-            #     grad = grad[0]
             if grad.ndim != self.args[0].data.ndim  and axis is not None:
                 grad = np.expand_dims(grad, axis)
 
-            if axis is None:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
-            elif type(axis) is int:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.shape[axis])
-            else:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod([self.args[0].data.shape[i] for i in axis]))
+            # if axis is None:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
+            # elif type(axis) is int:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.shape[axis])
+            # else:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod([self.args[0].data.shape[i] for i in axis]))
+            _axis = list(axis) if isinstance(axis, tuple) else axis
+            self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod(np.array(self.args[0].data.shape)[_axis]))
             
-        elif self.op == "var":
+        elif self.op == "var": #axis=None, ddof=0, keepdims=False add params instead args kwargs
             axis = self.args[1]
           
-            # if grad.ndim == 1:
-            #     grad = grad[0]
             if grad.ndim != self.args[0].data.ndim and axis is not None:
                 grad = np.expand_dims(grad, axis)
    
-            if axis is None:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean()) / self.args[0].data.size)
-            elif type(axis) is int:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / self.args[0].data.shape[axis])
-            else:
-                self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod([self.args[0].data.shape[i] for i in axis]))
+            # if axis is None:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean()) / self.args[0].data.size)
+            # elif type(axis) is int:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / self.args[0].data.shape[axis])
+            # else:
+            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod([self.args[0].data.shape[i] for i in axis]))
+            _axis = list(axis) if isinstance(axis, tuple) else axis
+            self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod(np.array(self.args[0].data.shape)[_axis]))
 
             
 
