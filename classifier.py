@@ -60,7 +60,7 @@ class Conv2dClassifier(Module):
     def __init__(self):
         super(Conv2dClassifier, self).__init__()
 
-        self.conv1 = Conv2d(1, 4, 3, 1, 1)
+        self.conv1 = Conv2d(1, 4, 3, 1, 2)
         self.conv2 = Conv2d(4, 8, 3, 1, 1)
         self.conv3 = Conv2d(8, 16, 3, 1, 1)
 
@@ -70,7 +70,7 @@ class Conv2dClassifier(Module):
 
         self.leaky_relu = LeakyReLU()
         
-        self.fc1 = Linear(12544, 10)
+        self.fc1 = Linear(3136, 10)
         self.sigmoid = Sigmoid()
 
     def forward(self, x):
@@ -125,7 +125,7 @@ loss = MSELoss()
 optimizer = Adam(classifier.parameters(), lr = 0.001)
 
 batch_size = 100
-epochs = 100
+epochs = 5
 
 for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = 'epoch ' + str(epoch))
@@ -150,3 +150,22 @@ for epoch in range(epochs):
         optimizer.step()
 
         tqdm_range.set_description('epoch %d, loss: %.7f' % (epoch, l.data))
+
+
+# evaluate
+correct = 0
+total = 0
+
+
+for i in tqdm(range(len(test_inputs)), desc = 'evaluating'):
+    img = test_inputs[i]
+    img = img.reshape(1, image_size[0], image_size[1], image_size[2])
+    img = Tensor(img)
+
+    outputs = classifier(img)
+    predicted = np.argmax(outputs.data)
+
+    total += 1
+    correct += (predicted == test_targets[i])
+
+print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))

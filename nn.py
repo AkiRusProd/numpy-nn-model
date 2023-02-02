@@ -4,6 +4,7 @@ from layers.batchnorm1d import BatchNorm1d
 from layers.batchnorm2d import BatchNorm2d
 from layers.layernorm import LayerNorm
 from layers.conv2d import Conv2d
+from layers.convtranspose2d import ConvTranspose2d
 from containers import *
 from losses import *
 from activations import *
