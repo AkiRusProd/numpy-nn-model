@@ -2,21 +2,24 @@ from autograd import Tensor
 import numpy as np
 
 
-class _BatchNorm2dTensor(Tensor):
+class _BatchNorm2dTensor(Tensor): # tensor for static backpropagation
     def __init__(self, data, args, op):
         super().__init__(data, args, op)
 
     def backward(self, grad=1):
         X, weight, bias, X_centered, stddev_inv = self.args
         
-        X_hat = X_centered * stddev_inv[..., None, None]
         batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
-        dX_hat =  grad * weight.data[..., None, None]
-        dvar = (-0.5 * dX_hat * X_centered).sum((0, 2, 3), keepdims=True)  * (stddev_inv[..., None, None] ** 3.0)
-        dmu = (- stddev_inv[..., None, None] * dX_hat).sum((0, 2, 3), keepdims = True) + (dvar * (-2.0 * X_centered).sum((0, 2, 3), keepdims = True) / batch_size)
+        axis = (0, 2, 3)
+        # _axis = list(axis) if isinstance(axis, tuple) else axis
+        X_hat = X_centered * stddev_inv[..., None, None]
 
-        grad_X = stddev_inv[..., None, None] * dX_hat + dvar * (2.0 * X_centered / batch_size) + dmu / batch_size
+        dX_hat = weight.data[..., None, None] * grad
+        dstddev_inv = -0.5 * np.power(stddev_inv[..., None, None], 3) * np.sum(dX_hat * X_centered, axis = axis, keepdims = True)
+        dvar = np.ones_like(X.data) * dstddev_inv * 2 * X_centered / batch_size #np.prod(np.array(X.shape)[_axis])
+        dmean = np.ones_like(X.data) * np.sum(dX_hat * stddev_inv[..., None, None], axis = axis, keepdims = True) * (-1) / batch_size#np.prod(np.array(X.shape)[_axis])
+        grad_X = dX_hat * stddev_inv[..., None, None] + dvar + dmean
 
         grad_weight = np.sum(grad * X_hat, axis = (0, 2, 3), keepdims = True).reshape(weight.data.shape)
         grad_bias = np.sum(grad, axis = (0, 2, 3), keepdims = True).reshape(bias.data.shape)
@@ -27,7 +30,7 @@ class _BatchNorm2dTensor(Tensor):
 
 
 
-class BatchNorm2d():
+class BatchNorm2d(): # layer with static backpropagation
     def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
         self.num_features = num_features
         self.eps = eps
@@ -68,6 +71,52 @@ class BatchNorm2d():
 
     def __call__(self, X):
         return self.forward(X)
+
+
+
+# class BatchNorm2d(): #layer with dynamic backpropagation
+#     def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
+#         self.num_features = num_features
+#         self.eps = eps
+#         self.momentum = momentum
+#         self.affine = affine
+
+#         self.running_mean = Tensor(np.zeros((1, num_features)))
+#         self.running_var = Tensor(np.ones((1, num_features)))
+
+#         self.weight = Tensor(np.ones((1, num_features)))
+#         self.bias = Tensor(np.zeros((1, num_features)))
+
+#         self.train = True
+
+#     def forward(self, X):
+
+#         if self.train:
+#             mean = X.mean(axis = (0, 2, 3))
+#             var = X.var(axis = (0, 2, 3))
+ 
+
+#             self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean.data
+#             self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var.data
+#         else:
+#             mean = self.running_mean
+#             var = self.running_var
+
+#         X_centered = X - mean[..., None, None]
+#         varaddeps = var + self.eps
+#         powvaraddeps = varaddeps.power(0.5)
+#         stddev_inv = Tensor(1).div(powvaraddeps) #1 / np.sqrt(var + self.eps) BUG
+
+#         O = X_centered * stddev_inv[..., None, None]
+
+#         if self.affine:
+#             O = self.weight[..., None, None] * O + self.bias[..., None, None]
+
+        
+#         return O
+
+#     def __call__(self, X):
+#         return self.forward(X)
 
 
 # x_rand = np.random.randn(2, 3, 2, 2)

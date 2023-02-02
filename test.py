@@ -1,5 +1,6 @@
 import numpy as np
 from autograd import Tensor
+from nn import BatchNorm2d
 
 import torch
 from torch import nn
@@ -165,14 +166,53 @@ from torch import nn
 # print(ln.weight.grad)
 # print(ln.bias.grad)
 
-x = Tensor(1)
-y = Tensor(2)
-z = Tensor(3)
+# x = Tensor(1)
+# y = Tensor(2)
+# z = Tensor(3)
 
-l = x + y + z
-l.backward()
-print(x.grad, y.grad, z.grad)
+# l = x + y + z
+# l.backward()
+# print(x.grad, y.grad, z.grad)
 
 
-x = 1
-print(np.ones_like(x))
+# x = 1
+# print(np.ones_like(x))
+
+
+# x_rand = np.random.randn(2, 3, 2, 2)
+# x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
+# x = Tensor(x_rand)
+# bn = BatchNorm2d(3)
+
+# bn.train = True
+# y = bn(x)
+
+# print(y.data)
+
+# y.backward(np.ones_like(y.data))
+
+# print(x.grad)
+
+# import torch
+# import torch.nn as nn
+
+
+# x = torch.tensor(x_rand, requires_grad=True, dtype=torch.float32)
+# bn = nn.BatchNorm2d(3)
+
+# bn.train()
+# y = bn(x)
+# # print(y)
+
+# y.backward(torch.ones_like(y))
+
+# print(x.grad)
+
+x = Tensor(np.ones((1, 5)))
+
+y = x[..., None, None] * 3
+print(y.data.shape)
+print(y.data)
+y.backward(np.ones_like(y.data))
+print(x.grad)
+print(x.grad.shape)
