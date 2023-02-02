@@ -15,10 +15,7 @@ class MSELoss(Tensor):
 
 
 class BCELoss(Tensor):
-    def __init__(self, weight=None, size_average=None, reduce=None, reduction = "mean"):
-        self.weight = weight
-        self.size_average = size_average
-        self.reduce = reduce
+    def __init__(self, reduction = "mean"):
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):

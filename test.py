@@ -140,27 +140,39 @@ from torch import nn
 # z.backward(torch.ones_like(z))
 # print(x.grad)
 
-x = np.random.rand(5, 3, 4)
-axis = (1, 2)
-axis = list(axis) if isinstance(axis, tuple) else axis
-reps = np.prod(np.array(x.shape)[axis])
-print(reps)
-reps2 = np.prod([x.shape[i] for i in axis])
-print(reps2)
+# x = np.random.rand(5, 3, 4)
+# axis = (1, 2)
+# axis = list(axis) if isinstance(axis, tuple) else axis
+# reps = np.prod(np.array(x.shape)[axis])
+# print(reps)
+# reps2 = np.prod([x.shape[i] for i in axis])
+# print(reps2)
 
-from nn import LayerNorm
-# x_arr = np.random.randn(2, 3, 3)
-x_arr = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
-x = Tensor(x_arr)
-ln = LayerNorm(3)
-y = ln(x)
-print(y)
+# from nn import LayerNorm
+# # x_arr = np.random.randn(2, 3, 3)
+# x_arr = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
+# x = Tensor(x_arr)
+# ln = LayerNorm(3)
+# y = ln(x)
+# print(y)
 
-y.backward(np.ones_like(y.data))
-print("-----------------")
-print(x.grad)
-x_grad = x.grad
-ln_weight_grad = ln.weight.grad
-# print(ln.weight.grad.shape, ln.weight.shape)
-print(ln.weight.grad)
-print(ln.bias.grad)
+# y.backward(np.ones_like(y.data))
+# print("-----------------")
+# print(x.grad)
+# x_grad = x.grad
+# ln_weight_grad = ln.weight.grad
+# # print(ln.weight.grad.shape, ln.weight.shape)
+# print(ln.weight.grad)
+# print(ln.bias.grad)
+
+x = Tensor(1)
+y = Tensor(2)
+z = Tensor(3)
+
+l = x + y + z
+l.backward()
+print(x.grad, y.grad, z.grad)
+
+
+x = 1
+print(np.ones_like(x))

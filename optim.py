@@ -17,6 +17,8 @@ class Adam:
     def step(self):
         self.t += 1
         for i, param in enumerate(self.params):
+            if param.grad is None:
+                continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
             self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad ** 2
@@ -39,11 +41,11 @@ class SGD:
 
     def step(self):
         for param in self.params:
-            # try:
-                param.data -= self.lr * param.grad
-            # except:
-                # param.data -= self.lr * param.grad.sum(axis = 0) # ??? bias should be su
-                # pass
+            if param.grad is None:
+                continue
+            
+            param.data -= self.lr * param.grad
+
 
     def zero_grad(self):
         for param in self.params:
