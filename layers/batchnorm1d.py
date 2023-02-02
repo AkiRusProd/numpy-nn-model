@@ -7,23 +7,27 @@ class _BatchNorm1dTensor(Tensor): # tensor for static backpropagation
         super().__init__(data, args, op)
 
     def backward(self, grad=1):
-        X, weight, bias, X_centered, stddev_inv = self.args
+        X, weight, bias, X_centered, stddev_inv, affine = self.args
         
         X_hat = X_centered * stddev_inv
         batch_size = X.data.shape[0]
 
-        grad_X = (1 / batch_size) * weight.data * stddev_inv * (
+        weight_data = weight.data if affine else 1
+
+        grad_X = (1 / batch_size) * weight_data * stddev_inv * (
             batch_size * grad
             - np.sum(grad, axis = 0)
             - X_centered * np.power(stddev_inv, 2) * np.sum(grad * X_centered, axis = 0)
             )
-
-        grad_weight = np.sum(grad * X_hat, axis = 0, keepdims = True)
-        grad_bias = np.sum(grad, axis = 0, keepdims = True)
+        
+        if affine:
+            grad_weight = np.sum(grad * X_hat, axis = 0, keepdims = True)
+            grad_bias = np.sum(grad, axis = 0, keepdims = True)
 
         X.backward(grad_X)
-        weight.backward(grad_weight)
-        bias.backward(grad_bias)
+        if affine:
+            weight.backward(grad_weight)
+            bias.backward(grad_bias)
 
 
 
@@ -37,8 +41,12 @@ class BatchNorm1d(): # layer with static backpropagation
         self.running_mean = Tensor(np.zeros((1, num_features)))
         self.running_var = Tensor(np.ones((1, num_features)))
 
-        self.weight = Tensor(np.ones((1, num_features)))
-        self.bias = Tensor(np.zeros((1, num_features)))
+        if affine:
+            self.weight = Tensor(np.ones((1, num_features)))
+            self.bias = Tensor(np.zeros((1, num_features)))
+        else:
+            self.weight = None
+            self.bias = None
 
         self.train = True
 
@@ -62,7 +70,7 @@ class BatchNorm1d(): # layer with static backpropagation
         if self.affine:
             O = self.weight.data * O + self.bias.data
         
-        return _BatchNorm1dTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv], "batchnorm")
+        return _BatchNorm1dTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv, self.affine], "batchnorm")
 
     def __call__(self, X):
         return self.forward(X)
@@ -96,8 +104,12 @@ class BatchNorm1d(): # layer with static backpropagation
 #         self.running_mean = Tensor(np.zeros((1, num_features)), requires_grad = False)
 #         self.running_var = Tensor(np.ones((1, num_features)), requires_grad = False)
 
-#         self.weight = Tensor(np.ones((1, num_features)))
-#         self.bias = Tensor(np.zeros((1, num_features)))
+#         if affine:
+#             self.weight = Tensor(np.ones((1, num_features)))
+#             self.bias = Tensor(np.zeros((1, num_features)))
+#         else:
+#             self.weight = None
+#             self.bias = None
 
 #         self.train = True
 

@@ -20,11 +20,13 @@ class Module:
             if hasattr(item, "parameters"):
                 params.extend(item.parameters())
             if hasattr(item, "weight"):
-                if item.weight.requires_grad:
-                    params.append(item.weight)
+                if hasattr(item.weight, "requires_grad"):
+                    if item.weight.requires_grad:
+                        params.append(item.weight)
             if hasattr(item, "bias"):
-                if item.bias.requires_grad:
-                    params.append(item.bias)
+                if hasattr(item.bias, "requires_grad"):
+                    if item.bias.requires_grad:
+                        params.append(item.bias)
             if hasattr(item, "named_parameters"):
                 for name, param in item.named_parameters():
                     if param.requires_grad:
@@ -52,11 +54,13 @@ class Sequential:
             if hasattr(layer, "parameters"):
                 params.extend(layer.parameters())
             if hasattr(layer, "weight"):
-                if layer.weight.requires_grad:
-                    params.append(layer.weight)
+                if hasattr(layer.weight, "requires_grad"):
+                    if layer.weight.requires_grad:
+                        params.append(layer.weight)
             if hasattr(layer, "bias"):
-                if layer.bias.requires_grad:
-                    params.append(layer.bias)
+                if hasattr(layer.bias, "requires_grad"):
+                    if layer.bias.requires_grad:
+                        params.append(layer.bias)
             if hasattr(layer, "named_parameters"):
                 for name, param in layer.named_parameters():
                     if param.requires_grad:
