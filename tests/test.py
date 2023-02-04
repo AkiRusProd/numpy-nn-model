@@ -1,6 +1,10 @@
+import sys, os
+from pathlib import Path
+sys.path[0] = str(Path(sys.path[0]).parent)
+
 import numpy as np
 from autograd import Tensor
-from nn import BatchNorm2d
+from nn import BatchNorm2d, MaxPool2d
 
 import torch
 from torch import nn
@@ -208,11 +212,28 @@ from torch import nn
 
 # print(x.grad)
 
-x = Tensor(np.ones((1, 5)))
 
-y = x[..., None, None] * 3
-print(y.data.shape)
-print(y.data)
-y.backward(np.ones_like(y.data))
+
+x = np.random.randn(1, 1, 9, 9)
+x = np.ones((1, 1, 9, 9))
+layer = MaxPool2d(4, 2, 0, dilation=2)
+x_t = Tensor(x)
+out = layer(x_t)
+# print(out)
+out.backward(np.ones_like(out.data))
+print(x_t.grad)
+
+
+x = torch.tensor(x, requires_grad=True, dtype=torch.float32)
+layer = nn.MaxPool2d(4, 2, 0, dilation=2)
+
+y = layer(x)
+print(y)
+y.backward(torch.ones_like(y))
 print(x.grad)
-print(x.grad.shape)
+print(y.data.shape, out.shape)
+print(np.allclose(y.data, out.data))
+print(np.allclose(x.grad, x_t.grad))
+# print(np.isclose(y.data, out.data))
+
+

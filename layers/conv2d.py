@@ -182,7 +182,6 @@ class Conv2d(): # layer with static backpropagation
         self.prepared_input_width = (self.stride_compared_input_width + self.padding[2] + self.padding[3])
         self.prepared_input_size = (self.prepared_input_height, self.prepared_input_width)
             
-        self.output_size = (self.out_channels, self.conv_width, self.conv_height)
 
     def forward(self, X):
         if self.input_size == None:

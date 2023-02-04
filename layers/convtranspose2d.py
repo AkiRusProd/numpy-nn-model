@@ -169,7 +169,6 @@ class ConvTranspose2d():  # layer with static backpropagation
         self.prepared_input_width = (self.input_width - 1) * self.stride[1] + 1 - (self.padding[2] + self.padding[3])+ self.output_padding[1] + 2 * self.dilated_kernel_width - 2
         self.prepared_input_size = (self.prepared_input_height, self.prepared_input_width)
             
-        self.output_size = (self.out_channels, self.conv_width, self.conv_height)
         
 
 
