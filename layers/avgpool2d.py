@@ -3,7 +3,7 @@ import numpy as np
 
 
 
-class _MaxPool2dTensor(Tensor):
+class _AvgPool2dTensor(Tensor):
     def __init__(self, data, args, op):
         super().__init__(data, args, op)
 
@@ -13,45 +13,17 @@ class _MaxPool2dTensor(Tensor):
             kernel_size,
             stride,
             padding,
-            dilation,
             input_size,
             output_size,
-            dilated_kernel_size,
-            kernel,
             windows,
-            O_einsum
         ) = self.args
-
-        # grad_X = np.where(O_args == 1, grad[..., None, None], 0)
+        
         batch_size, in_channels, in_height, in_width = input_size
-        # X_data = set_padding(X.data, padding, value=-np.inf)
-
-        #TODO: vectorize this
-        # grad_X = np.zeros_like(X_data)
-        # #https://towardsdatascience.com/forward-and-backward-propagation-of-pooling-layers-in-convolutional-neural-networks-11e36d169bec
-        # for n in range(batch_size):
-        #     for c in range(in_channels):
-        #         for i in range(output_size[0]):
-        #             for j in range(output_size[1]):
-        #                 # get the index in the region i,j where the value is the maximum
-        #                 i_t, j_t = np.where(np.nanmax(X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]] * kernel[None, None, ...]) == X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]])
-        #                 i_t, j_t = i_t[0], j_t[0] # ignore the other maximum values indices
-                        
-        #                 # only the position of the maximum element in the region i,j gets the incoming gradient, the other gradients are zero
-        #                 grad_X[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]][i_t, j_t] += grad[n, c, i, j]
-
-
-        grad = grad.reshape(-1, 1)
-        windows = O_einsum.reshape(-1, dilated_kernel_size[0] * dilated_kernel_size[1])
-
-        grad_col = np.zeros_like(windows)
-        grad_col[np.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = grad.reshape(-1)
-        grad_col = grad_col.reshape(batch_size, in_channels, output_size[0], output_size[1], dilated_kernel_size[0], dilated_kernel_size[0])
 
         grad_X = np.zeros((batch_size, in_channels, in_height + 2 * padding[0], in_width + 2 * padding[1]))
         for i in range(output_size[0]):
             for j in range(output_size[1]):
-                grad_X[:, :, i*stride[0]:i*stride[0]+dilated_kernel_size[0], j*stride[1]:j*stride[1]+dilated_kernel_size[1]] += grad_col[:, :, i, j, :, :]
+                grad_X[:, :, i*stride[0]:i*stride[0]+kernel_size[0], j*stride[1]:j*stride[1]+kernel_size[1]] += grad[:, :, i, j, None, None]/(kernel_size[0] * kernel_size[1])
 
         grad_X = remove_padding(grad_X, padding)
 
@@ -59,13 +31,12 @@ class _MaxPool2dTensor(Tensor):
 
 
 
-class MaxPool2d:
+class AvgPool2d:
     
-        def __init__(self, kernel_size, stride=None, padding=0, dilation=1):
+        def __init__(self, kernel_size, stride=None, padding=0):
             self.kernel_size = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
             self.stride = stride if isinstance(stride, tuple) else (stride, stride) if stride else self.kernel_size
             self.padding = padding if isinstance(padding, tuple) else (padding, padding)
-            self.dilation = dilation if isinstance(dilation, tuple) else (dilation, dilation)
 
             self.input_size = None
 
@@ -100,13 +71,9 @@ class MaxPool2d:
                 self.padding = (self.padding[0], self.padding[0], self.padding[1], self.padding[1]) #(up, down, left, right) padding ≃ (2 * vertical, 2 *horizontal) padding
 
 
-            self.output_height = (self.input_height + self.padding[0] + self.padding[1] - self.dilation[0] * (self.kernel_size[0] - 1) - 1) // self.stride[0] + 1
-            self.output_width  = (self.input_width  + self.padding[2] + self.padding[3] - self.dilation[1] * (self.kernel_size[1] - 1) - 1) // self.stride[1] + 1
+            self.output_height = (self.input_height + self.padding[0] + self.padding[1] - self.kernel_size[0]) // self.stride[0] + 1
+            self.output_width  = (self.input_width  + self.padding[2] + self.padding[3] - self.kernel_size[1]) // self.stride[1] + 1
             self.output_size = (self.output_height, self.output_width)
-
-            self.dilated_kernel_height =  self.dilation[0] * (self.kernel_height - 1) + 1
-            self.dilated_kernel_width = self.dilation[1] * (self.kernel_width - 1) + 1
-            self.dilated_kernel_size = (self.dilated_kernel_height, self.dilated_kernel_width)
 
             # self.stride_compared_input_height = (self.output_height - 1) * self.stride[0] - self.padding[0] - self.padding[1] +  self.dilated_kernel_height
             # self.stride_compared_input_width = (self.output_width - 1) * self.stride[1] - self.padding[2] - self.padding[3] +  self.dilated_kernel_width
@@ -114,7 +81,7 @@ class MaxPool2d:
             # self.prepared_input_height = (self.stride_compared_input_height + self.padding[0] + self.padding[1])
             # self.prepared_input_width = (self.stride_compared_input_width + self.padding[2] + self.padding[3])
 
-            self.kernel = set_dilation_stride(np.ones((self.kernel_height, self.kernel_width)), self.dilation, value = np.nan)
+            # self.kernel = set_dilation_stride(np.ones((self.kernel_height, self.kernel_width)), self.dilation, value = np.nan)
 
 
             
@@ -124,41 +91,22 @@ class MaxPool2d:
                 self.input_size = X.shape
                 self.build()
             
-            X_data = set_padding(X.data, self.padding, value = -np.inf)
-
+            X_data = set_padding(X.data, self.padding)
+     
             batch_size, in_channels, in_height, in_width = X_data.shape
             
             batch_str, channel_str, kern_h_str, kern_w_str = X_data.strides
             windows = np.lib.stride_tricks.as_strided(
                 X_data,
-                (batch_size, in_channels, self.output_size[0], self.output_size[1], self.dilated_kernel_size[0], self.dilated_kernel_size[1]),
+                (batch_size, in_channels, self.output_size[0], self.output_size[1], self.kernel_size[0], self.kernel_size[1]),
                 (batch_str, channel_str, self.stride[0] * kern_h_str, self.stride[1] * kern_w_str, kern_h_str, kern_w_str)
             )
 
-            O_einsum = np.einsum('bihwkl,oikl->bihwkl', windows, self.kernel[None, None, ...])
-            # O_args = np.where(O_einsum == np.nanmax(O_einsum, axis=(4, 5))[..., None, None], 1, 0)
-            # O_argw = np.argwhere(O_einsum == np.nanmax(O_einsum, axis=(4, 5))[..., None, None])
-            O = np.nanmax(O_einsum, axis=(4, 5)) #np.amax(windows, axis=(4, 5))
+            O = np.mean(windows, axis=(4, 5))
 
-            #remove lines where first 4 elements are the same
-            # new_O_argw = []
-            # for i in range(len(O_argw)):
-            #     if i == 0:
-            #         new_O_argw.append(O_argw[i])
-            #     elif np.all(O_argw[i][:4] == O_argw[i-1][:4]):
-            #         pass
-            #     else:
-            #         new_O_argw.append(O_argw[i])
-            # new_O_argw = np.array(new_O_argw)
+            return _AvgPool2dTensor(O, [X, self.kernel_size, self.stride, self.padding, self.input_size, self.output_size, 
+            windows], "maxpool2d")
 
-           
-
-            return _MaxPool2dTensor(O, [X, self.kernel_size, self.stride, self.padding, self.dilation, self.input_size, self.output_size, 
-            self.dilated_kernel_size, self.kernel, windows, O_einsum], "maxpool2d")
-           
-
-        def backward(self, grad):
-            pass
 
         def __call__(self, X):
             return self.forward(X)
@@ -167,29 +115,17 @@ class MaxPool2d:
 
 
    
-def set_dilation_stride(layer, stride, value = 0):
-    transposed_layer = np.full(
-        (
-            stride[0] * layer.shape[0] - (stride[0] - 1),
-            stride[1] * layer.shape[1] - (stride[1] - 1),
-        ),
-        value,
-    )
-    
-    transposed_layer[::stride[0], ::stride[1]] = layer
-
-    return transposed_layer
 
 
-def set_padding(layer, padding, value = 0):
-    padded_layer = np.full(
+
+def set_padding(layer, padding):
+    padded_layer = np.zeros(
         (   
             layer.shape[0],
             layer.shape[1],
             layer.shape[2] + padding[0] + padding[1],
             layer.shape[3] + padding[2] + padding[3],
         ),
-        value
     )
 
     padded_layer[

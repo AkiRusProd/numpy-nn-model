@@ -4,7 +4,7 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 
 import numpy as np
 from autograd import Tensor
-from nn import BatchNorm2d, MaxPool2d
+from nn import BatchNorm2d, MaxPool2d, AvgPool2d
 
 import torch
 from torch import nn
@@ -214,22 +214,25 @@ from torch import nn
 
 
 
-x = np.random.randn(1, 1, 9, 9)
+x = np.random.randn(2, 2, 5, 5)
 x = np.ones((1, 1, 9, 9))
-layer = MaxPool2d(4, 2, 0, dilation=2)
+layer = AvgPool2d(4, 2, 1)
 x_t = Tensor(x)
 out = layer(x_t)
-# print(out)
-out.backward(np.ones_like(out.data))
+print(out)
+
+
+grad = np.random.randn(*out.shape)
+out.backward(grad)
 print(x_t.grad)
 
 
 x = torch.tensor(x, requires_grad=True, dtype=torch.float32)
-layer = nn.MaxPool2d(4, 2, 0, dilation=2)
+layer = nn.AvgPool2d(4, 2, 1)
 
 y = layer(x)
 print(y)
-y.backward(torch.ones_like(y))
+y.backward(torch.tensor(grad))
 print(x.grad)
 print(y.data.shape, out.shape)
 print(np.allclose(y.data, out.data))

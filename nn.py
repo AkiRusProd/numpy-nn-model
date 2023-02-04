@@ -6,6 +6,7 @@ from layers.layernorm import LayerNorm
 from layers.conv2d import Conv2d
 from layers.convtranspose2d import ConvTranspose2d
 from layers.maxpool2d import MaxPool2d
+from layers.avgpool2d import AvgPool2d
 from containers import *
 from losses import *
 from activations import *

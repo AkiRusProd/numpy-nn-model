@@ -1,5 +1,5 @@
 from autograd import Tensor
-from nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU, Dropout, BatchNorm1d, Conv2d, Module, BatchNorm2d
+from nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU, Dropout, BatchNorm1d, Conv2d, Module, BatchNorm2d, MaxPool2d, AvgPool2d
 from optim import SGD, Adam
 from tqdm import tqdm
 import numpy as np
@@ -60,7 +60,7 @@ class Conv2dClassifier(Module):
     def __init__(self):
         super(Conv2dClassifier, self).__init__()
 
-        self.conv1 = Conv2d(1, 4, 3, 1, 2)
+        self.conv1 = Conv2d(1, 4, 3, 2, 1)
         self.conv2 = Conv2d(4, 8, 3, 1, 1)
         self.conv3 = Conv2d(8, 16, 3, 1, 1)
 
@@ -68,9 +68,12 @@ class Conv2dClassifier(Module):
         self.bnorm2 = BatchNorm2d(8)
         self.bnorm3 = BatchNorm2d(16)
 
+        self.maxpool = AvgPool2d(2, 2)
+
+
         self.leaky_relu = LeakyReLU()
         
-        self.fc1 = Linear(3136, 10)
+        self.fc1 = Linear(784, 10)
         self.sigmoid = Sigmoid()
 
     def forward(self, x):
@@ -83,6 +86,7 @@ class Conv2dClassifier(Module):
 
         x = self.conv3(x)
         x = self.leaky_relu(x)
+        x = self.maxpool(x)
 
         x = x.reshape(x.shape[0], -1)
         x = self.fc1(x)
