@@ -4,7 +4,7 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 
 import numpy as np
 from autograd import Tensor
-from nn import BatchNorm2d, MaxPool2d, AvgPool2d
+from nn import BatchNorm2d, MaxPool2d, AvgPool2d, Embedding
 
 import torch
 from torch import nn
@@ -214,29 +214,92 @@ from torch import nn
 
 
 
-x = np.random.randn(2, 2, 5, 5)
-x = np.ones((1, 1, 9, 9))
-layer = AvgPool2d(4, 2, 1)
-x_t = Tensor(x)
-out = layer(x_t)
-print(out)
+# x = np.random.randn(2, 2, 5, 5)
+# x = np.ones((1, 1, 9, 9))
+# layer = AvgPool2d(4, 2, 1)
+# x_t = Tensor(x)
+# out = layer(x_t)
+# print(out)
 
 
-grad = np.random.randn(*out.shape)
-out.backward(grad)
-print(x_t.grad)
+# grad = np.random.randn(*out.shape)
+# out.backward(grad)
+# print(x_t.grad)
 
 
-x = torch.tensor(x, requires_grad=True, dtype=torch.float32)
-layer = nn.AvgPool2d(4, 2, 1)
+# x = torch.tensor(x, requires_grad=True, dtype=torch.float32)
+# layer = nn.AvgPool2d(4, 2, 1)
 
-y = layer(x)
-print(y)
-y.backward(torch.tensor(grad))
-print(x.grad)
-print(y.data.shape, out.shape)
-print(np.allclose(y.data, out.data))
-print(np.allclose(x.grad, x_t.grad))
-# print(np.isclose(y.data, out.data))
+# y = layer(x)
+# print(y)
+# y.backward(torch.tensor(grad))
+# print(x.grad)
+# print(y.data.shape, out.shape)
+# print(np.allclose(y.data, out.data))
+# print(np.allclose(x.grad, x_t.grad))
+# # print(np.isclose(y.data, out.data))
 
 
+# rnn = nn.RNN(3, 2, 2)
+# x = torch.randn(5, 3, 3)
+# # h0 = torch.randn(2, 3, 2)
+# h0 = torch.zeros(2, 3, 2)
+# out, hn = rnn(x, h0)
+# print(out.shape, hn.shape)
+# print(out)
+
+
+
+# rnn = nn.RNN(10, 20, 1)
+# input = torch.randn(5, 3, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
+# h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
+# output1, hn = rnn(input, h0)
+# print(output1.shape, hn.shape)
+
+# rnn.train(False)
+
+# output2, hn = rnn(input, h0)
+# print(output2.shape, hn.shape)
+# print(np.allclose(output1.data, output2.data))
+# for name, param in rnn.named_parameters():
+#     print(name, param.shape)
+
+# a = 1
+# b = 0
+
+# b = b + a if a is not None else + 0
+# print(b)
+
+
+# emb = Embedding(10, 5)
+# w = emb.weight.data
+
+# x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]])
+# print(x.shape)
+
+# x_t = Tensor(x)
+# out = emb(x_t)
+# print(out)
+# print(f"out shape: {out.shape}")
+# out.backward(np.ones_like(out.data))
+
+
+# print(emb.weight.grad)
+# print(x_t.grad)
+
+# emb = nn.Embedding(10, 5)
+# emb.weight.data = torch.tensor(w)
+# x = torch.tensor(x, dtype=torch.long)
+# out = emb(x)
+# out.backward(torch.ones_like(out))
+
+# print(out)
+# print(emb.weight.grad)
+# print(x.grad)
+
+
+rnn = nn.RNN(10, 20, 1, batch_first=True)
+input = torch.randn(3, 5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
+h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
+output1, hn = rnn(input, h0)
+print(output1.shape, hn.shape)
