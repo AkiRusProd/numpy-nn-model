@@ -5,7 +5,7 @@
 import numpy as np
 from tqdm import tqdm
 import torch
-from torch.nn import Linear, Dropout,  RNNCell, Embedding, RNN
+from torch.nn import Linear, Dropout,  RNNCell, Embedding, RNN, LSTM
 from torch.nn import Sigmoid
 from torch.nn import Sequential, Module
 from torch.nn import MSELoss
@@ -81,6 +81,19 @@ print('Padded document:', *padded_document, sep = "\n")
 # print(model.predict(padded_document[9]))
 
 
+# class ExtractTensor(Module):
+#     def __init__(self, return_sequences):
+#         super().__init__()
+#         self.return_sequences = return_sequences
+
+#     def forward(self, X):
+#         all_states, last_state = X
+#         # print(all_states.shape, last_state.shape)
+#         if self.return_sequences:
+#             return all_states
+#         else:
+#             return last_state
+
 class ExtractTensor(Module):
     def __init__(self, return_sequences):
         super().__init__()
@@ -92,15 +105,15 @@ class ExtractTensor(Module):
         if self.return_sequences:
             return all_states
         else:
-            return last_state
+            return last_state[0]
 
 model = Sequential(
     Embedding(vocab_size, 10),
-    RNN(10, 50),
+    LSTM(10, 50),
     ExtractTensor(return_sequences=True),
-    RNN(50, 50),
+    LSTM(50, 50),
     ExtractTensor(return_sequences=True),
-    RNN(50, 50),
+    LSTM(50, 50),
     ExtractTensor(return_sequences=False),
     Linear(50, 1),
     Sigmoid()

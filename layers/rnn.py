@@ -10,7 +10,11 @@ class _RNNTensor(Tensor):
         super().__init__(data, args, op)
 
     def backward(self, grad=1):
-        X, weight, weight_h, bias, states, unactivated_states, input_size, hidden_size, timesteps, nonlinearity, X_data = self.args
+        X, weight, weight_h, bias, states, unactivated_states, input_size, hidden_size, timesteps, nonlinearity = self.args
+        X_data = X.data
+        
+        if len(X_data.shape) == 2:
+            X_data = X_data[np.newaxis, :, :]
 
         if self.data.shape != states[:, 0 : -1, :].shape: # if return_sequences == "last"
             temp = np.zeros_like((states))
@@ -52,7 +56,7 @@ class RNN():
         Args:
             `input_size` (int): number of neurons in the input layer
             `hidden_size` (int): number of neurons in the hidden layer
-            `nonlinearity` (str) or (`Activation Function` class): activation function
+            `nonlinearity` (str): activation function
             `bias` (bool):  `True` if used. `False` if not used
             `cycled_states` (bool): `True` future iteration init state equals previous iteration last state. `False` future iteration init state equals 0
             `return_sequences` (str): `"all"` return all timesteps. `"last"` return only last timestep. `"both"` return both
@@ -60,15 +64,14 @@ class RNN():
             output: data with shape (batch_size, timesteps, hidden_size)
     """
 
-    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', input_shape = None, bias = True, cycled_states = False, return_sequences = "both"):
+    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', bias = True, cycled_states = False, return_sequences = "both"):
         self.input_size  = input_size
         self.hidden_size   = hidden_size
-        self.input_shape = input_shape
         self.nonlinearity  = nonlinearities.get(nonlinearity)
         self.cycled_states = cycled_states
         self.return_sequences = return_sequences
 
-        stdv = 1. / np.sqrt(self.input_size)
+        stdv = 1. / np.sqrt(self.hidden_size)
         self.weight = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
         self.weight_h = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))
         
@@ -86,45 +89,46 @@ class RNN():
 
 
     def forward(self, X, hprev = None):
-        self.X_data = X.data
+        X_data = X.data
         
-        if len(self.X_data.shape) == 2:
-            self.X_data = self.X_data[np.newaxis, :, :]
+        if len(X_data.shape) == 2:
+            X_data = X_data[np.newaxis, :, :]
        
-        batch_size, timesteps, input_size = self.X_data.shape
+        batch_size, timesteps, input_size = X_data.shape
 
-        self.states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
-        self.unactivated_states = np.zeros_like(self.states)
+        states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
+        unactivated_states = np.zeros_like(states)
         
         if self.cycled_states == False:
             self.hprev = hprev
             
-        assert self.hprev is None or self.hprev.shape == self.states[:, -1, :].shape, "hprev shape must be equal to (batch_size, 1, hidden_size)"
+        assert self.hprev is None or self.hprev.shape == states[:, -1, :].shape, "hprev shape must be equal to (batch_size, 1, hidden_size)"
         assert self.input_size == input_size, "input_size must be equal to input shape[2]"
         
         if self.hprev is None: 
-            self.hprev = np.zeros_like(self.states[:, 0, :])
+            self.hprev = np.zeros_like(states[:, 0, :])
 
-        self.states[:, -1, :] = self.hprev.copy()
+        states[:, -1, :] = self.hprev.copy()
 
         
         for t in range(timesteps):
-            self.unactivated_states[:, t, :] = np.dot(self.X_data[:, t, :], self.weight.data) + np.dot(self.states[:, t-1, :], self.weight_h.data) + self.bias.data if self.bias is not None else + 0
-            self.states[:, t, :] =  self.nonlinearity.function(self.unactivated_states[:, t, :])
+            unactivated_states[:, t, :] = np.dot(X_data[:, t, :], self.weight.data) + np.dot(states[:, t-1, :], self.weight_h.data) + self.bias.data if self.bias is not None else + 0
+            states[:, t, :] =  self.nonlinearity.function(unactivated_states[:, t, :])
 
         if self.cycled_states == True:
-            self.hprev = self.states[:, timesteps - 1, :].copy()
+            self.hprev = states[:, timesteps - 1, :].copy()
 
-        all_states = self.states[:, 0 : -1, :]
-        last_state = self.states[:, -2, :].reshape(batch_size, 1, self.hidden_size)
+        all_states = states[:, 0 : -1, :]
+        last_state = states[:, -2, :].reshape(batch_size, 1, self.hidden_size)
+
+        cache = [X, self.weight, self.weight_h, self.bias, states, unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity]
 
         if self.return_sequences in ["all", True]:
-            return _RNNTensor(all_states, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn")
+            return _RNNTensor(all_states, cache, "rnn")
         elif self.return_sequences in ["last", False]:
-            return _RNNTensor(last_state, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn")
+            return _RNNTensor(last_state, cache, "rnn")
         elif self.return_sequences == "both":
-            return (_RNNTensor(all_states, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"),
-                    _RNNTensor(last_state, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"))
+            return (_RNNTensor(all_states, cache, "rnn"), _RNNTensor(last_state, cache, "rnn"))
 
     def __call__(self, X, hprev = None):
         return self.forward(X, hprev)
