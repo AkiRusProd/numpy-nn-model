@@ -7,14 +7,12 @@ from autograd import Tensor
 
 class _RNNTensor(Tensor):
     def __init__(self, data, args, op):
-        self.data = data
-        self.args = args
-        self.op = op
+        super().__init__(data, args, op)
 
     def backward(self, grad=1):
         X, weight, weight_h, bias, states, unactivated_states, input_size, hidden_size, timesteps, nonlinearity, X_data = self.args
 
-        if self.data.shape != states[:, 0 : -1, :].shape: # if return_sequences == False
+        if self.data.shape != states[:, 0 : -1, :].shape: # if return_sequences == "last"
             temp = np.zeros_like((states))
             temp[:, -2, :] = grad
             grad = temp
@@ -52,15 +50,17 @@ class RNN():
     Add Vanilla RNN layer
     ---------------------
         Args:
-            `hidden_size` (int): number of neurons in the layer
+            `input_size` (int): number of neurons in the input layer
+            `hidden_size` (int): number of neurons in the hidden layer
             `nonlinearity` (str) or (`Activation Function` class): activation function
-            `use_bias` (bool):  `True` if used. `False` if not used
+            `bias` (bool):  `True` if used. `False` if not used
             `cycled_states` (bool): `True` future iteration init state equals previous iteration last state. `False` future iteration init state equals 0
+            `return_sequences` (str): `"all"` return all timesteps. `"last"` return only last timestep. `"both"` return both
         Returns:
             output: data with shape (batch_size, timesteps, hidden_size)
     """
 
-    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', input_shape = None, bias = True, cycled_states = False, return_sequences = True):
+    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', input_shape = None, bias = True, cycled_states = False, return_sequences = "both"):
         self.input_size  = input_size
         self.hidden_size   = hidden_size
         self.input_shape = input_shape
@@ -80,13 +80,16 @@ class RNN():
         self.train = True
         self.hprev = None
 
+    def named_parameters(self):
+        return [("weight", self.weight), ("weight_h", self.weight_h), ("bias", self.bias)]
+
 
 
     def forward(self, X, hprev = None):
         self.X_data = X.data
         
         if len(self.X_data.shape) == 2:
-            self.X_data = self.X_data[:, np.newaxis, :]
+            self.X_data = self.X_data[np.newaxis, :, :]
        
         batch_size, timesteps, input_size = self.X_data.shape
 
@@ -115,8 +118,13 @@ class RNN():
         all_states = self.states[:, 0 : -1, :]
         last_state = self.states[:, -2, :].reshape(batch_size, 1, self.hidden_size)
 
-        return (_RNNTensor(all_states, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"),
-                _RNNTensor(last_state, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"))
+        if self.return_sequences in ["all", True]:
+            return _RNNTensor(all_states, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn")
+        elif self.return_sequences in ["last", False]:
+            return _RNNTensor(last_state, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn")
+        elif self.return_sequences == "both":
+            return (_RNNTensor(all_states, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"),
+                    _RNNTensor(last_state, [X, self.weight, self.weight_h, self.bias, self.states, self.unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.X_data],  "rnn"))
 
     def __call__(self, X, hprev = None):
         return self.forward(X, hprev)

@@ -9,6 +9,7 @@ from layers.maxpool2d import MaxPool2d
 from layers.avgpool2d import AvgPool2d
 from layers.embedding import Embedding
 from layers.rnn import RNN
+from layers.bidirectional import Bidirectional
 from containers import *
 from losses import *
 from activations import *

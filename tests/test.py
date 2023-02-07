@@ -250,11 +250,11 @@ from torch import nn
 
 
 
-# rnn = nn.RNN(10, 20, 1)
-# input = torch.randn(5, 3, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
+rnn = nn.RNN(10, 20, 1, batch_first=True)
+input = torch.randn(5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
 # h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
-# output1, hn = rnn(input, h0)
-# print(output1.shape, hn.shape)
+output1, hn = rnn(input)
+print(output1.shape, hn.shape)
 
 # rnn.train(False)
 
@@ -275,6 +275,7 @@ from torch import nn
 # w = emb.weight.data
 
 # x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3]])
+# x = np.array([1, 2, 3])
 # print(x.shape)
 
 # x_t = Tensor(x)
@@ -291,6 +292,7 @@ from torch import nn
 # emb.weight.data = torch.tensor(w)
 # x = torch.tensor(x, dtype=torch.long)
 # out = emb(x)
+# print(out.shape)
 # out.backward(torch.ones_like(out))
 
 # print(out)
@@ -298,8 +300,16 @@ from torch import nn
 # print(x.grad)
 
 
-rnn = nn.RNN(10, 20, 1, batch_first=True)
-input = torch.randn(3, 5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
-h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
-output1, hn = rnn(input, h0)
-print(output1.shape, hn.shape)
+# rnn = nn.RNN(10, 20, 10, batch_first=True)
+# # print rnn weight
+# for name, param in rnn.named_parameters():
+#     print(name, param.shape)
+# # input = torch.randn(3, 5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
+# # h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
+# # output1, hn = rnn(input, h0)
+# # print(output1.shape, hn.shape)
+
+
+x = Tensor(np.random.randn(2, 3, 4, 4))
+x_T = x.T
+print(x_T.shape)

@@ -97,6 +97,11 @@ class Tensor:
             axes = range(self.data.ndim)[::-1]
         return Tensor(self.data.transpose(axes), [self, axes], "transpose", requires_grad=self.requires_grad)
 
+    def flip(self, axis):
+        if axis is None:
+            axis = range(self.data.ndim)
+        return Tensor(np.flip(self.data, axis), [self, axis], "flip", requires_grad=self.requires_grad)
+
     def __neg__(self):
         return Tensor(-self.data, [self], "neg", requires_grad=self.requires_grad)
 
@@ -318,6 +323,9 @@ class Tensor:
             if type(grad) == int and grad == 1:
                 grad = np.ones_like(self.data)
             self.args[0].backward(grad.transpose(self.args[1]))
+
+        elif self.op == "flip":
+            self.args[0].backward(np.flip(grad, axis=self.args[1]))
 
         elif self.op == "neg":
             self.args[0].backward(-grad)

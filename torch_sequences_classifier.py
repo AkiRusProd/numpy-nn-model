@@ -96,11 +96,11 @@ class ExtractTensor(Module):
 
 model = Sequential(
     Embedding(vocab_size, 10),
-    RNN(10, 50, batch_first=True),
+    RNN(10, 50),
     ExtractTensor(return_sequences=True),
-    RNN(50, 50, batch_first=True),
+    RNN(50, 50),
     ExtractTensor(return_sequences=True),
-    RNN(50, 50, batch_first=True),
+    RNN(50, 50),
     ExtractTensor(return_sequences=False),
     Linear(50, 1),
     Sigmoid()
@@ -111,7 +111,7 @@ loss_fn = MSELoss()
 optimizer = Adam(model.parameters(), lr=0.01)
 
 
-padded_document = torch.tensor(padded_document, dtype=torch.long)[..., np.newaxis]
+padded_document = torch.tensor(padded_document, dtype=torch.long)#[..., np.newaxis]
 
 labels = torch.tensor(labels, dtype=torch.float32).reshape(-1, 1)
 
@@ -119,7 +119,7 @@ loss = []
 for epoch in tqdm(range(1000)):
     for i in range(padded_document.shape[0]):
         optimizer.zero_grad()
-        y_pred = model.forward(padded_document[i].T)
+        y_pred = model.forward(padded_document[i])
         # print(y_pred.shape, labels[i].shape)
         loss_ = loss_fn(y_pred, labels[i].reshape(y_pred.shape))
         loss_.backward()

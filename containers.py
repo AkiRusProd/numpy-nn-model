@@ -30,7 +30,8 @@ class Module:
             if hasattr(item, "named_parameters"):
                 for name, param in item.named_parameters():
                     if param.requires_grad:
-                        params.append(param)
+                        if param not in params:
+                            params.append(param)
 
 
         return params
@@ -64,5 +65,6 @@ class Sequential:
             if hasattr(layer, "named_parameters"):
                 for name, param in layer.named_parameters():
                     if param.requires_grad:
-                        params.append(param)
+                        if param not in params:
+                            params.append(param)
         return params

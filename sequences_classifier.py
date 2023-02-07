@@ -5,7 +5,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from nn import Linear, Dropout,  RNN, Embedding
+from nn import Linear, Dropout,  RNN, Embedding, Bidirectional
 from nn import Sigmoid
 from nn import Sequential, Module
 from nn import MSELoss
@@ -81,24 +81,36 @@ class ExtractTensor(Module):
         else:
             return last_state
 
+# model = Sequential(
+#     Embedding(vocab_size, 10),
+#     RNN(10, 50),
+#     ExtractTensor(return_sequences=True),
+#     RNN(50, 50),
+#     ExtractTensor(return_sequences=True),
+#     RNN(50, 50),
+#     ExtractTensor(return_sequences=False),
+#     Linear(50, 1),
+#     Sigmoid()
+# )
+
 model = Sequential(
     Embedding(vocab_size, 10),
-    RNN(10, 50),
-    ExtractTensor(return_sequences=True),
-    RNN(50, 50),
-    ExtractTensor(return_sequences=True),
-    RNN(50, 50),
-    ExtractTensor(return_sequences=False),
+    Bidirectional(RNN(10, 50, return_sequences=True), merge_mode='sum'),
+    Bidirectional(RNN(50, 50, return_sequences=True)),
+    Bidirectional(RNN(50, 50, return_sequences=False)),
     Linear(50, 1),
     Sigmoid()
 )
 
 
+
 loss_fn = MSELoss()
 optimizer = Adam(model.parameters(), lr=0.01)
 
+# for param in model.parameters():
+#     print(param.shape)
 
-padded_document = np.array(padded_document)[..., np.newaxis]
+padded_document = np.array(padded_document)#[..., np.newaxis]
 # print(padded_document.shape)
 # print(padded_document[0].shape)
 
@@ -106,11 +118,12 @@ labels = np.array(labels).reshape(-1, 1) #check
 # print(labels.shape)
 
 loss = []
-tqdm_range = tqdm(range(1000))
+epochs = 1000
+tqdm_range = tqdm(range(epochs))
 for epoch in tqdm_range:
     for i in range(padded_document.shape[0]):
         optimizer.zero_grad()
-        y_pred = model.forward(padded_document[i].T)
+        y_pred = model.forward(padded_document[i])
 
         loss_ = loss_fn(y_pred, labels[i])
         loss_.backward()
@@ -118,13 +131,13 @@ for epoch in tqdm_range:
         loss.append(loss_.data)
 
 
-    tqdm_range.set_description(f"epoch: {epoch}, loss: {loss[-1].round(10)}")
+    tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss[-1].round(10)}")
 
 
 
 acc = 0
 for i in range(padded_document.shape[0]):
-    y_pred = model.forward(padded_document[i].T)
+    y_pred = model.forward(padded_document[i])
     if y_pred.data.round() == labels[i]:
         acc += 1
 
