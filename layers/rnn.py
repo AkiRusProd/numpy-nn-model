@@ -25,7 +25,7 @@ class _RNNTensor(Tensor):
 
         grad_weight = np.zeros_like(weight.data)
         grad_weight_h = np.zeros_like(weight_h.data)
-        grad_bias = np.zeros_like(bias.data)
+        grad_bias = np.zeros(hidden_size)
 
         grad_X = np.zeros_like(X_data)
 
@@ -84,7 +84,11 @@ class RNN():
         self.hprev = None
 
     def named_parameters(self):
-        return [("weight", self.weight), ("weight_h", self.weight_h), ("bias", self.bias)]
+        return [
+            ("weight", self.weight), 
+            ("weight_h", self.weight_h), 
+            ("bias", self.bias)
+        ]
 
 
 

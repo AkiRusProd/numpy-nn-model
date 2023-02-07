@@ -29,9 +29,10 @@ class Module:
                         params.append(item.bias)
             if hasattr(item, "named_parameters"):
                 for name, param in item.named_parameters():
-                    if param.requires_grad:
-                        if param not in params:
-                            params.append(param)
+                    if hasattr(param, "requires_grad"):
+                        if param.requires_grad:
+                            if param not in params:
+                                params.append(param)
 
 
         return params
@@ -64,7 +65,8 @@ class Sequential:
                         params.append(layer.bias)
             if hasattr(layer, "named_parameters"):
                 for name, param in layer.named_parameters():
-                    if param.requires_grad:
-                        if param not in params:
-                            params.append(param)
+                    if hasattr(param, "requires_grad"):
+                        if param.requires_grad:
+                            if param not in params:
+                                params.append(param)
         return params

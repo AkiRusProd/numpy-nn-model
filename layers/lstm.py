@@ -10,7 +10,8 @@ class _LSTMTensor(Tensor):
     def backward(self, grad=1):
         (X, weight_f, weight_i, weight_o, weight_c, weight_hf, weight_hi, weight_ho, weight_hc, bias_f, bias_i, bias_o, bias_c, 
         forget_gates, input_gates, output_gates, cell_gates, cell_states, hidden_states, 
-        unactivated_forget_gates, unactivated_input_gates, unactivated_output_gates, unactivated_cell_gates, input_size, hidden_size, timesteps, nonlinearity, recurrent_nonlinearity) = self.args
+        unactivated_forget_gates, unactivated_input_gates, unactivated_output_gates, unactivated_cell_gates, 
+        input_size, hidden_size, timesteps, nonlinearity, recurrent_nonlinearity) = self.args
         X_data = X.data
         
         if len(X_data.shape) == 2:
@@ -34,10 +35,10 @@ class _LSTMTensor(Tensor):
         grad_weight_ho = np.zeros_like(weight_ho.data)
         grad_weight_hc = np.zeros_like(weight_hf.data)
 
-        grad_bias_f = np.zeros_like(bias_f.data)
-        grad_bias_i = np.zeros_like(bias_i.data)
-        grad_bias_o = np.zeros_like(bias_o.data)
-        grad_bias_c = np.zeros_like(bias_c.data)
+        grad_bias_f = np.zeros(hidden_size)
+        grad_bias_i = np.zeros(hidden_size)
+        grad_bias_o = np.zeros(hidden_size)
+        grad_bias_c = np.zeros(hidden_size)
 
         grad_X = np.zeros_like(X_data)
 
@@ -150,18 +151,20 @@ class LSTM():
         self.hprev = None
 
     def named_parameters(self):
-        return [("weight_f", self.weight_f), 
-                ("weight_i", self.weight_i), 
-                ("weight_o", self.weight_o), 
-                ("weight_c", self.weight_c), 
-                ("weight_hf", self.weight_hf), 
-                ("weight_hi", self.weight_hi), 
-                ("weight_ho", self.weight_ho), 
-                ("weight_hc", self.weight_hc), 
-                ("bias_f", self.bias_f), 
-                ("bias_i", self.bias_i), 
-                ("bias_o", self.bias_o), 
-                ("bias_c", self.bias_c)]
+        return [
+            ("weight_f", self.weight_f), 
+            ("weight_i", self.weight_i), 
+            ("weight_o", self.weight_o), 
+            ("weight_c", self.weight_c), 
+            ("weight_hf", self.weight_hf), 
+            ("weight_hi", self.weight_hi), 
+            ("weight_ho", self.weight_ho), 
+            ("weight_hc", self.weight_hc), 
+            ("bias_f", self.bias_f), 
+            ("bias_i", self.bias_i), 
+            ("bias_o", self.bias_o), 
+            ("bias_c", self.bias_c)
+        ]
 
 
     def forward(self, X, hprev  = None, cprev = None):
@@ -246,8 +249,8 @@ class LSTM():
             return (_LSTMTensor(all_states, cache, "lstm"), _LSTMTensor(last_state, cache, "lstm"))
 
 
-    def __call__(self, X):
-        return self.forward(X)
+    def __call__(self, X, hprev=None, cprev=None):
+        return self.forward(X, hprev, cprev)
 
 
 

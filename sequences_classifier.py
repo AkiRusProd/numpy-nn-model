@@ -5,7 +5,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from nn import Linear, Dropout,  RNN, LSTM, Embedding, Bidirectional
+from nn import Linear, Dropout,  RNN, LSTM, GRU, Embedding, Bidirectional
 from nn import Sigmoid
 from nn import Sequential, Module
 from nn import MSELoss
@@ -81,26 +81,26 @@ class ExtractTensor(Module):
         else:
             return last_state
 
-model = Sequential(
-    Embedding(vocab_size, 10),
-    LSTM(10, 50),
-    ExtractTensor(return_sequences=True),
-    LSTM(50, 50),
-    ExtractTensor(return_sequences=True),
-    LSTM(50, 50),
-    ExtractTensor(return_sequences=False),
-    Linear(50, 1),
-    Sigmoid()
-)
-
 # model = Sequential(
 #     Embedding(vocab_size, 10),
-#     Bidirectional(LSTM(10, 50, return_sequences=True), merge_mode='sum'),
-#     Bidirectional(LSTM(50, 50, return_sequences=True)),
-#     Bidirectional(LSTM(50, 50, return_sequences=False)),
+#     GRU(10, 50),
+#     ExtractTensor(return_sequences=True),
+#     GRU(50, 50),
+#     ExtractTensor(return_sequences=True),
+#     GRU(50, 50),
+#     ExtractTensor(return_sequences=False),
 #     Linear(50, 1),
 #     Sigmoid()
 # )
+
+model = Sequential(
+    Embedding(vocab_size, 10),
+    Bidirectional(GRU(10, 50, return_sequences=True), merge_mode='sum'),
+    Bidirectional(RNN(50, 50, return_sequences=True, bias = True)),
+    Bidirectional(GRU(50, 50, return_sequences=False)),
+    Linear(50, 1),
+    Sigmoid()
+)
 
 
 
