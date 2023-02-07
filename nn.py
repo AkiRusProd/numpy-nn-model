@@ -13,6 +13,7 @@ from layers.lstm import LSTM
 from layers.gru import GRU
 from layers.bidirectional import Bidirectional
 from layers.flatten import Flatten
+from layers.zeropad2d import ZeroPad2d
 from containers import *
 from losses import *
 from activations import *
