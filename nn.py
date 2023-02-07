@@ -12,6 +12,7 @@ from layers.rnn import RNN
 from layers.lstm import LSTM
 from layers.gru import GRU
 from layers.bidirectional import Bidirectional
+from layers.flatten import Flatten
 from containers import *
 from losses import *
 from activations import *
