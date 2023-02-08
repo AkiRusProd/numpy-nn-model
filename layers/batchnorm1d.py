@@ -126,9 +126,7 @@ class BatchNorm1d(): # layer with static backpropagation
         
 #         X_centered = (X - mean) #errro
         
-#         varaddeps = var + self.eps
-#         powvaraddeps = varaddeps.power(0.5)
-#         stddev_inv = Tensor(1).div(powvaraddeps) #1 / np.sqrt(var + self.eps) BUG
+#         stddev_inv = 1 / Tensor.sqrt(var + self.eps)
 
 #         O = X_centered * stddev_inv
 
