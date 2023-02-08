@@ -154,7 +154,8 @@ class Tensor:
         return self.mul(t)
 
     def __rtruediv__(self, t):
-        return self.div(t)
+        t = self.tensor(t)
+        return t.div(self)
 
     def __rmatmul__(self, t):
         return self.dot(t)
@@ -367,7 +368,6 @@ class Tensor:
 
 
 # BUGS:
-# 1 / Tensor(x)
 # gettitem, iter; lists slices
 # overflow memory when use * between non grad tensor and grad tensor many times (check batchnorm moving mean and var)
 # without explicitly specifying arguments in mean, var, sum, the function does not receive them

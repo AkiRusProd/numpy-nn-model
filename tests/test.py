@@ -310,15 +310,7 @@ from torch import nn
 # # print(output1.shape, hn.shape)
 
 
-# x = Tensor(2)
-# # y = x**2
-# # y = x*2
-# # y = 2 * x
-# y = Tensor(2)/x
-# # y = x/2
-# print(y)
-# y.backward()
-# print(x.grad)
+
 
 # arr = np.random.randn(2, 3, 4, 5)
 # my_x = Tensor(arr)
@@ -352,36 +344,36 @@ from torch import nn
 
 
 # arr = np.random.randn(3, 4, 5)
-arr = np.random.randn(3, 5)
+# arr = np.random.randn(3, 5)
 
-softmax = Softmax()
-my_x = Tensor(arr)
-# my_y = softmax(my_x)
-e_x = my_x.sub(my_x.max(axis=-1, keepdims=True)).exp()
-e_x_sum = e_x.sum(axis=-1, keepdims=True)
-# e_x = my_x.max(axis=-1, keepdims=True)
-# e_x_sum = e_x.sum()
-my_y =  e_x.mul(e_x_sum)
-# print(e_x.shape, e_x_sum.shape)
+# softmax = Softmax()
+# my_x = Tensor(arr)
+# # my_y = softmax(my_x)
+# e_x = my_x.sub(my_x.max(axis=-1, keepdims=True)).exp()
+# e_x_sum = e_x.sum(axis=-1, keepdims=True)
+# # e_x = my_x.max(axis=-1, keepdims=True)
+# # e_x_sum = e_x.sum()
+# my_y =  e_x.mul(e_x_sum)
+# # print(e_x.shape, e_x_sum.shape)
 
-print(my_y)
-my_y.backward()
-print(my_x.grad)
+# print(my_y)
+# my_y.backward()
+# print(my_x.grad)
 
-x = torch.tensor(arr, dtype=torch.float32, requires_grad=True)
-# y = nn.Softmax(dim=-1)(x)
-e_x = x.sub(x.amax(dim = -1, keepdim=True)).exp()
-e_x_sum = e_x.sum(dim = -1, keepdim=True)
-# e_x = x.amax(axis=-1, keepdims=True)
-# e_x_sum = e_x.sum()
-y =  e_x.mul(e_x_sum)
+# x = torch.tensor(arr, dtype=torch.float32, requires_grad=True)
+# # y = nn.Softmax(dim=-1)(x)
+# e_x = x.sub(x.amax(dim = -1, keepdim=True)).exp()
+# e_x_sum = e_x.sum(dim = -1, keepdim=True)
+# # e_x = x.amax(axis=-1, keepdims=True)
+# # e_x_sum = e_x.sum()
+# y =  e_x.mul(e_x_sum)
 
-print(y)
-y.backward(torch.ones_like(y))
-print(x.grad)
+# print(y)
+# y.backward(torch.ones_like(y))
+# print(x.grad)
 
-print(np.allclose(y.data, my_y.data))
-print(np.allclose(x.grad, my_x.grad))
+# print(np.allclose(y.data, my_y.data))
+# print(np.allclose(x.grad, my_x.grad))
 # print(e_x.shape, e_x_sum.shape)
 
 
@@ -402,3 +394,19 @@ print(np.allclose(x.grad, my_x.grad))
 
 # print(np.allclose(y.data, my_y.data))
 # print(np.allclose(x.grad, my_x.grad))
+
+
+
+
+x = Tensor(4)
+# y = x**2
+# y = x*2
+# y = 2 * x
+# y = Tensor(2)/x
+y = 2/x/x
+# y = x + 2
+# y = x/2
+
+print(y)
+y.backward()
+print(x.grad)
