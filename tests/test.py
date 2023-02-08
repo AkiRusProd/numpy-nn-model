@@ -407,6 +407,79 @@ y = 2/x/x
 # y = x + 2
 # y = x/2
 
-print(y)
-y.backward()
+# print(y)
+# y.backward()
+# print(x.grad)
+
+
+x = Tensor([[1.1, 2.0, 3.6], [4.7, 3.14, 2.718]], requires_grad=True)
+y = Tensor([[2., 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
+output = Tensor.tanh(1/(Tensor.concatenate(Tensor.sin((Tensor.exp(x ** 1.4) / 3.1 ** Tensor.log(x)).mm(y)), y).mean()))
+
+print(x.shape, y.shape)
+
+# z = x.mm(y)
+# print(z.shape)
+# z.backward(np.ones_like(z.data))
+# print(x.grad)
+
+# step1 = Tensor.sin((Tensor.exp(x ** 1.4) / 3.1 ** Tensor.log(x)).mm(y))
+
+pow_x = x ** 1.4
+exp_x = pow_x.exp()
+log_x = x.log()
+div_x = 3.1 ** log_x
+outsin = exp_x / div_x
+step = outsin.mm(y)
+
+
+step1 = step.sin()
+# step1 = div_x
+
+# step2 = Tensor.concatenate(step1, y)
+# step3 = step2.mean()
+
+print(output)
+output.backward()
+
+
+# tensor(0.3489, grad_fn=<tanhBackward>)
 print(x.grad)
+# [[ -0.0276   0.6477 -11.827 ]
+#  [ 27.2554  -5.3062   1.0978]]
+print(y.grad)
+# [[-10.8005   8.2755]
+#  [ -0.3336   0.2187]
+#  [  0.8972  -0.9684]]
+
+
+x = torch.tensor([[1.1, 2.0, 3.6], [4.7, 3.14, 2.718]], requires_grad=True)
+y = torch.tensor([[2., 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
+output = torch.tanh(1/(torch.cat([torch.sin((torch.exp(x ** 1.4) / 3.1 ** torch.log(x)) @ y), y]).mean()))
+
+# step1 = torch.sin((torch.exp(x ** 1.4) / 3.1 ** torch.log(x)) @ y)
+# step2 = torch.cat([step1, y])
+# step3 = step2.mean()
+
+pow_x = x ** 1.4
+exp_x = pow_x.exp()
+log_x = x.log()
+div_x = 3.1 ** log_x
+outsin = exp_x / div_x
+step = outsin.mm(y)
+
+
+step1 = step.sin()
+# step1 = div_x
+
+output.backward(torch.ones_like(output))
+
+print(output)
+# tensor(0.3489, grad_fn=<tanhBackward>)
+print(x.grad)
+# [[ -0.0276   0.6477 -11.827 ]
+#  [ 27.2554  -5.3062   1.0978]]
+print(y.grad)
+# [[-10.8005   8.2755]
+#  [ -0.3336   0.2187]
+#  [  0.8972  -0.9684]]

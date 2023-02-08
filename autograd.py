@@ -76,6 +76,12 @@ class Tensor:
     def tanh(self):
         return Tensor(np.tanh(self.data), [self], "tanh", requires_grad=self.requires_grad)
 
+    def sin(self):
+        return Tensor(np.sin(self.data), [self], "sin", requires_grad=self.requires_grad)
+
+    def cos(self):
+        return Tensor(np.cos(self.data), [self], "cos", requires_grad=self.requires_grad)
+
     def maximum(self, t):
         t = self.tensor(t)
         return Tensor(np.maximum(self.data, t.data), [self, t], "maximum", requires_grad=self.requires_grad or t.requires_grad)
@@ -164,7 +170,8 @@ class Tensor:
         return self.dot(t)
 
     def __rpow__(self, t):
-        return self.power(t)
+        t = self.tensor(t)
+        return t.power(self)
 
     # add unpacking of split tensors
     def __iter__(self):
@@ -235,7 +242,7 @@ class Tensor:
             self.args[0].backward(grad)
             self.args[1].backward(-grad)
 
-        elif self.op in ["dot", "mul"]:
+        elif self.op == "mul":
             self.args[0].backward(grad * self.args[1].data)
             self.args[1].backward(self.args[0].data * grad)
 
@@ -248,7 +255,7 @@ class Tensor:
             self.args[0].backward(np.outer(grad, self.args[1].data))
             self.args[1].backward(np.dot(grad, self.args[0].data))
 
-        elif self.op == "mm":
+        elif self.op in ["dot", "mm"]:
             self.args[0].backward(np.dot(grad, self.args[1].data.T))
             self.args[1].backward(np.dot(self.args[0].data.T, grad))
 
@@ -292,6 +299,7 @@ class Tensor:
 
         elif self.op == "power":
             self.args[0].backward(grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1))
+            self.args[1].backward(grad * self.args[0].data ** self.args[1].data * np.log(self.args[0].data))
 
         elif self.op == "sqrt":
             self.args[0].backward(grad * 1 / (2 * np.sqrt(self.args[0].data)))
@@ -304,6 +312,12 @@ class Tensor:
 
         elif self.op == "tanh":
             self.args[0].backward(grad * (1 - np.tanh(self.args[0].data) ** 2))
+
+        elif self.op == "sin":
+            self.args[0].backward(grad * np.cos(self.args[0].data))
+
+        elif self.op == "cos":
+            self.args[0].backward(grad * -np.sin(self.args[0].data))
 
         elif self.op == "maximum":
             self.args[0].backward(grad * (self.args[0].data >= self.args[1].data))
