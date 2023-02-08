@@ -70,6 +70,9 @@ class Tensor:
     def exp(self):
         return Tensor(np.exp(self.data), [self], "exp", requires_grad=self.requires_grad)
 
+    def tanh(self):
+        return Tensor(np.tanh(self.data), [self], "tanh", requires_grad=self.requires_grad)
+
     def maximum(self, t):
         t = self.tensor(t)
         return Tensor(np.maximum(self.data, t.data), [self, t], "maximum", requires_grad=self.requires_grad or t.requires_grad)
@@ -77,6 +80,12 @@ class Tensor:
     def minimum(self, t):
         t = self.tensor(t)
         return Tensor(np.minimum(self.data, t.data), [self, t], "minimum", requires_grad=self.requires_grad or t.requires_grad)
+
+    def max(self, axis = None, keepdims = False): #equivalent to torch.amax
+        return Tensor(self.data.max(axis = axis, keepdims = keepdims), [self, axis, keepdims], "max", requires_grad=self.requires_grad)
+
+    def min(self, axis = None, keepdims = False): #equivalent to torch.amin
+        return Tensor(self.data.min(axis = axis, keepdims = keepdims), [self, axis, keepdims], "min", requires_grad=self.requires_grad)
 
     def concatenate(self, *tensors, axis = 0):
         tensors = [self.tensor(t) for t in tensors]
@@ -286,6 +295,9 @@ class Tensor:
         elif self.op == "exp":
             self.args[0].backward(grad * np.exp(self.args[0].data))
 
+        elif self.op == "tanh":
+            self.args[0].backward(grad * (1 - np.tanh(self.args[0].data) ** 2))
+
         elif self.op == "maximum":
             self.args[0].backward(grad * (self.args[0].data >= self.args[1].data))
             self.args[1].backward(grad * (self.args[0].data <= self.args[1].data))
@@ -293,6 +305,18 @@ class Tensor:
         elif self.op == "minimum":
             self.args[0].backward(grad * (self.args[0].data <= self.args[1].data))
             self.args[1].backward(grad * (self.args[0].data >= self.args[1].data))
+
+        elif self.op == "max":
+            axis, keepdims = self.args[1:]
+            if grad.ndim != self.args[0].data.ndim and axis is not None:
+                grad = np.expand_dims(grad, axis)
+            self.args[0].backward(grad * (self.args[0].data == self.args[0].data.max(axis=axis, keepdims=True)))
+
+        elif self.op == "min":
+            axis, keepdims = self.args[1:]
+            if grad.ndim != self.args[0].data.ndim and axis is not None:
+                grad = np.expand_dims(grad, axis)
+            self.args[0].backward(grad * (self.args[0].data == self.args[0].data.min(axis=axis, keepdims=True)))
 
         elif self.op == "concatenate":
             if type(grad) == int and grad == 1:
@@ -372,4 +396,7 @@ class Tensor:
         # g_repeated, num_reps = self.repeat_to_match_shape(grad, shape, dtype, axis, None)
         # print(f"g_repeated {g_repeated}")
         # self.args[0].backward(g_repeated / num_reps)
+
+
+# softmax not equals grads with pytorch; place: div; maybe NOT BUG becase small numbers manipulation????
 

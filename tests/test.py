@@ -4,7 +4,7 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 
 import numpy as np
 from autograd import Tensor
-from nn import BatchNorm2d, MaxPool2d, AvgPool2d, Embedding
+from nn import BatchNorm2d, MaxPool2d, AvgPool2d, Embedding, GELU, ELU, TanhExp, Softmax
 
 import torch
 from torch import nn
@@ -250,11 +250,11 @@ from torch import nn
 
 
 
-rnn = nn.RNN(10, 20, 1, batch_first=True)
-input = torch.randn(5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
-# h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
-output1, hn = rnn(input)
-print(output1.shape, hn.shape)
+# rnn = nn.RNN(10, 20, 1, batch_first=True)
+# input = torch.randn(5, 10) # 5 seq, 3 batch, 10 input if batch_first=False else batch seq input
+# # h0 = torch.randn(1, 3, 20) # 1 layer, 3 batch, 20 hidden
+# output1, hn = rnn(input)
+# print(output1.shape, hn.shape)
 
 # rnn.train(False)
 
@@ -310,6 +310,95 @@ print(output1.shape, hn.shape)
 # # print(output1.shape, hn.shape)
 
 
-x = Tensor(np.random.randn(2, 3, 4, 4))
-x_T = x.T
-print(x_T.shape)
+# x = Tensor(2)
+# # y = x**2
+# # y = x*2
+# # y = 2 * x
+# y = Tensor(2)/x
+# # y = x/2
+# print(y)
+# y.backward()
+# print(x.grad)
+
+# arr = np.random.randn(2, 3, 4, 5)
+# my_x = Tensor(arr)
+# # gelu = TanhExp()
+# # y = gelu(x)
+# my_y = my_x.max(0, keepdims=True)
+# print(my_y)
+# my_y.backward()
+# print(my_x.grad)
+
+# x = torch.tensor(arr, requires_grad=True, dtype=torch.float32)
+# y = x.amax(0, keepdim=False) #contains max and argmax
+# print(y)
+# y.backward(torch.ones_like(y))
+# print(x.grad)
+
+# print(np.allclose(y.data, my_y.data))
+# print(np.allclose(x.grad, my_x.grad))
+
+# print(np.allclose(y[0].data, my_y.data))
+# print(np.allclose(y[1].data, my_x.grad))
+
+
+# x = torch.tensor(-2.324, dtype=torch.float32, requires_grad=True)
+# gelu = nn.TanhExp()
+# y = gelu(x)
+# print(y)
+# y.backward()
+# print(x.grad)
+
+
+
+# arr = np.random.randn(3, 4, 5)
+arr = np.random.randn(3, 5)
+
+softmax = Softmax()
+my_x = Tensor(arr)
+# my_y = softmax(my_x)
+e_x = my_x.sub(my_x.max(axis=-1, keepdims=True)).exp()
+e_x_sum = e_x.sum(axis=-1, keepdims=True)
+# e_x = my_x.max(axis=-1, keepdims=True)
+# e_x_sum = e_x.sum()
+my_y =  e_x.mul(e_x_sum)
+# print(e_x.shape, e_x_sum.shape)
+
+print(my_y)
+my_y.backward()
+print(my_x.grad)
+
+x = torch.tensor(arr, dtype=torch.float32, requires_grad=True)
+# y = nn.Softmax(dim=-1)(x)
+e_x = x.sub(x.amax(dim = -1, keepdim=True)).exp()
+e_x_sum = e_x.sum(dim = -1, keepdim=True)
+# e_x = x.amax(axis=-1, keepdims=True)
+# e_x_sum = e_x.sum()
+y =  e_x.mul(e_x_sum)
+
+print(y)
+y.backward(torch.ones_like(y))
+print(x.grad)
+
+print(np.allclose(y.data, my_y.data))
+print(np.allclose(x.grad, my_x.grad))
+# print(e_x.shape, e_x_sum.shape)
+
+
+# arr2 = np.random.randn(3, 4, 1)
+
+# my_x = Tensor(arr)
+# my_x2 = Tensor(arr2)
+
+# my_y = my_x.div(my_x2)
+# my_y.backward()
+# print(my_x.grad)
+
+# x = torch.tensor(arr, dtype=torch.float32, requires_grad=True)
+# x2 = torch.tensor(arr2, dtype=torch.float32, requires_grad=True)
+# y = x.div(x2)
+# y.backward(torch.ones_like(y))
+# print(x.grad)
+
+# print(np.allclose(y.data, my_y.data))
+# print(np.allclose(x.grad, my_x.grad))
