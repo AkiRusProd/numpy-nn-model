@@ -154,20 +154,24 @@ class Tensor:
     #     return f"Tensor({self.data}, requires_grad={self.requires_grad})"
 
     def __radd__(self, t):
-        return self.add(t)
+        t = self.tensor(t)
+        return t.add(self)
 
     def __rsub__(self, t):
-        return self.sub(t)
+        t = self.tensor(t)
+        return t.sub(self)
 
     def __rmul__(self, t):
-        return self.mul(t)
+        t = self.tensor(t)
+        return t.mul(self)
 
     def __rtruediv__(self, t):
         t = self.tensor(t)
         return t.div(self)
 
     def __rmatmul__(self, t):
-        return self.dot(t)
+        t = self.tensor(t)
+        return t.dot(self)
 
     def __rpow__(self, t):
         t = self.tensor(t)

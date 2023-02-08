@@ -483,3 +483,14 @@ print(y.grad)
 # [[-10.8005   8.2755]
 #  [ -0.3336   0.2187]
 #  [  0.8972  -0.9684]]
+
+
+x = Tensor(2)
+y = 2 - x
+y.backward()
+print(x.grad)
+
+x = torch.tensor(2, requires_grad=True, dtype=torch.float32)
+y = 2 - x
+y.backward()
+print(x.grad)
