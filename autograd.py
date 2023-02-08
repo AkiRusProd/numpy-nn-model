@@ -64,6 +64,9 @@ class Tensor:
         n = self.tensor(n)
         return Tensor(self.data ** n.data, [self, n], "power", requires_grad=self.requires_grad or n.requires_grad)    
 
+    def sqrt(self):
+        return Tensor(np.sqrt(self.data), [self], "sqrt", requires_grad=self.requires_grad)
+
     def log(self):
         return Tensor(np.log(self.data), [self], "log", requires_grad=self.requires_grad)
 
@@ -289,6 +292,9 @@ class Tensor:
 
         elif self.op == "power":
             self.args[0].backward(grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1))
+
+        elif self.op == "sqrt":
+            self.args[0].backward(grad * 1 / (2 * np.sqrt(self.args[0].data)))
 
         elif self.op == "log":
             self.args[0].backward(grad * 1 / self.args[0].data)
