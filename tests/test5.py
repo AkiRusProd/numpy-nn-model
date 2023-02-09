@@ -1,3 +1,9 @@
+import sys, os
+from pathlib import Path
+sys.path[0] = str(Path(sys.path[0]).parent)
+
+
+
 import numpy as np
 from autograd import Tensor
 
@@ -69,7 +75,7 @@ mean = x.mean(axis = -1, keepdims=True)
 var = x.var(axis = -1,  keepdims=True)
 
 
-x_c = x + mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
+x_c = x - mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
 varaddeps = var + eps
 powvaraddeps = varaddeps.power(0.5)
 stddev_inv = Tensor(1).div(powvaraddeps)
@@ -90,7 +96,7 @@ x = torch.tensor(x_arr, requires_grad = True)
 mean = x.mean(axis = -1, keepdim=True)
 var = x.var(axis = -1, unbiased=False, keepdim=True)
 
-x_c = x + mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
+x_c = x - mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
 varaddeps = var + eps
 powvaraddeps = varaddeps.pow(0.5)
 stddev_inv = 1 / powvaraddeps

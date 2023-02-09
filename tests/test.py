@@ -494,3 +494,40 @@ x = torch.tensor(2, requires_grad=True, dtype=torch.float32)
 y = 2 - x
 y.backward()
 print(x.grad)
+
+
+x_arr = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
+# x_arr = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+x_arr = np.random.randn(2, 3, 3)
+
+x = Tensor(x_arr)
+eps = 1e-5
+
+mean = x.mean(axis = -1, keepdims=True)
+var = x.var(axis = -1,  keepdims=True)
+
+
+x_c = x - mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
+varaddeps = var + eps
+x_hat = x_c * x
+
+x_hat.backward(np.ones_like(x_hat.data))
+print("X_HAT", x_hat.data)
+x_grad = x.grad
+
+print("x.grad", x_grad)
+
+print("--------------------")
+
+x = torch.tensor(x_arr, requires_grad = True)
+
+mean = x.mean(axis = -1, keepdim=True)
+var = x.var(axis = -1, unbiased=False, keepdim=True)
+
+x_c = x - mean # WHEN - MEAN NOT COMPATIBLE WITH PYTORCH
+x_hat = x_c * x
+
+x_hat.backward(torch.ones_like(x_hat.data))
+print("X_HAT", x_hat.data)
+print("x.grad", x.grad)
+
