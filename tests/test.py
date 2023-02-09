@@ -551,11 +551,3 @@ output.backward()
 print(x.grad)
 print(y.grad)
 
-
-x = nnet.Tensor([1])
-y = nnet.Tensor([2])
-
-z = x - y
-z.backward()
-print(x.grad)
-print(y.grad)
