@@ -1,6 +1,6 @@
-from autograd import Tensor
-from nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU, Dropout, BatchNorm1d, Conv2d, Module, BatchNorm2d, MaxPool2d, AvgPool2d
-from optim import SGD, Adam
+from neunet.autograd import Tensor
+from neunet.nn import Linear, Sequential, Sigmoid, Tanh, BCELoss, MSELoss, LeakyReLU, Dropout, BatchNorm1d, Conv2d, Module, BatchNorm2d, MaxPool2d, AvgPool2d
+from neunet.optim import SGD, Adam
 from tqdm import tqdm
 import numpy as np
 import os

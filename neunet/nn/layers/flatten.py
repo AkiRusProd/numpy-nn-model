@@ -1,5 +1,5 @@
 import numpy as np
-from autograd import Tensor
+from neunet.autograd import Tensor
 
 
 class Flatten():

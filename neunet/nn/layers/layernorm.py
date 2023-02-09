@@ -1,4 +1,4 @@
-from autograd import Tensor
+from neunet.autograd import Tensor
 import numpy as np
 
 

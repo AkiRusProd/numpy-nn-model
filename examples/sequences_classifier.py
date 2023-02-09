@@ -1,15 +1,15 @@
-# import sys
-# from pathlib import Path
-# sys.path[0] = str(Path(sys.path[0]).parent)
+import sys
+from pathlib import Path
+sys.path[0] = str(Path(sys.path[0]).parent)
 
 import numpy as np
 from tqdm import tqdm
 
-from nn import Linear, Dropout,  RNN, LSTM, GRU, Embedding, Bidirectional
-from nn import Sigmoid
-from nn import Sequential, Module
-from nn import MSELoss
-from optim import SGD, Adam
+from neunet.nn import Linear, Dropout,  RNN, LSTM, GRU, Embedding, Bidirectional
+from neunet.nn import Sigmoid
+from neunet.nn import Sequential, Module
+from neunet.nn import MSELoss
+from neunet.optim import SGD, Adam
 
 
 document = ['Nice Clothes!', 

@@ -1,6 +1,6 @@
 import numpy as np
-from autograd import Tensor
-from nn import Linear, Sequential, Module, MSELoss, Sigmoid, ReLU, BCELoss, Tanh
+from neunet.autograd import Tensor
+from neunet.nn import Linear, Sequential, Module, MSELoss, Sigmoid, ReLU, BCELoss, Tanh
 import torch
 import torch.nn as nn
 

@@ -1,6 +1,6 @@
 import numpy as np
 import copy as copy_object
-from autograd import Tensor
+from neunet.autograd import Tensor
 
 
 #In feature can be moved to rnn layer as argument
