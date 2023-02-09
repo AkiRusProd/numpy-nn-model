@@ -5,7 +5,7 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 
 
 import numpy as np
-from autograd import Tensor
+from neunet.autograd import Tensor
 
 import torch
 from torch import nn
