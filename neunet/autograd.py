@@ -101,6 +101,7 @@ class Tensor:
         return Tensor(np.concatenate([self.data] + [t.data for t in tensors], axis = axis), [self] + tensors + [axis], "concatenate", requires_grad=self.requires_grad or any([t.requires_grad for t in tensors]))
 
     def reshape(self, *shape):
+        shape = shape[0] if len(shape) == 1 else shape
         return Tensor(self.data.reshape(shape), [self], "reshape", requires_grad=self.requires_grad)
 
     # def split(self, n, axis = 0):
@@ -111,6 +112,7 @@ class Tensor:
         return Tensor(np.abs(self.data), [self], "abs", requires_grad=self.requires_grad)
 
     def transpose(self, *axes):
+        axes = axes[0] if len(axes) == 1 else axes
         if len(axes) == 0:
             axes = range(self.data.ndim)[::-1]
         return Tensor(self.data.transpose(axes), [self, axes], "transpose", requires_grad=self.requires_grad)

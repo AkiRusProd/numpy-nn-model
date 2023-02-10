@@ -554,7 +554,7 @@ print(y.grad)
 x = nnet.tensor([[1.1, 2.0, 3.6], [4.7, 3.14, 2.718]], requires_grad=True)
 y = nnet.tensor([[2., 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
 
-output = nnet.tanh(1/(nnet.concatenate(nnet.sin((nnet.exp(x ** 1.4) / 3.1 ** nnet.log(x)).mm(y)), y).mean()))
+output = nnet.tanh(1/(nnet.concatenate([nnet.sin((nnet.exp(x ** 1.4) / 3.1 ** nnet.log(x)).mm(y)), y]).mean()))
 
 print(output)
 output.backward()
@@ -578,19 +578,58 @@ import numpy as np
 import torch
 
 
-x = torch.randn(2, 3, 3)
-x = x.reshape((((2,3,3))))
-print(x.shape)
+# x = torch.randn(2, 3, 3)
+# x = x.reshape((((2,3,3))))
+# print(x.shape)
 
-x= nnet.tensor(x.data)
-y= nnet.tensor(x.data)
+# x= nnet.tensor(x.data)
+# y= nnet.tensor(x.data)
 
-z = x.max(axis = -1, keepdims=True)
+# z = x.max(axis = -1, keepdims=True)
+# print(z.shape)
+
+# z2 = nnet.max(x, axis = -1, keepdims=True)
+# print(z2.shape)
+
+# z3 = nnet.maximum(x, 0)
+# print(x)
+# print(z3)
+
+# x = nnet.tensor(np.random.randn(2, 3, 3))
+# x = nnet.reshape(x, *(2, 3, 3))
+# print(x.shape)
+
+x = Tensor(np.random.randn(2, 3, 3))
+# y = nnet.reshape(x, (3, 3, 2))
+# y = x.reshape(*(3, 3, 2))
+# y = Tensor.reshape(x, *(3, 3, 2))
+print(y.shape, "y")
+y.backward(np.ones_like(y.data))
+print(x.grad.shape)
+
+# x = torch.tensor(np.random.randn(2, 3, 3), requires_grad=True)
+# x = x.reshape((3, 2, 3)).retain_grad()
+# # print(y.shape)
+# x.backward(torch.ones_like(x.data))
+# print(x.grad.shape)
+
+x = [1, 2, 3]
+print(*x)
+
+x = torch.tensor(np.random.randn(2, 3, 3))  # , requires_grad=True)
+y = torch.tensor(np.random.randn(2, 3, 3))  # , requires_grad=True)
+z = torch.cat((x, y), axis=0)
 print(z.shape)
+# # z = x.cat(y)
 
-z2 = nnet.max(x, axis = -1, keepdims=True)
-print(z2.shape)
-
-z3 = nnet.maximum(x, 0)
-print(x)
-print(z3)
+x = nnet.tensor(np.random.randn(2, 3, 3))
+y = nnet.tensor(np.random.randn(2, 3, 3))
+w = nnet.tensor(np.random.randn(2, 3, 3))
+z = nnet.concatenate(x, y, w, axis=1)
+# z = x.concatenate(y, w, axis=1)
+# z = Tensor.concatenate(x, y, w, axis=1)
+z.backward(np.ones_like(z.data))
+print(z.shape)
+print(x.grad.shape)
+print(y.grad.shape)
+print(w.grad.shape)

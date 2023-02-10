@@ -72,6 +72,7 @@ def min(x, axis=None, keepdims=False):
     return x.min(axis=axis, keepdims=keepdims)
 
 def concatenate(*tensors, axis=0):
+    tensors = tensors[0] if len(tensors) == 1 and isinstance(tensors[0], (list, tuple)) else tensors
     return Tensor.concatenate(*tensors, axis=axis)
 
 def reshape(x, *shape):
