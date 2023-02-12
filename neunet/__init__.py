@@ -29,14 +29,14 @@ def mv(x, y):
 def mm(x, y):
     return x.mm(y)
 
-def sum(x, dim=None, keepdims=False):
-    return x.sum(dim=dim, keepdims=keepdims)
+def sum(x, axis=None, keepdims=False):
+    return x.sum(axis=axis, keepdims=keepdims)
 
-def mean(x, dim=None, keepdims=False):
-    return x.mean(dim=dim, keepdims=keepdims)
+def mean(x, axis=None, keepdims=False):
+    return x.mean(axis=axis, keepdims=keepdims)
 
-def var(x, dim=None, keepdims=False):
-    return x.var(dim=dim, keepdims=keepdims)
+def var(x, axis=None, keepdims=False):
+    return x.var(axis=axis, keepdims=keepdims)
 
 def power(x, y):
     return x ** y

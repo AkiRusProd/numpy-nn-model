@@ -18,7 +18,7 @@ class _GRUTensor(Tensor):
 
         if self.data.shape != hidden_states[:, 0 : -1, :].shape: # if return_sequences == "last"
             temp = np.zeros_like((hidden_states))
-            temp[:, -2, :] = grad
+            temp[:, [-2], :] = grad #[-2] saves dims when slicing
             grad = temp
 
         next_hidden_delta = np.zeros((hidden_size))

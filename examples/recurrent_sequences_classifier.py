@@ -5,10 +5,13 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 import numpy as np
 from tqdm import tqdm
 
-from neunet.nn import Linear, Dropout,  RNN, LSTM, GRU, Embedding, Bidirectional
-from neunet.nn import Sigmoid
-from neunet.nn import Sequential, Module
-from neunet.nn import MSELoss
+from tqdm import tqdm
+from neunet.optim import Adam
+import neunet as nnet
+import neunet.nn as nn
+import numpy as np
+import os
+
 from neunet.optim import SGD, Adam
 
 
@@ -69,56 +72,52 @@ print('Padded document:', *padded_document, sep = "\n")
 
 
 
-class ExtractTensor(Module):
-    def __init__(self, return_sequences):
-        super().__init__()
-        self.return_sequences = return_sequences
+# class ExtractTensor(nn.Module):
+#     def __init__(self, return_sequences):
+#         super().__init__()
+#         self.return_sequences = return_sequences
 
-    def forward(self, X):
-        all_states, last_state = X
-        if self.return_sequences:
-            return all_states
-        else:
-            return last_state
+#     def forward(self, X):
+#         all_states, last_state = X
+#         if self.return_sequences:
+#             return all_states
+#         else:
+#             return last_state
 
-# model = Sequential(
-#     Embedding(vocab_size, 10),
-#     GRU(10, 50),
+# model = nn.Sequential(
+#     nn.Embedding(vocab_size, 10),
+#     nn.GRU(10, 50),
 #     ExtractTensor(return_sequences=True),
-#     GRU(50, 50),
+#     nn.GRU(50, 50),
 #     ExtractTensor(return_sequences=True),
-#     GRU(50, 50),
+#     nn.GRU(50, 50),
 #     ExtractTensor(return_sequences=False),
-#     Linear(50, 1),
-#     Sigmoid()
+#     nn.Linear(50, 1),
+#     nn.Sigmoid()
 # )
 
-model = Sequential(
-    Embedding(vocab_size, 10),
-    Bidirectional(GRU(10, 50, return_sequences=True), merge_mode='sum'),
-    Bidirectional(RNN(50, 50, return_sequences=True, bias = True)),
-    Bidirectional(GRU(50, 50, return_sequences=False)),
-    Linear(50, 1),
-    Sigmoid()
+model = nn.Sequential(
+    nn.Embedding(vocab_size, 10),
+    nn.Bidirectional(nn.GRU(10, 50, return_sequences=True), merge_mode='sum'),
+    nn.Bidirectional(nn.RNN(50, 50, return_sequences=True, bias = True)),
+    nn.Bidirectional(nn.GRU(50, 50, return_sequences=False)),
+    nn.Linear(50, 1),
+    nn.Sigmoid()
 )
 
 
 
-loss_fn = MSELoss()
+loss_fn = nn.MSELoss()
 optimizer = Adam(model.parameters(), lr=0.001)
 
-# for param in model.parameters():
-#     print(param.shape)
+padded_document = np.array(padded_document)
 
-padded_document = np.array(padded_document)#[..., np.newaxis]
-# print(padded_document.shape)
-# print(padded_document[0].shape)
 
-labels = np.array(labels).reshape(-1, 1) #check
-# print(labels.shape)
+labels = np.array(labels).reshape(-1, 1)
+
 
 loss = []
-epochs = 1000
+epochs = 100
 tqdm_range = tqdm(range(epochs))
 for epoch in tqdm_range:
     for i in range(padded_document.shape[0]):
@@ -131,7 +130,7 @@ for epoch in tqdm_range:
         loss.append(loss_.data)
 
 
-    tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss[-1].round(10)}")
+    tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss[-1]:.7f}")
 
 
 
@@ -151,8 +150,3 @@ plt.title('Model loss')
 plt.ylabel('loss')
 plt.xlabel('iterations')
 plt.show()
-
-emb = Embedding(vocab_size, 10)
-out = emb.forward(padded_document[0])
-print(out.shape)
-

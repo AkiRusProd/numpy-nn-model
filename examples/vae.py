@@ -2,85 +2,55 @@ import sys, os
 from pathlib import Path
 sys.path[0] = str(Path(sys.path[0]).parent)
 
-from neunet.autograd import Tensor
-from neunet.nn import Linear, Sequential, Module, MSELoss, Sigmoid, ReLU, BCELoss
-from neunet.optim import SGD, Adam
 from tqdm import tqdm
+from neunet.optim import Adam
+import neunet as nnet
+import neunet.nn as nn
 import numpy as np
 import os
+
 from PIL import Image
+from data_loader import load_mnist
 
 
 
-training_data = open('datasets/mnist/mnist_train.csv','r').readlines()
-test_data = open('datasets/mnist/mnist_test.csv','r').readlines()
+dataset, _, _, _ = load_mnist()
+dataset = dataset / 255 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
-image_size = (1, 28, 28)
-
-def prepare_data(data, number_to_take = None):
-    inputs = []
-
-    for raw_line in tqdm(data, desc = 'preparing data'):
-
-        line = raw_line.split(',')
-
-        if number_to_take != None:
-            if str(line[0]) == number_to_take:
-                inputs.append(np.asfarray(line[1:]))
-        else:
-            inputs.append(np.asfarray(line[1:]))
-        
-    return inputs
+latent_size = 64
 
 
-
-mnist_data_path = "datasets/mnist/"
-
-if not os.path.exists(mnist_data_path + "mnist_train.npy") or not os.path.exists(mnist_data_path + "mnist_test.npy"):
-    train_inputs = np.asfarray(prepare_data(training_data))
-    test_inputs = np.asfarray(prepare_data(test_data))
-
-    np.save(mnist_data_path + "mnist_train.npy", train_inputs)
-    np.save(mnist_data_path + "mnist_test.npy", test_inputs)
-else:
-    train_inputs = np.load(mnist_data_path + "mnist_train.npy")
-    test_inputs = np.load(mnist_data_path + "mnist_test.npy")
-
-
-dataset = train_inputs / 255 #/ 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
-
-
-class VAE(Module):
+class VAE(nn.Module):
     def __init__(self, input_size, latent_size):
         super().__init__()
         self.input_size = input_size
         self.latent_size = latent_size
 
-        self.encoder = Sequential(
-            Linear(input_size, 256),
-            ReLU(),
-            Linear(256, 128),
-            ReLU(),
-            Linear(128, latent_size),
-            ReLU(),
+        self.encoder = nn.Sequential(
+            nn.Linear(input_size, 256),
+            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, latent_size),
+            nn.ReLU(),
         )
 
-        self.decoder = Sequential(
-            Linear(latent_size, 128),
-            ReLU(),
-            Linear(128, 256),
-            ReLU(),
-            Linear(256, input_size),
-            Sigmoid()
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_size, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, input_size),
+            nn.Sigmoid()
         )
-        self.mu_encoder = Linear(latent_size, latent_size)
-        self.logvar_encoder = Linear(latent_size, latent_size)
+        self.mu_encoder = nn.Linear(latent_size, latent_size)
+        self.logvar_encoder = nn.Linear(latent_size, latent_size)
 
-        self.loss_fn = BCELoss(reduction='sum')
+        self.loss_fn = nn.BCELoss(reduction='sum')
 
     def reparameterize(self, mu, logvar):
         std = logvar.mul(0.5).exp()
-        eps = Tensor(np.random.normal(0, 1, size=std.shape))
+        eps = nnet.tensor(np.random.normal(0, 1, size=std.shape))
         z = mu + eps * std
         return z
 
@@ -97,7 +67,7 @@ class VAE(Module):
 
     def loss_function(self, x, x_recon, mu, logvar):
         MSE = self.loss_fn(x_recon, x)
-        KLD = -0.5 * Tensor.sum(1 + logvar - mu.power(2) - logvar.exp())
+        KLD = -0.5 * nnet.sum(1 + logvar - mu.power(2) - logvar.exp())
         return MSE + KLD
     
     def train(self, x, optimizer):
@@ -116,7 +86,7 @@ class VAE(Module):
     def reconstruct(self, x):
         return self.forward(x)[0]
 
-vae = VAE(28 * 28, 64)
+vae = VAE(28 * 28, latent_size)
 optimizer = Adam(vae.parameters(), lr=0.001)
 
 
@@ -128,21 +98,20 @@ for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = 'epoch %d' % epoch)
     for i in tqdm_range:
         batch = dataset[i:i+batch_size]
-        batch = Tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
         loss = vae.train(batch, optimizer)
         
-        tqdm_range.set_description('epoch %d, loss: %.4f' % (epoch, loss.data))
+        tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
 
 
-
-    generated = vae.generate(Tensor(np.random.normal(0, 1, size=(100, 64)), requires_grad=False))
+    generated = vae.generate(nnet.tensor(np.random.normal(0, 1, size=(100, latent_size)), requires_grad=False))
     # generated = vae.reconstruct(Tensor(dataset[:100], requires_grad=False).reshape(-1, 28 * 28))
     generated = generated.data
 
-    for i in range(100):
+    for i in range(25):
         image = generated[i] * 255
         image = image.astype(np.uint8)
         image = image.reshape(28, 28)
         image = Image.fromarray(image)
-        image.save(f'generated_images/{i}.png')
+        image.save(f'generated images/{i}.png')
 
