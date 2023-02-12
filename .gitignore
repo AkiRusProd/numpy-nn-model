@@ -134,4 +134,5 @@ dmypy.json
 *.gz
 *.chip.jpg
 *.npy
-generated images/
+*.png
+*.jpeg
