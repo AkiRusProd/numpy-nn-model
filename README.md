@@ -101,8 +101,6 @@ print(z.grad, '\n')
 ### Model Examples:
 All examples was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
-Code:   
-*[Base training module](https://github.com/AkiRusProd/numpy-nn-model/blob/master/nnmodel/nn_model.py)*
 
 #### Convolutional Classifier
 ```python
