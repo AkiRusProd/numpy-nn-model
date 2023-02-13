@@ -64,7 +64,7 @@
 
 1) add, sub, mul, div, dot, abs
 2) sum, mean, var, max, min, maximum, minimum
-3) transpose, reshape, concatenate, flip
+3) transpose, reshape, concatenate, flip, slicing
 4) power, exp, log, sqrt, sin, cos, tanh
 
 ### Tensor Operations with autograd Example:

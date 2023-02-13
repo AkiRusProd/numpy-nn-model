@@ -162,3 +162,123 @@ print(x_grad / xt_grad)
 # x_hat.backward(torch.ones_like(x_hat.data))
 # print("X_HAT", x_hat.data)
 # print("x.grad", x.grad)
+
+import sys, os
+from pathlib import Path
+sys.path[0] = str(Path(sys.path[0]).parent)
+
+
+import torch
+import torch.nn as nn
+
+import neunet as nnet
+import neunet.nn as nnn
+
+import numpy as np
+
+# SLICE BUGS: 1) НЕ РАБОТАЕТ СО СТАТИЧЕСКИМИ СЛОЯМИ 2) В VAE ДАЖЕ С ДИНАМИЧЕСКИМИ СЛОЯМИ СЕТЬ НЕ ОБУЧАЕТСЯ
+
+# xnp = np.random.randn(2, 3, 4, 5)
+# xnnet = nnet.tensor(xnp)
+
+# x_slice = xnnet[1:3]
+
+# print(x_slice)
+
+
+# y = x_slice.sum()
+
+# print(y)
+
+# y.backward()
+
+# print(xnnet.grad)
+
+# xtorch = torch.tensor(xnp, requires_grad=True)
+# x_slice = xtorch[1:3]
+
+# print(x_slice)
+
+# y = x_slice.sum()
+
+# print(y)
+
+# y.backward()
+
+# print(xtorch.grad)
+
+# x_enc = np.random.randn(2, 6)
+# x_enc = nnet.tensor(x_enc, requires_grad=True)
+# latent_size = 3
+
+# mu, logvar = x_enc[:, :latent_size], x_enc[:, latent_size:]
+
+# print(mu)
+# print(logvar)
+
+# std = logvar.mul(0.5).exp()
+# eps = nnet.tensor(np.random.normal(0, 1, size=std.shape))
+# z = mu + eps * std
+
+# print(z)
+
+# z.backward()
+
+# print(x_enc.grad)
+
+# xtorch = torch.tensor(x_enc.data, requires_grad=True)
+# mu, logvar = xtorch[:, :latent_size], xtorch[:, latent_size:]
+
+# print(mu)
+# print(logvar)
+
+# std = logvar.mul(0.5).exp()
+# eps = torch.tensor(eps.data)
+# z = mu + eps * std
+
+# print(z)
+
+# z.backward(torch.ones_like(z))
+
+# print(xtorch.grad)
+
+###########################
+latent_size = 3
+input_size = 6
+
+layer = nnn.Linear(input_size, latent_size * 2, bias=False)
+weights = layer.weight.data
+
+x = np.random.randn(2, input_size)
+x = nnet.tensor(x, requires_grad=True)
+
+y = layer(x)
+
+mu, logvar = y[:, :latent_size], y[:, latent_size:]
+std = logvar.mul(0.5).exp()
+eps = nnet.tensor(np.random.normal(0, 1, size=std.shape))
+z = mu + eps * std
+
+print(z)
+
+z.backward()
+
+print(x.grad)
+
+xtorch = torch.tensor(x.data, requires_grad=True, dtype=torch.float32)
+layer = torch.nn.Linear(input_size, latent_size * 2, bias=False)
+layer.weight.data = torch.tensor(weights, dtype=torch.float32)
+
+y = layer(xtorch)
+
+mu, logvar = y[:, :latent_size], y[:, latent_size:]
+std = logvar.mul(0.5).exp()
+eps = torch.tensor(eps.data)
+z = mu + eps * std
+
+
+print(z)
+
+z.backward(torch.ones_like(z))
+
+print(xtorch.grad)

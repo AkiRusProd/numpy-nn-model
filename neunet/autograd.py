@@ -367,8 +367,13 @@ class Tensor:
         #     self.args[0].backward(np.concatenate(grad, axis = 0))
 
         elif self.op == "getitem":
-            self.args[0].backward(np.zeros_like(self.args[0].data))
-            self.args[0].grad[self.args[1]] = grad
+            # self.args[0].backward(np.zeros_like(self.args[0].data))
+            # self.args[0].grad[self.args[1]] = grad
+
+            _grad = np.zeros_like(self.args[0].data)
+            _grad[self.args[1]] = grad
+
+            self.args[0].backward(_grad)
 
         elif self.op == "transpose":
             if type(grad) == int and grad == 1:
