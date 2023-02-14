@@ -332,6 +332,8 @@ class _SELUTensor(Tensor): #Static SELU tensor for backpropagation
 
         grad_x = grad * (lmbda * np.where(x > 0, 1, alpha * np.exp(x)))
 
+        self.args[0].backward(grad_x)
+
 class SELU(): #Static SELU computation
     def __init__(self):
         self.alpha = 1.6732632423543772848170429916717
