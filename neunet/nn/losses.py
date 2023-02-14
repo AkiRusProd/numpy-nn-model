@@ -26,9 +26,8 @@ class BCELoss(Tensor):
 
         if self.weight is None:
             self.weight = np.ones((1))
-        else:
-            self.weight = self.weight.data
-        assert (self.weight.data * y_pred.data).shape == y_pred.data.shape, "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
+
+        assert (self.weight * y_pred.data).shape == y_pred.data.shape, "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
 
         loss = loss.mul(self.weight)
 
@@ -71,8 +70,6 @@ class NLLLoss(Tensor):
     def forward(self, y_pred, y_true):
         if self.weight is None:
             self.weight = np.ones((y_pred.data.shape[1]))
-        else:
-            self.weight = self.weight.data
 
         assert self.weight.shape == (y_pred.data.shape[1], ), "Weight shape must be equal to number of classes"
 
