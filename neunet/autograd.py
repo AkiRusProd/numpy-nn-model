@@ -36,17 +36,9 @@ class Tensor:
         t = self.tensor(t)
         return Tensor(self.data / t.data, [self, t], "div", requires_grad=self.requires_grad or t.requires_grad)
 
-    def dot(self, v):
-        v = self.tensor(v)
-        return Tensor(np.dot(self.data, v.data), [self, v], "dot", requires_grad=self.requires_grad or v.requires_grad)
-
-    def mv(self, v):
-        v = self.tensor(v)
-        return Tensor(np.dot(self.data, v.data), [self, v], "mv", requires_grad=self.requires_grad or v.requires_grad)
-
-    def mm(self, n):
+    def matmul(self, n):
         n = self.tensor(n)
-        return Tensor(np.dot(self.data, n.data), [self, n], "mm", requires_grad=self.requires_grad or n.requires_grad)
+        return Tensor(np.matmul(self.data, n.data), [self, n], "matmul", requires_grad=self.requires_grad or n.requires_grad)
 
     def sum(self, *args, **kwargs):
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
@@ -144,7 +136,7 @@ class Tensor:
         return self.div(t)
 
     def __matmul__(self, t):
-        return self.dot(t)
+        return self.matmul(t)
 
     def __pow__(self, t):
         return self.power(t)
@@ -173,7 +165,7 @@ class Tensor:
 
     def __rmatmul__(self, t):
         t = self.tensor(t)
-        return t.dot(self)
+        return t.matmul(self)
 
     def __rpow__(self, t):
         t = self.tensor(t)
@@ -217,7 +209,7 @@ class Tensor:
         if type(grad) is not np.ndarray:
             grad = np.array(grad)
 
-        if grad.size != self.data.size or grad.ndim != self.data.ndim or grad.shape != self.data.shape: #TODO : MAYBE MOVE IT TO ANOTHER PLACE
+        if grad.size != self.data.size or grad.ndim != self.data.ndim or grad.shape != self.data.shape: # reverse broadcast; TODO : MAYBE MOVE IT TO ANOTHER PLACE
             # print(f"grad {grad.shape} {grad.size} != data {self.data.shape} {self.data.size}")
             if self.data.size == 1:
                 grad = grad.sum()
@@ -256,14 +248,24 @@ class Tensor:
             self.args[0].backward(grad / self.args[1].data)
             self.args[1].backward(-grad * self.args[0].data / self.args[1].data ** 2)
             
+        elif self.op == "matmul":
 
-        elif self.op == "mv":
-            self.args[0].backward(np.outer(grad, self.args[1].data))
-            self.args[1].backward(np.dot(grad, self.args[0].data))
+            if self.args[0].data.ndim > 1 and self.args[1].data.ndim > 1: # [matrix x matrix]
+                self.args[0].backward(np.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
+                self.args[1].backward(np.matmul(self.args[0].data.swapaxes(-1, -2), grad))
 
-        elif self.op in ["dot", "mm"]:
-            self.args[0].backward(np.dot(grad, self.args[1].data.T))
-            self.args[1].backward(np.dot(self.args[0].data.T, grad))
+            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim == 1: # [vector x vector]
+                self.args[0].backward(grad * self.args[1].data)
+                self.args[1].backward(grad * self.args[0].data)
+
+            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim > 1: # [vector x matrix]
+                self.args[0].backward(grad * self.args[1].data)
+                self.args[1].backward(np.outer(grad, self.args[0].data))
+
+            elif self.args[0].data.ndim > 1 and self.args[1].data.ndim == 1: # [matrix x vector]
+                self.args[0].backward(np.outer(grad, self.args[1].data))
+                self.args[1].backward(grad * self.args[0].data)
+
 
         elif self.op == "sum":
             axis = self.args[1]

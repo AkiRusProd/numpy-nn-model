@@ -20,14 +20,8 @@ def mul(x, y):
 def div(x, y):
     return x / y
 
-def dot(x, y):
-    return x.dot(y)
-
-def mv(x, y):
-    return x.mv(y)
-
-def mm(x, y):
-    return x.mm(y)
+def matmul(x, y):
+    return x.matmul(y)
 
 def sum(x, axis=None, keepdims=False):
     return x.sum(axis=axis, keepdims=keepdims)

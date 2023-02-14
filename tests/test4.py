@@ -151,3 +151,63 @@ z.backward(np.ones_like(z.data))
 print(x.grad)
 print(y.grad)
 # print(np.sum(x.grad, axis=0))
+
+# ####################
+
+import neunet as nnet
+
+import torch
+import torch.nn as nn
+
+
+
+# x = np.random.randn(1, 2, 3 ,4)
+# print(x.shape)
+
+
+print("####################")
+x = torch.randn(1, requires_grad=True)
+y = torch.randn(1, requires_grad=True)
+# x = torch.tensor([1.0], requires_grad=True)
+# y = torch.tensor([2.0], requires_grad=True)
+z = torch.matmul(x, y)
+print(z.shape)
+
+z.backward(torch.ones_like(z))
+
+print(x.grad)
+print(y.grad)
+
+# mat = torch.randn(2, 3)
+# vec = torch.randn(3)
+# OUT = torch.mv(mat, vec)
+# OUT2 = torch.matmul(mat, vec)
+# print(OUT)
+# print(OUT2)
+x = nnet.tensor(x.detach().numpy(), requires_grad=True)
+y = nnet.tensor(y.detach().numpy(), requires_grad=True)
+z = nnet.matmul(x, y)
+
+print(z.ndim)
+
+z.backward()
+
+print(x.grad)
+print(y.grad)
+print(y.grad.shape, "y.grad.shape")
+
+
+linear = nn.Linear(2, 3)
+x = torch.randn(2, 2, 2)
+y = linear(x)
+print(y.shape)
+y.backward(torch.ones_like(y))
+print(linear.weight.grad.shape)
+
+linear = Linear(2, 3)
+x = nnet.tensor(np.random.randn(2, 2, 2), requires_grad=True)
+y = linear(x)
+print(y.shape, "y.shape")
+y.backward(np.ones_like(y.data))
+print(linear.weight.grad.shape)
+
