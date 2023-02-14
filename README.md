@@ -34,8 +34,11 @@
 *[See Optimizers...](neunet/optim.py)*
 
 ### Implemented Loss Functions:
-1) MSE
-2) BinaryCrossEntropy
+1) MSELoss
+2) BCELoss
+3) CrossEntropyLoss
+4) NLLLoss
+5) L1Loss
 
 *[See Loss Functions...](neunet/nn/losses.py)*
 
