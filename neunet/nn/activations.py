@@ -380,8 +380,8 @@ class GELU(): #Static GELU computation
 
 
 class Softmax(): #Dynamic Softmax computation
-    def __init__(self):
-        self.axis = -1
+    def __init__(self, axis = 1):
+        self.axis = axis
 
     def forward(self, x):
         e_x = x.sub(x.max(axis=self.axis, keepdims=True)).exp()
