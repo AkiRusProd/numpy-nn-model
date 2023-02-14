@@ -18,7 +18,7 @@ class Tensor:
         self.requires_grad = requires_grad
 
     def tensor(self, t, requires_grad=False):
-        return t if isinstance(t, Tensor) else Tensor(t, requires_grad) #TODO: Just add requires_grad=False (lately)
+        return t if isinstance(t, Tensor) else Tensor(t, requires_grad)
 
     def add(self, t):
         t = self.tensor(t)
@@ -401,11 +401,8 @@ class Tensor:
 
 
 # BUGS:
-# gettitem, iter; lists slices
-# overflow memory when use * between non grad tensor and grad tensor many times (check batchnorm moving mean and var)
-# without explicitly specifying arguments in mean, var, sum, the function does not receive them
-# grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation
-
+# grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)
+# softmax not equals grads with pytorch; place: div; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)????
 
 
     # def repeat_to_match_shape(self, g, shape, dtype, axis, keepdims): same
@@ -431,5 +428,4 @@ class Tensor:
         # self.args[0].backward(g_repeated / num_reps)
 
 
-# softmax not equals grads with pytorch; place: div; maybe NOT BUG becase small numbers manipulation????
 
