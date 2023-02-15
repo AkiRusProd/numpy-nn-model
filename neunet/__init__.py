@@ -78,6 +78,9 @@ def abs(x):
 def transpose(x, *axes):
     return x.transpose(*axes)
 
+def swapaxes(x, axis1, axis2):
+    return x.swapaxes(axis1, axis2)
+
 def flip(x, axis):
     return x.flip(axis=axis)
 

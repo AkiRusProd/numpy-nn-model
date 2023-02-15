@@ -108,6 +108,9 @@ class Tensor:
         if len(axes) == 0:
             axes = range(self.data.ndim)[::-1]
         return Tensor(self.data.transpose(axes), [self, axes], "transpose", requires_grad=self.requires_grad)
+    
+    def swapaxes(self, axis1, axis2):
+        return Tensor(np.swapaxes(self.data, axis1, axis2), [self, axis1, axis2], "swapaxes", requires_grad=self.requires_grad)
 
     def flip(self, axis):
         if axis is None:
@@ -348,9 +351,6 @@ class Tensor:
             self.args[0].backward(grad * (self.args[0].data == self.args[0].data.min(axis=axis, keepdims=True)))
 
         elif self.op == "concatenate":
-            if type(grad) == int and grad == 1:
-                grad = np.ones_like(self.data)
-
             axis = self.args[-1]
             args = self.args[:-1]
             args_shapes = [arg.data.shape for arg in args]
@@ -361,26 +361,22 @@ class Tensor:
                 arg.backward(grads[i])
                 
         elif self.op == "reshape":
-            if type(grad) == int and grad == 1:
-                grad = np.ones_like(self.data)
             self.args[0].backward(grad.reshape(self.args[0].data.shape))
 
         # elif self.op == "split":
         #     self.args[0].backward(np.concatenate(grad, axis = 0))
 
         elif self.op == "getitem":
-            # self.args[0].backward(np.zeros_like(self.args[0].data))
-            # self.args[0].grad[self.args[1]] = grad
-
             _grad = np.zeros_like(self.args[0].data)
             _grad[self.args[1]] = grad
 
             self.args[0].backward(_grad)
 
         elif self.op == "transpose":
-            if type(grad) == int and grad == 1:
-                grad = np.ones_like(self.data)
             self.args[0].backward(grad.transpose(self.args[1]))
+
+        elif self.op == "swapaxes":
+            self.args[0].backward(grad.swapaxes(self.args[1], self.args[2]))
 
         elif self.op == "flip":
             self.args[0].backward(np.flip(grad, axis=self.args[1]))
