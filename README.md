@@ -39,6 +39,7 @@
 3) CrossEntropyLoss
 4) NLLLoss
 5) L1Loss
+6) KLDivLoss
 
 *[See Loss Functions...](neunet/nn/losses.py)*
 

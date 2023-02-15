@@ -113,3 +113,27 @@ class L1Loss(Tensor):
 
     def __call__(self, y_pred, y_true):
         return self.forward(y_pred, y_true)
+    
+
+class KLDivLoss(Tensor):
+    def __init__(self, reduction = "mean", log_target = False):
+        self.reduction = reduction
+        self.log_target = log_target
+
+    def forward(self, y_pred, y_true):
+        if not self.log_target:
+            loss = y_true.mul(y_true.log().sub(y_pred))
+        else:
+            loss = y_true.exp().mul(y_true.sub(y_pred))
+
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "batchmean":
+            return loss.sum().div(y_pred.data.shape[0])
+        elif self.reduction == "sum":
+            return loss.sum()
+        else:
+            return loss
+        
+    def __call__(self, y_pred, y_true):
+        return self.forward(y_pred, y_true)
