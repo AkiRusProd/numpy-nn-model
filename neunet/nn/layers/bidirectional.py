@@ -17,7 +17,7 @@ class _BidirectionalTensor(Tensor):
         elif merge_mode == "sum":
             direct_grad, reverse_grad = grad, grad
         elif merge_mode == "mul":
-            direct_grad, reverse_grad = grad * D_O.data, grad * R_O.data
+            direct_grad, reverse_grad = grad * R_O.data, grad * D_O.data
         elif merge_mode == "avg":
             direct_grad, reverse_grad = grad/2, grad/2
 

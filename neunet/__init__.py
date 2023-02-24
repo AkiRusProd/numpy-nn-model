@@ -1,12 +1,40 @@
 from neunet.autograd import Tensor
 from neunet import nn
-
+import numpy as np
 
 
 # references to the original Tensor functions
 
 def tensor(data, requires_grad=True):
     return Tensor(data, requires_grad=requires_grad)
+
+def ones(*shape, dtype = None, requires_grad=True):
+    shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
+
+    return Tensor(np.ones(shape, dtype=dtype), requires_grad = requires_grad)
+
+def zeros(*shape, dtype = None, requires_grad=True):
+    shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
+ 
+    return Tensor(np.zeros(shape, dtype=dtype), requires_grad = requires_grad)
+
+def randn(*shape, dtype = None, requires_grad=True):
+    shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
+
+    return Tensor(np.random.randn(*shape).astype(dtype), requires_grad = requires_grad)
+
+def arange(start = 0, end = None, step  = 1, dtype = None, requires_grad=True):
+    if end is None:
+        start, end = 0, start
+    return Tensor(np.arange(start, end, step, dtype=dtype), requires_grad=requires_grad)
+
+def ones_like(tensor, dtype=None, requires_grad=True):
+    return Tensor(np.ones_like(tensor.data, dtype), requires_grad=requires_grad)
+
+def zeros_like(tensor, dtype=None, requires_grad=True):
+    return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad)
+
+
 
 def add(x, y):
     return x + y
