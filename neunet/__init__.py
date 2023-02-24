@@ -18,6 +18,11 @@ def zeros(*shape, dtype = None, requires_grad=True):
  
     return Tensor(np.zeros(shape, dtype=dtype), requires_grad = requires_grad)
 
+def rand(*shape, dtype = None, requires_grad=True):
+    shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
+
+    return Tensor(np.random.rand(*shape).astype(dtype), requires_grad = requires_grad)
+
 def randn(*shape, dtype = None, requires_grad=True):
     shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 

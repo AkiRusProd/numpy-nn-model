@@ -70,6 +70,7 @@
 2) sum, mean, var, max, min, maximum, minimum
 3) transpose, swapaxes, reshape, concatenate, flip, slicing
 4) power, exp, log, sqrt, sin, cos, tanh
+5) ones, zeros, ones_like, zeros_like, arange, rand, randn
 
 ### Tensor Operations with autograd Example:
 ```python

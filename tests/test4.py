@@ -211,3 +211,7 @@ print(y.shape, "y.shape")
 y.backward(np.ones_like(y.data))
 print(linear.weight.grad.shape)
 
+
+x = nnet.rand((1, 2, 3))
+print(x.shape, "x.shape")
+
