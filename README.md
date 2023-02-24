@@ -1,5 +1,5 @@
 # numpy-nn-model
-Сustom CPU torch style machine learning framework implemented on numpy with automatic differentiation.
+Сustom CPU torch style machine learning framework for creating neural networks, implemented on numpy with automatic differentiation.
 
 ## Some information and features:
 
