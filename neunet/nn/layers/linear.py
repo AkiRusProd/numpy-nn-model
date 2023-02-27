@@ -24,10 +24,10 @@ class Linear(): # layer with static backpropagation
         self.out_features = out_features
 
         stdv = 1. / np.sqrt(in_features)
-        self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)))
+        self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)), dtype=np.float32)
 
         if bias == True:
-            self.bias = Tensor(np.zeros((1, out_features)))
+            self.bias = Tensor(np.zeros((1, out_features)), dtype=np.float32)
         else:
             self.bias = None
 
@@ -50,10 +50,10 @@ class Linear(): # layer with static backpropagation
 #         self.out_features = out_features
 
 #         stdv = 1. / np.sqrt(in_features)
-#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)))
+#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (out_features, in_features)), dtype=np.float32)
 
 #         if bias == True:
-#             self.bias = Tensor(np.zeros((1, out_features)))
+#             self.bias = Tensor(np.zeros((1, out_features)), dtype=np.float32)
 #         else:
 #             self.bias = None
 
@@ -88,10 +88,10 @@ class Linear(): # layer with static backpropagation
 #         self.out_features = out_features
 
 #         stdv = 1. / np.sqrt(in_features)
-#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (in_features, out_features)))
-#         self.bias = Tensor(np.zeros((1, out_features)), requires_grad = bias)
-#         # self.weight = Tensor(np.random.normal(0, pow(out_features, -0.5), (in_features, out_features)))
-#         # self.bias = Tensor(np.zeros((1, out_features)))
+#         self.weight = Tensor(np.random.uniform(-stdv, stdv, (in_features, out_features)), dtype=np.float32)
+#         self.bias = Tensor(np.zeros((1, out_features)), requires_grad = bias, dtype=np.float32)
+#         # self.weight = Tensor(np.random.normal(0, pow(out_features, -0.5), (in_features, out_features)), dtype=np.float32)
+#         # self.bias = Tensor(np.zeros((1, out_features)), dtype=np.float32)
 
 #     def forward(self, X): 
 #         self.X = X

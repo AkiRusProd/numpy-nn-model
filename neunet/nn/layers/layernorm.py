@@ -89,8 +89,8 @@ class LayerNorm(): # layer with static backpropagation
         self.elementwise_affine = elementwise_affine
 
         if elementwise_affine:
-            self.weight = Tensor(np.ones((normalized_shape)))
-            self.bias = Tensor(np.zeros((normalized_shape)))
+            self.weight = Tensor(np.ones((normalized_shape)), dtype=np.float32)
+            self.bias = Tensor(np.zeros((normalized_shape)), dtype=np.float32)
         else:
             self.weight = None
             self.bias = None

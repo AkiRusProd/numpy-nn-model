@@ -72,6 +72,7 @@ class NLLLoss(Tensor):
             self.weight = np.ones((y_pred.data.shape[1]))
 
         assert self.weight.shape == (y_pred.data.shape[1], ), "Weight shape must be equal to number of classes"
+        assert y_true.dtype in (np.int16, np.int32, np.int64), "Target must be of int dtype"
 
         if y_pred.data.ndim == 2:
             y_pred = y_pred[..., None]

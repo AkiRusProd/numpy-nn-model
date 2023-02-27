@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Tensor:
-    def __init__(self, val, args=None, op=None, requires_grad=True):
+    def __init__(self, val, args=None, op=None, requires_grad=True, dtype = None):
         if isinstance(val, Tensor): # If val is a tensor, copy its attributes
             self.data = val.data
             self.grad = val.grad
@@ -11,7 +11,7 @@ class Tensor:
             self.requires_grad = val.requires_grad
             return
             
-        self.data = np.array(val)
+        self.data = np.array(val, dtype=dtype)
         self.grad = None
         self.op = op
         self.args = args
@@ -145,7 +145,7 @@ class Tensor:
         return self.power(t)
 
     def __repr__(self):
-        return f"Tensor({self.data}, requires_grad={self.requires_grad})"
+        return f"Tensor({self.data}, requires_grad={self.requires_grad}, dtype={self.data.dtype})"
 
     # def __str__(self):
     #     return f"Tensor({self.data}, requires_grad={self.requires_grad})"
@@ -180,6 +180,9 @@ class Tensor:
 
     def __getitem__(self, index): # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad
         return Tensor(self.data[index], [self, index], "getitem", requires_grad=self.requires_grad)
+    
+    def __array__(self, dtype=None):
+        return self.data.astype(dtype, copy=False)
 
     @property
     def shape(self):
@@ -207,29 +210,20 @@ class Tensor:
             return
         
         if grad is None:
-            grad = np.ones_like(self.data)
-
-        if type(grad) is not np.ndarray:
-            grad = np.array(grad)
+            grad = np.ones_like(self.data, dtype = self.dtype)
+        else:
+            grad = np.array(grad, dtype = self.dtype)
 
         if grad.size != self.data.size or grad.ndim != self.data.ndim or grad.shape != self.data.shape: # reverse broadcast; TODO : MAYBE MOVE IT TO ANOTHER PLACE
-            # print(f"grad {grad.shape} {grad.size} != data {self.data.shape} {self.data.size}")
             if self.data.size == 1:
                 grad = grad.sum()
-            # elif self.data.ndim == 1:
-            #     grad = grad.sum(axis=0)   
-          
             elif self.data.ndim == grad.ndim:
                 grad = grad.sum(axis=tuple(np.where(np.array(self.data.shape) != np.array(grad.shape))[0]), keepdims=True)
-            # elif self.data.ndim < grad.ndim:
-            #     grad = grad.sum(axis=tuple(range(grad.ndim - self.data.ndim)))
-            else: # self.data.ndim < grad.ndim:
+            else:
                 data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
                 axis = tuple(np.where(np.array(data_shape) != np.array(grad.shape))[0])
                 grad = grad.sum(axis=axis).reshape(self.data.shape)
            
-        # print(f"backward {self.op} {self.data.shape} {grad.shape}, {self.grad.shape if self.grad is not None else None}")   
-        # print(f"backward {self.op} {self.data = } {self.grad = } {grad = } {type(grad) =}")  
         if self.grad is None:
             self.grad = grad
         else:

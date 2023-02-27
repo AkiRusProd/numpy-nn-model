@@ -125,21 +125,21 @@ class LSTM():
         self.cycled_states = cycled_states
 
         stdv = 1. / np.sqrt(self.hidden_size)
-        self.weight_f = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
-        self.weight_i = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
-        self.weight_o = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
-        self.weight_c = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
+        self.weight_f = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)), dtype=np.float32)
+        self.weight_i = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)), dtype=np.float32)
+        self.weight_o = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)), dtype=np.float32)
+        self.weight_c = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)), dtype=np.float32)
 
-        self.weight_hf = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))
-        self.weight_hi = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))
-        self.weight_ho = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))    
-        self.weight_hc = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))
+        self.weight_hf = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)), dtype=np.float32)
+        self.weight_hi = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)), dtype=np.float32)
+        self.weight_ho = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)), dtype=np.float32)    
+        self.weight_hc = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)), dtype=np.float32)
 
         if bias:
-            self.bias_f = Tensor(np.zeros(self.hidden_size))
-            self.bias_i = Tensor(np.zeros(self.hidden_size))
-            self.bias_o = Tensor(np.zeros(self.hidden_size))
-            self.bias_c = Tensor(np.zeros(self.hidden_size))
+            self.bias_f = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias_i = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias_o = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias_c = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
         else:
             self.bias_f = None
             self.bias_i = None

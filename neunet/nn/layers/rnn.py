@@ -72,11 +72,11 @@ class RNN():
         self.return_sequences = return_sequences
 
         stdv = 1. / np.sqrt(self.hidden_size)
-        self.weight = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)))
-        self.weight_h = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)))
+        self.weight = Tensor(np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)), dtype=np.float32)
+        self.weight_h = Tensor(np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)), dtype=np.float32)
         
         if bias == True:
-            self.bias = Tensor(np.zeros(self.hidden_size))
+            self.bias = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
         else:
             self.bias = None
 

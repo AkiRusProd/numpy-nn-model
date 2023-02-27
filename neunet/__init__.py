@@ -3,10 +3,18 @@ from neunet import nn
 import numpy as np
 
 
+
+int16 = np.int16
+int32 = np.int32
+int64 = np.int64
+float16 = np.float16
+float32 = np.float32
+float64 = np.float64
+
 # references to the original Tensor functions
 
-def tensor(data, requires_grad=True):
-    return Tensor(data, requires_grad=requires_grad)
+def tensor(data, requires_grad=True, dtype = float32):
+    return Tensor(data, requires_grad=requires_grad, dtype=dtype)
 
 def ones(*shape, dtype = None, requires_grad=True):
     shape = tuple(*shape)  if all(isinstance(arg, (list, tuple)) for arg in shape) else shape

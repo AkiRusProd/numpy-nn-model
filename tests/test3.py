@@ -31,7 +31,7 @@ print(x.grad)
 
 loss_fn = nnn.CrossEntropyLoss(reduction =  'none', weight=nnet.tensor([1, 2, 3]), ignore_index=-100)
 xnnet = nnet.tensor(x.detach().numpy(), requires_grad=True)
-ynnet = nnet.tensor(y.detach().numpy())
+ynnet = nnet.tensor(y.detach().numpy(), dtype=np.int32)
 
 
 loss = loss_fn(xnnet, ynnet)
@@ -41,3 +41,28 @@ print(loss)
 
 loss.backward()
 print(xnnet.grad)
+
+
+x = nnet.tensor([1., 2, 3 ,4], dtype=np.float32, requires_grad=True)
+y = nnet.tensor([2., 2, 1, 1], dtype=np.float16)
+
+# y.data = x - y
+
+z = nnet.sqrt(x + y)
+
+
+# z = torch.cat([y, x])
+print(z.dtype, y.dtype) # dtype = max precision dtype
+z.backward(nnet.ones_like(z, dtype=np.float64))
+print(x.grad.dtype) # grad.dtype = x.dtype
+print(y.grad.dtype)
+
+a = np.zeros((1, 2, 3))
+print(a.shape)
+b = np.array(a)
+print(b.shape)
+
+
+x = nnet.tensor([1, 2 ,3])
+y = np.array(x)
+print(type(y))

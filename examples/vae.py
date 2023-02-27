@@ -41,17 +41,22 @@ class VAE(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(input_size, 512),
             nn.ReLU(),
+            nn.BatchNorm1d(512),
             nn.Linear(512, 256),
             nn.ReLU(),
+            nn.BatchNorm1d(256),
             nn.Linear(256, latent_size),
             nn.ReLU(),
+            nn.BatchNorm1d(latent_size),
         )
 
         self.decoder = nn.Sequential(
             nn.Linear(latent_size, 256),
             nn.ReLU(),
+            nn.BatchNorm1d(256),
             nn.Linear(256, 512),
             nn.ReLU(),
+            nn.BatchNorm1d(512),
             nn.Linear(512, input_size),
             nn.Sigmoid()
         )
@@ -109,7 +114,7 @@ class VAE(nn.Module):
         return self.forward(x)[0]
 
 vae = VAE(28 * 28, latent_size)
-optimizer = Adam(vae.parameters(), lr=0.001)
+optimizer = Adam(vae.parameters(), lr=0.0005)
 
 
 batch_size = 100

@@ -38,12 +38,12 @@ class BatchNorm1d(): # layer with static backpropagation
         self.momentum = momentum
         self.affine = affine
 
-        self.running_mean = Tensor(np.zeros((1, num_features)))
-        self.running_var = Tensor(np.ones((1, num_features)))
+        self.running_mean = Tensor(np.zeros((1, num_features)), dtype=np.float32)
+        self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
 
         if affine:
-            self.weight = Tensor(np.ones((1, num_features)))
-            self.bias = Tensor(np.zeros((1, num_features)))
+            self.weight = Tensor(np.ones((1, num_features)), dtype=np.float32)
+            self.bias = Tensor(np.zeros((1, num_features)), dtype=np.float32)
         else:
             self.weight = None
             self.bias = None
@@ -101,12 +101,12 @@ class BatchNorm1d(): # layer with static backpropagation
 #         self.momentum = momentum
 #         self.affine = affine
 
-#         self.running_mean = Tensor(np.zeros((1, num_features)), requires_grad = False)
-#         self.running_var = Tensor(np.ones((1, num_features)), requires_grad = False)
+#         self.running_mean = Tensor(np.zeros((1, num_features)), requires_grad = False, dtype=np.float32)
+#         self.running_var = Tensor(np.ones((1, num_features)), requires_grad = False, dtype=np.float32)
 
 #         if affine:
-#             self.weight = Tensor(np.ones((1, num_features)))
-#             self.bias = Tensor(np.zeros((1, num_features)))
+#             self.weight = Tensor(np.ones((1, num_features)), dtype=np.float32)
+#             self.bias = Tensor(np.zeros((1, num_features)), dtype=np.float32)
 #         else:
 #             self.weight = None
 #             self.bias = None

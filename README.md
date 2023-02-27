@@ -1,5 +1,5 @@
 # numpy-nn-model
-Сustom CPU torch style machine learning framework for creating neural networks, implemented on numpy with automatic differentiation.
+Сustom CPU torch style machine learning framework with automatic differentiation for creating neural networks, implemented on numpy.
 
 ## Some information and features:
 
@@ -104,7 +104,7 @@ print(z.grad, '\n')
 
 
 ### Model Examples:
-All examples was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
+All [examples](examples/) was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
 
 #### Convolutional Classifier

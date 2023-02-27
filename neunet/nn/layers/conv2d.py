@@ -122,9 +122,9 @@ class Conv2d(): # layer with static backpropagation
 
         stdv = 1. / np.sqrt(self.in_channels * self.kernel_size[0] * self.kernel_size[1])
 
-        self.weight = Tensor(np.random.uniform(-stdv, stdv, (self.out_channels, self.in_channels, self.kernel_size[0], self.kernel_size[1])))
+        self.weight = Tensor(np.random.uniform(-stdv, stdv, (self.out_channels, self.in_channels, self.kernel_size[0], self.kernel_size[1])), dtype=np.float32)
         if bias == True:
-            self.bias = Tensor(np.zeros(self.out_channels))
+            self.bias = Tensor(np.zeros(self.out_channels), dtype=np.float32)
         else:
             self.bias = None
 
