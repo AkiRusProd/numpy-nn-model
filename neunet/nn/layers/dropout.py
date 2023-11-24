@@ -13,12 +13,13 @@ class _DropoutTensor(Tensor): # tensor for static backpropagation
 class Dropout(): # layer with static backpropagation
     def __init__(self, p = 0.5):
         self.p = p
+        self.scale = 1 / (1 - p)
         self.mask = None
         self.train = True
 
     def forward(self, X):
         if self.train:
-            self.mask = np.random.binomial(1, 1 - self.p, size = X.data.shape)
+            self.mask = np.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
         else:
             self.mask = 1
 
@@ -33,11 +34,12 @@ class Dropout(): # layer with static backpropagation
 # class Dropout(): # layer with dynamic backpropagation
 #     def __init__(self, p = 0.5):
 #         self.p = p
+#         self.scale = 1 / (1 - p)
 #         self.train = True
 
 #     def forward(self, X):
 #         if self.train:
-#             mask = np.random.binomial(1, 1 - self.p, size = X.data.shape)
+#             mask = np.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
 #         else:
 #             mask = 1
 
