@@ -103,6 +103,7 @@ for epoch in range(epochs):
 correct = 0
 total = 0
 
+classifier.eval()
 
 for i in tqdm(range(len(test_dataset)), desc = 'evaluating'):
     img = test_dataset[i]

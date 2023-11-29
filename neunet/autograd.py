@@ -222,7 +222,9 @@ class Tensor:
             else:
                 data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
                 axis = tuple(np.where(np.array(data_shape) != np.array(grad.shape))[0])
-                grad = grad.sum(axis=axis).reshape(self.data.shape)
+                grad = grad.sum(axis=axis)
+
+            grad = grad.reshape(self.data.shape)
            
         if self.grad is None:
             self.grad = grad

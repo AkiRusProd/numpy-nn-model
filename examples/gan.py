@@ -61,6 +61,8 @@ const_noise = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)), req
 
 for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = f'epoch {epoch}')
+    generator.train()
+    discriminator.train()
     for i in tqdm_range:
         batch = dataset[i:i+batch_size]
         batch = nnet.tensor(batch, requires_grad = False)
@@ -106,7 +108,8 @@ for epoch in range(epochs):
 
     each_epoch_generated_samples.append(generator(noise).data.reshape(-1, 28, 28))
 
-
+    generator.eval()
+    discriminator.eval()
     for i in range(samples_num):
         image = each_epoch_generated_samples[-1][i] * 127.5 + 127.5
         image = image.astype(np.uint8)
@@ -115,7 +118,8 @@ for epoch in range(epochs):
         image.save(f'generated images/{i}.png')
 
 
-
+generator.eval()
+discriminator.eval()
 
 
 

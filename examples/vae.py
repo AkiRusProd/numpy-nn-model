@@ -87,7 +87,7 @@ class VAE(nn.Module):
         KLD = -0.5 * nnet.sum(1 + logvar - mu.power(2) - logvar.exp())
         return BCE + KLD
     
-    def train(self, in_x, out_x, optimizer):
+    def train_step(self, in_x, out_x, optimizer):
         x_recon, mu, logvar = self.forward(in_x)
 
         loss = self.loss_function(out_x, x_recon, mu, logvar)
@@ -123,6 +123,7 @@ epochs = 30
 for epoch in range(epochs):
     
     tqdm_range = tqdm(range(0, len(training_data), batch_size), desc = 'epoch %d' % epoch)
+    vae.train()
     for i in tqdm_range:
         batch = training_data[i:i+batch_size]
 
@@ -132,7 +133,7 @@ for epoch in range(epochs):
 
         out_batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
 
-        loss = vae.train(in_batch, out_batch, optimizer)
+        loss = vae.train_step(in_batch, out_batch, optimizer)
         
         tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
 
@@ -143,7 +144,7 @@ for epoch in range(epochs):
     # if noisy_inputs:
     #     samples = add_noise(samples)
     # generated = vae.reconstruct(nnet.tensor(samples, requires_grad=False).reshape(-1, 28 * 28)).data
-
+    vae.eval()
     for i in range(25):
         image = generated[i] * 255
         image = image.astype(np.uint8)
@@ -153,7 +154,7 @@ for epoch in range(epochs):
 
 
 
-
+vae.eval()
 
 
 

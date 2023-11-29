@@ -22,8 +22,9 @@ class Embedding():
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
 
-        stdv = 1. / np.sqrt(embedding_dim)
-        self.weight = Tensor(np.random.uniform(-stdv, stdv, (num_embeddings, embedding_dim)), dtype=np.float32)
+        # stdv = 1. / np.sqrt(embedding_dim)
+        # self.weight = Tensor(np.random.uniform(-stdv, stdv, (num_embeddings, embedding_dim)), dtype=np.float32)
+        self.weight = Tensor(np.random.randn(num_embeddings, embedding_dim), dtype=np.float32) # Torch's initialization
 
     def one_hot(self, X):
         O = np.zeros((X.size, self.num_embeddings))

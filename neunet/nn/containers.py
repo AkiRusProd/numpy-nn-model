@@ -3,7 +3,7 @@ import numpy as np
 
 class Module:
     def __init__(self):
-        pass
+        self.training = True
     
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
@@ -37,10 +37,25 @@ class Module:
 
         return params
 
+    # TODO: add eval and train methods to layers; change self.train to self.training
+    def eval(self):
+        self.training = False
+        for name, item in self.__dict__.items():
+            if hasattr(item, "eval"):
+                item.eval()
+           
+
+    def train(self):
+        self.training = True
+        for name, item in self.__dict__.items():
+            if hasattr(item, "train"):
+                item.train()
+
 
 class Sequential:
     def __init__(self, *layers):
         self.layers = layers
+        self.training = True
 
     def forward(self, X):
         for layer in self.layers:
@@ -70,3 +85,19 @@ class Sequential:
                             if param not in params:
                                 params.append(param)
         return params
+
+     # TODO: add eval and train methods to layers; change self.train to self.training
+    def eval(self):
+        self.training = False
+        for layer in self.layers:
+            # if hasattr(layer, "eval"):
+            if hasattr(layer, "train"):
+                # layer.eval()
+                layer.train = False
+
+    def train(self):
+        self.training = True
+        for layer in self.layers:
+            if hasattr(layer, "train"):
+                layer.train = True
+

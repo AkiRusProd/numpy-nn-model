@@ -56,6 +56,7 @@ epochs = 100
 
 for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(input_dataset), batch_size), desc = 'epoch %d' % epoch)
+    model.train()
     for i in tqdm_range:
         input_batch = input_dataset[i:i+batch_size]
         input_batch = nnet.tensor(input_batch, requires_grad=False).reshape(-1, 28 * 28)
@@ -72,7 +73,7 @@ for epoch in range(epochs):
         tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
 
     generated = model(nnet.tensor(input_dataset[:25], requires_grad=False).reshape(-1, 28 * 28)).data
-
+    model.eval()
     for i in range(25):
         image = generated[i] * 255
         image = image.astype(np.uint8)
