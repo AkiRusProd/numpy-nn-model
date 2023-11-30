@@ -5,8 +5,10 @@ sys.path[0] = str(Path(sys.path[0]).parent)
 import neunet as nnet
 import neunet.nn as nn
 import neunet.optim as optim
+from tqdm import tqdm
 
-# Example taken from the site https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html
+
+# Example taken from the https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html
 
 CONTEXT_SIZE = 2
 EMBEDDING_DIM = 10
@@ -62,12 +64,14 @@ class NGramLanguageModeler(nn.Module):
         return log_probs
 
 
-losses = []
+# losses = []
 loss_function = nn.NLLLoss()
 model = NGramLanguageModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
 optimizer = optim.SGD(model.parameters(), lr=0.001)
 
-for epoch in range(100):
+epochs = 100
+tqdm_range = tqdm(range(epochs))
+for epoch in tqdm_range:
     total_loss = 0
     for context, target in ngrams:
 
@@ -94,8 +98,9 @@ for epoch in range(100):
 
         # Get the Python number from a 1-element Tensor by calling tensor.item()
         total_loss += loss.data
-    losses.append(total_loss)
-print(losses)  # The loss decreased every iteration over the training data!
+    # losses.append(total_loss)
+    tqdm_range.set_description(f"Skip-Gram loss: {total_loss:.7f}")
+# print(losses)  # The loss decreased every iteration over the training data!
 
 # To get the embedding of a particular word, e.g. "beauty"
-print(model.embeddings.weight[word_to_ix["beauty"]])
+print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
