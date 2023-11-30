@@ -278,12 +278,6 @@ class Tensor:
             if grad.ndim != self.args[0].data.ndim  and axis is not None:
                 grad = np.expand_dims(grad, axis)
 
-            # if axis is None:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.size)
-            # elif type(axis) is int:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / self.args[0].data.shape[axis])
-            # else:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod([self.args[0].data.shape[i] for i in axis]))
             _axis = list(axis) if isinstance(axis, tuple) else axis
             self.args[0].backward(np.ones_like(self.args[0].data) * grad / np.prod(np.array(self.args[0].data.shape)[_axis]))
             
@@ -293,16 +287,8 @@ class Tensor:
             if grad.ndim != self.args[0].data.ndim and axis is not None:
                 grad = np.expand_dims(grad, axis)
    
-            # if axis is None:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean()) / self.args[0].data.size)
-            # elif type(axis) is int:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / self.args[0].data.shape[axis])
-            # else:
-            #     self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod([self.args[0].data.shape[i] for i in axis]))
             _axis = list(axis) if isinstance(axis, tuple) else axis
             self.args[0].backward(np.ones_like(self.args[0].data) * grad * 2 * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True)) / np.prod(np.array(self.args[0].data.shape)[_axis]))
-
-            
 
         elif self.op == "power":
             self.args[0].backward(grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1))
