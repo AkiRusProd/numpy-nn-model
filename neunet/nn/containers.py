@@ -37,19 +37,17 @@ class Module:
 
         return params
 
-    # TODO: add eval and train methods to layers; change self.train to self.training
     def eval(self):
         self.training = False
         for name, item in self.__dict__.items():
             if hasattr(item, "eval"):
                 item.eval()
            
-
-    def train(self):
-        self.training = True
+    def train(self, mode = True):
+        self.training = mode
         for name, item in self.__dict__.items():
             if hasattr(item, "train"):
-                item.train()
+                item.train(mode)
 
 
 class Sequential:
@@ -86,18 +84,15 @@ class Sequential:
                                 params.append(param)
         return params
 
-     # TODO: add eval and train methods to layers; change self.train to self.training
     def eval(self):
         self.training = False
         for layer in self.layers:
-            # if hasattr(layer, "eval"):
-            if hasattr(layer, "train"):
-                # layer.eval()
-                layer.train = False
+            if hasattr(layer, "eval"):
+                layer.eval()
 
-    def train(self):
-        self.training = True
+    def train(self, mode = True):
+        self.training = mode
         for layer in self.layers:
             if hasattr(layer, "train"):
-                layer.train = True
+                layer.train(mode)
 

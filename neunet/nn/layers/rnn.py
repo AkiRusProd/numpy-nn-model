@@ -80,7 +80,6 @@ class RNN():
         else:
             self.bias = None
 
-        self.train = True
         self.hprev = None
 
     def named_parameters(self):

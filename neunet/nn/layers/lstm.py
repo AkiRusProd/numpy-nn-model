@@ -146,7 +146,6 @@ class LSTM():
             self.bias_o = None
             self.bias_c = None
 
-        self.train = True
         self.cprev = None
         self.hprev = None
 

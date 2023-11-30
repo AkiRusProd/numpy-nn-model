@@ -137,7 +137,6 @@ class GRU():
             self.bias_r = None
             self.bias_h = None
 
-        self.train = True
         self.cprev = None
         self.hprev = None
 

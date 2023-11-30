@@ -48,11 +48,11 @@ class BatchNorm1d(): # layer with static backpropagation
             self.weight = None
             self.bias = None
 
-        self.train = True
+        self.training = True
 
     def forward(self, X):
 
-        if self.train:
+        if self.training:
             mean = np.mean(X.data, axis = 0, keepdims = True)
             var = np.var(X.data, axis = 0, keepdims = True)
 
@@ -74,6 +74,12 @@ class BatchNorm1d(): # layer with static backpropagation
 
     def __call__(self, X):
         return self.forward(X)
+
+    def train(self, mode = True):
+        self.training = mode
+
+    def eval(self):
+        self.training = False
 
 
 
@@ -111,10 +117,10 @@ class BatchNorm1d(): # layer with static backpropagation
 #             self.weight = None
 #             self.bias = None
 
-#         self.train = True
+#         self.training = True
 
 #     def forward(self, X):
-#         if self.train:
+#         if self.training:
 #             mean = X.mean(axis = 0)#.reshape(1, -1)
 #             var = X.var(axis = 0)#.reshape(1, -1)
 
@@ -138,6 +144,11 @@ class BatchNorm1d(): # layer with static backpropagation
 #     def __call__(self, X):
 #         return self.forward(X)
 
+    # def train(self, mode = True):
+    #     self.training = mode
+
+    # def eval(self):
+    #     self.training = False
 
 
 # # x = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])

@@ -51,11 +51,11 @@ class BatchNorm2d(): # layer with static backpropagation
             self.weight = None
             self.bias = None
 
-        self.train = True
+        self.training = True
 
     def forward(self, X):
 
-        if self.train:
+        if self.training:
             mean = np.mean(X.data, axis = (0, 2, 3))
             var = np.var(X.data, axis = (0, 2, 3))
  
@@ -80,7 +80,11 @@ class BatchNorm2d(): # layer with static backpropagation
     def __call__(self, X):
         return self.forward(X)
 
+    def train(self, mode = True):
+        self.training = mode
 
+    def eval(self):
+        self.training = False
 
 # class BatchNorm2d(): #layer with dynamic backpropagation
 #     def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True):
@@ -99,11 +103,11 @@ class BatchNorm2d(): # layer with static backpropagation
 #             self.weight = None
 #             self.bias = None
 
-#         self.train = True
+#         self.training = True
 
 #     def forward(self, X):
 
-#         if self.train:
+#         if self.training:
 #             mean = X.mean(axis = (0, 2, 3))
 #             var = X.var(axis = (0, 2, 3))
  
@@ -129,6 +133,11 @@ class BatchNorm2d(): # layer with static backpropagation
 #     def __call__(self, X):
 #         return self.forward(X)
 
+    # def train(self, mode = True):
+    #     self.training = mode
+
+    # def eval(self):
+    #     self.training = False
 
 # x_rand = np.random.randn(2, 3, 2, 2)
 # x_rand = np.arange(0, 24).reshape(2, 3, 2, 2)
