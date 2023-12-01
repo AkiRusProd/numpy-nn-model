@@ -18,7 +18,10 @@ class Tensor:
         self.requires_grad = requires_grad
 
     def tensor(self, t, requires_grad=False):
-        return t if isinstance(t, Tensor) else Tensor(t, requires_grad)
+        return t if isinstance(t, Tensor) else Tensor(t, requires_grad = requires_grad)
+
+    def detach(self):
+        return Tensor(val = self.data, args = self.args, op = self.op, requires_grad = False, dtype = self.data.dtype)
 
     def add(self, t):
         t = self.tensor(t)
