@@ -78,9 +78,9 @@ import neunet as nnet
 import numpy as np
 
 
-x = nnet.tensor([[7.0, 6.0, 5.0], [4.0, 5.0, 6.0]])
-y = nnet.tensor([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]])
-z = nnet.tensor([[2.3, 3.4], [4.5, 5.6]])
+x = nnet.tensor([[7.0, 6.0, 5.0], [4.0, 5.0, 6.0]], requires_grad=True)
+y = nnet.tensor([[1.1, 2.2], [3.3, 4.4], [5.5, 6.6]], requires_grad=True)
+z = nnet.tensor([[2.3, 3.4], [4.5, 5.6]], requires_grad=True)
 
 out = nnet.tanh(1 / nnet.log(nnet.concatenate([(x @ y) @ z, nnet.exp(x) / nnet.sqrt(x)], axis = 1)))
 out.backward(np.ones_like(out.data))
