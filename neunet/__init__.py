@@ -47,6 +47,11 @@ def ones_like(tensor, dtype=None, requires_grad=True):
 def zeros_like(tensor, dtype=None, requires_grad=True):
     return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad)
 
+def argmax(x, axis=None, keepdims=False):
+    return Tensor(np.argmax(x.data, axis=axis, keepdims=keepdims), requires_grad = False)
+
+def argmin(x, axis=None, keepdims=False):
+    return Tensor(np.argmin(x.data, axis=axis, keepdims=keepdims), requires_grad = False)
 
 
 def add(x, y):
