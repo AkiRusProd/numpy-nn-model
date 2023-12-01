@@ -4,11 +4,11 @@ import numpy as np
 class Tensor:
     def __init__(self, val, args=None, op=None, requires_grad=True, dtype = None):
         if isinstance(val, Tensor): # If val is a tensor, copy its attributes
-            self.data = val.data
+            self.data = np.array(val.data, dtype=val.data.dtype if dtype is None else dtype) 
             self.grad = val.grad
-            self.op = val.op
-            self.args = val.args
-            self.requires_grad = val.requires_grad
+            self.op = val.op if op is None else op
+            self.args = val.args if args is None else args
+            self.requires_grad = requires_grad
             return
             
         self.data = np.array(val, dtype=dtype)

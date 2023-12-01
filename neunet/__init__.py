@@ -13,7 +13,7 @@ float64 = np.float64
 
 # references to the original Tensor functions
 
-def tensor(data, requires_grad=True, dtype = float32):
+def tensor(data, requires_grad=False, dtype = float32):
     return Tensor(data, requires_grad=requires_grad, dtype=dtype)
 
 def ones(*shape, dtype = None, requires_grad=True):
