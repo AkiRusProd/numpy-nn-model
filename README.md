@@ -106,8 +106,24 @@ print(z.grad, '\n')
 ### Model Examples:
 All [examples](examples/) was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
+#### All of them:
+1. *[Autoencoder](examples/autoencoder.py)*        
+2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.py)*    
+3. *[Conway`s Game of Life](examples/conway.py)*  
+4. *[Generative Adversarial Network](examples/gan.py)*     
+5. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
+6. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
+7. *[Variational Autoencoder](examples/vae.py)*    
+8. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
+9. *[Word2Vec](examples/word2vec.py)*
 
-#### Convolutional Classifier
+
+
+#### More details about some of them:
+
+<details>
+<summary>Convolutional Classifier</summary>
+
 ```python
 from tqdm import tqdm
 from neunet.optim import Adam
@@ -194,8 +210,11 @@ for epoch in range(epochs):
 
 Code:   
 *[Model Example](examples/convolutional_digits_classifier.py)*
+</details>
 
-#### LSTM Classifier
+<details>
+<summary>LSTM Classifier</summary>
+
 ```python
 from tqdm import tqdm
 from neunet.optim import Adam
@@ -272,8 +291,11 @@ for epoch in range(epochs):
 
 Code:   
 *[Model Example](examples/recurrent_digits_classifier.py)*
+</details>
 
-#### Variational Autoencoder (VAE)
+<details>
+<summary>Variational Autoencoder (VAE)</summary>
+
 ```python
 from tqdm import tqdm
 from neunet.optim import Adam
@@ -431,8 +453,11 @@ Digits location in 2D latent space:
 
 Digits labels in 2D latent space:   
 <img src="generated images/vae_2d_latent_space_labels.jpg" width=75% height=75%>
+</details>
 
-#### Generative Adversarial Network (GAN)
+<details>
+<summary>Generative Adversarial Network (GAN)</summary>
+
 ```python
 from tqdm import tqdm
 from neunet.optim import Adam
@@ -550,6 +575,192 @@ Code:
 Training process Example | Interpolation between images Example
 :-------------------------:|:-------------------------:
 <img src="generated images/gan_training_process.gif"> |  <img src="generated images/gan_vectors_interpolation.gif">
+</details>
+
+<details>
+<summary>Conway`s Game of Life Neural Network Simulation</summary>
+
+```python
+import itertools
+import numpy as np
+import neunet
+import neunet.nn as nn
+import neunet.optim as optim
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.colors import ListedColormap
+from tqdm import tqdm
+
+'''
+Conway's Game of Life
+
+This example illustrates how to implement a neural network that can be trained to simulate Conway's Game of Life.
+'''
+
+N = 128
+# Randomly create a grid
+# grid = np.random.binomial(1, p = 0.2, size = (N, N))
+
+# or define for example the Glider Gun configuration as shown in 
+# https://conwaylife.com/wiki/Gosper_glider_gun 
+# Other examples can be found in
+# https://conwaylife.com/patterns/
+
+grid = np.zeros((N, N))
+
+gun_pattern_src = """
+........................O...........
+......................O.O...........
+............OO......OO............OO
+...........O...O....OO............OO
+OO........O.....O...OO..............
+OO........O...O.OO....O.O...........
+..........O.....O.......O...........
+...........O...O....................
+............OO......................
+"""
+
+# Split the pattern into lines
+lines = gun_pattern_src.strip().split('\n')
+
+# Convert each line into an array of 1s and 0s
+gun_pattern_grid = np.array([[1 if char == 'O' else 0 for char in line] for line in lines])
+
+grid[0:gun_pattern_grid.shape[0], 0:gun_pattern_grid.shape[1]] = gun_pattern_grid
+
+def update(grid):
+    '''
+    Native implementation of Conway's Game of Life
+    '''
+    updated_grid = grid.copy()
+    for i in range(N):
+        for j in range(N):
+            # Use the modulo operator % to ensure that the indices wrap around the grid.
+            # Using the modulus operator % to index an array creates the effect of a "toroidal" mesh, which can be thought of as the surface of a donut
+            n_alived_neighbors = int(grid[(i-1)%N, (j-1)%N] + grid[(i-1)%N, j] + grid[(i-1)%N, (j+1)%N] + grid[i, (j-1)%N] + grid[i, (j+1)%N] + grid[(i+1)%N, (j-1)%N] + grid[(i+1)%N, j] + grid[(i+1)%N, (j+1)%N])
+
+            if grid[i, j] == 1:
+                if n_alived_neighbors < 2 or n_alived_neighbors > 3:
+                    updated_grid[i, j] = 0
+            else:
+                if n_alived_neighbors == 3:
+                    updated_grid[i, j] = 1
+
+    return updated_grid
+
+class GameOfLife(nn.Module):
+    def __init__(self, ):
+        super(GameOfLife, self).__init__()
+
+        self.conv = nn.Conv2d(1, 1, 3, padding=0, bias=False)
+        kernel = neunet.tensor([[[[1, 1, 1],
+                                 [1, 0, 1],
+                                 [1, 1, 1]]]])
+        self.conv.weight.data = kernel
+
+    def forward(self, grid: np.ndarray):
+        '''
+        Implementation of Conway's Game of Life using a convolution (works much faster)
+        '''
+        # Pad the grid to create a "toroidal" mesh effect
+        grid_tensor = neunet.tensor(np.pad(grid, pad_width=1, mode='wrap'))[None, None, :, :]
+        n_alive_neighbors = self.conv(grid_tensor).data
+        updated_grid = ((n_alive_neighbors.astype(int) == 3) | ((grid.astype(int) == 1) & (n_alive_neighbors.astype(int) == 2)))
+        updated_grid = updated_grid[0, 0, :, :]
+
+        return updated_grid
+
+game = GameOfLife()
+
+
+class Dataset:
+    def get_data(self):
+        '''
+        Generate data from all probable situations (2^9), 
+        where (1 point - current point, 8 points - surrounding neighbors points)
+        '''
+        X = list(itertools.product([0, 1], repeat = 9))
+
+        X = [np.array(x).reshape(3, 3) for x in X]
+        Y = [game(x).astype(int) for x in X]
+
+        return np.array(X), np.array(Y)
+    
+# architecture was borrowed from https://gist.github.com/failure-to-thrive/61048f3407836cc91ab1430eb8e342d9
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 10, 3, padding=0) # 2
+        self.conv2 = nn.Conv2d(10, 1, 1)
+
+    def forward(self, x):
+        x = neunet.tanh(self.conv1(x))
+        x = self.conv2(x)
+        return x
+
+    def predict(self, x):
+        # Pad the grid to create a "toroidal" mesh effect
+        x = neunet.tensor(np.pad(x, pad_width = 1, mode='wrap'))[None, None, :, :]
+        # Squeeze
+        return self.forward(x).data[0, 0, :, :]
+
+model = Net()
+
+dataset = Dataset()
+X, Y = dataset.get_data()
+
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+criterion = nn.MSELoss()
+
+epochs = 500
+
+for epoch in range(epochs):
+    tqdm_range = tqdm(zip(X, Y), total=len(X))
+    perm = np.random.permutation(len(X))
+
+    X = X[perm]
+    Y = Y[perm]
+    losses = []
+    for x, y in tqdm_range:
+        optimizer.zero_grad()
+
+        x = neunet.tensor(np.pad(x, pad_width=1, mode='wrap'))[None, None, :, :]
+        y = neunet.tensor(y)[None, None, :, :]
+        y_pred = model(x)
+  
+        loss = criterion(y_pred, y)
+
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.data)
+        tqdm_range.set_description(f"Epoch: {epoch + 1}/{epochs}, Loss: {loss.data:.7f}, Mean Loss: {np.mean(losses):.7f}")
+        
+model.eval()
+
+def animate(i):
+    global grid
+    ax.clear()
+    # grid = update(grid) # Native implementation
+    # grid = game(grid) # Implementation using convolution
+    grid = model.predict(grid) # Neural network
+    ax.imshow(grid, cmap=ListedColormap(['black', 'lime']))#, interpolation='lanczos'
+
+fig, ax = plt.subplots(figsize = (10, 10))
+ani = animation.FuncAnimation(fig, animate, frames=30, interval=5)
+plt.show()
+```
+
+Code:   
+*[Model example](examples/conway.py)*   
+
+
+##### Conway`s Game of Life Simulation Results:
+Native implementation Example | Neural network Example
+:-------------------------:|:-------------------------:
+<img src="generated images/native_conway.gif"> |  <img src="generated images/neunet_conway.gif">
+
+</details>
+
 
 
 ### TODO:
