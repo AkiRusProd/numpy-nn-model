@@ -107,7 +107,7 @@ print(z.grad, '\n')
 All [examples](examples/) was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
 #### All of them:
-1. *[Autoencoder](examples/autoencoder.py)*        
+1. *[Autoencoder](examples/ae.py)*        
 2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.py)*    
 3. *[Conway`s Game of Life](examples/conway.py)*  
 4. *[Generative Adversarial Network](examples/gan.py)*     
