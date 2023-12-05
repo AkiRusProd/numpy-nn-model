@@ -184,9 +184,9 @@ class Conv2d(): # layer with static backpropagation
             
 
     def forward(self, X):
-        if self.input_size == None:
-            self.input_size = X.shape
-            self.build()
+        # if self.input_size == None:
+        self.input_size = X.shape
+        self.build()
 
         X_data = set_padding(X.data, self.padding)
         self.weight.data = set_stride(self.weight.data, self.dilation)
