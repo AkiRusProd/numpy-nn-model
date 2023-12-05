@@ -104,7 +104,7 @@ print(z.grad, '\n')
 
 
 ### Model Examples:
-All [examples](examples/) was trained on [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
+Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
 #### All of them:
 1. *[Autoencoder](examples/ae.py)*        
