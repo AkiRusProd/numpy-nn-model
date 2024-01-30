@@ -261,12 +261,12 @@ class Tensor:
                 self.args[1].backward(grad * self.args[0].data)
 
             elif self.args[0].data.ndim == 1 and self.args[1].data.ndim > 1: # [vector x matrix]
-                self.args[0].backward(grad * self.args[1].data)
-                self.args[1].backward(np.outer(grad, self.args[0].data))
+                self.args[0].backward(np.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
+                self.args[1].backward(np.outer(self.args[0].data, grad))
 
             elif self.args[0].data.ndim > 1 and self.args[1].data.ndim == 1: # [matrix x vector]
                 self.args[0].backward(np.outer(grad, self.args[1].data))
-                self.args[1].backward(grad * self.args[0].data)
+                self.args[1].backward(np.matmul(self.args[0].data.swapaxes(-1, -2), grad))
 
 
         elif self.op == "sum":
