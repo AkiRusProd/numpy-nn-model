@@ -1,5 +1,6 @@
 import sys, os
 from pathlib import Path
+
 sys.path[0] = str(Path(sys.path[0]).parent)
 
 import neunet as nnet
@@ -10,7 +11,7 @@ from tqdm import tqdm
 
 # Example based on the https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html
 
-CONTEXT_SIZE = 2 # 2 words to the left, 2 to the right
+CONTEXT_SIZE = 2  # 2 words to the left, 2 to the right
 EMBEDDING_DIM = 10
 # We will use Shakespeare Sonnet 2
 test_sentence = """When forty winters shall besiege thy brow,
@@ -30,8 +31,9 @@ And see thy blood warm when thou feel'st it cold.""".split()
 
 ngrams = [
     (
-        [test_sentence[i - j - 1] for j in range(CONTEXT_SIZE)] + [test_sentence[i + j + 1] for j in range(CONTEXT_SIZE)],
-        test_sentence[i]
+        [test_sentence[i - j - 1] for j in range(CONTEXT_SIZE)]
+        + [test_sentence[i + j + 1] for j in range(CONTEXT_SIZE)],
+        test_sentence[i],
     )
     for i in range(len(test_sentence) - CONTEXT_SIZE)
 ]
@@ -43,9 +45,7 @@ vocab = set(test_sentence)
 word_to_ix = {word: i for i, word in enumerate(vocab)}
 
 
-
 class CBOWModeler(nn.Module):
-
     def __init__(self, vocab_size, embedding_dim, context_size):
         super(CBOWModeler, self).__init__()
         self.vocab_size = vocab_size
@@ -57,7 +57,6 @@ class CBOWModeler(nn.Module):
         self.linear2 = nn.Linear(128, vocab_size)
         self.relu = nn.ReLU()
         self.softmax = nn.Softmax(axis=1)
-        
 
     def forward(self, inputs):
         embeds = self.embeddings(inputs).reshape((1, -1))
@@ -65,8 +64,6 @@ class CBOWModeler(nn.Module):
         out = self.linear2(out)
         log_probs = self.softmax(out).log()
         return log_probs
-
-
 
 
 loss_function = nn.NLLLoss()
@@ -84,7 +81,10 @@ for epoch in tqdm_range:
 
         log_probs = model(context_idxs)
 
-        loss = loss_function(log_probs, nnet.tensor([word_to_ix[target]], dtype=nnet.int16, requires_grad=False))
+        loss = loss_function(
+            log_probs,
+            nnet.tensor([word_to_ix[target]], dtype=nnet.int16, requires_grad=False),
+        )
 
         loss.backward()
         optimizer.step()
@@ -93,12 +93,12 @@ for epoch in tqdm_range:
 
     tqdm_range.set_description(f"CBOW loss: {total_loss:.7f}")
 
-print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
-
+print(
+    f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}'
+)
 
 
 class SkipGramModeler(nn.Module):
-
     def __init__(self, vocab_size, embedding_dim, context_size):
         super(SkipGramModeler, self).__init__()
         self.vocab_size = vocab_size
@@ -114,7 +114,7 @@ class SkipGramModeler(nn.Module):
     def forward(self, inputs):
         embeds = self.embeddings(inputs).reshape((1, -1))
         out = self.relu(self.linear1(embeds))
-        out = self.linear2(out).reshape(2 * self.context_size,-1)
+        out = self.linear2(out).reshape(2 * self.context_size, -1)
         log_probs = self.softmax(out).log()
         return log_probs
 
@@ -134,7 +134,9 @@ for epoch in tqdm_range:
 
         log_probs = model(context_idx)
 
-        loss = loss_function(log_probs, nnet.tensor([word_to_ix[w] for w in context], dtype=nnet.int16))
+        loss = loss_function(
+            log_probs, nnet.tensor([word_to_ix[w] for w in context], dtype=nnet.int16)
+        )
 
         loss.backward()
         optimizer.step()
@@ -143,4 +145,6 @@ for epoch in tqdm_range:
 
     tqdm_range.set_description(f"Skip-Gram loss: {total_loss:.7f}")
 
-print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
+print(
+    f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}'
+)

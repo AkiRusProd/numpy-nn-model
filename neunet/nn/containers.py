@@ -1,10 +1,11 @@
 from neunet.autograd import Tensor
 import numpy as np
 
+
 class Module:
     def __init__(self):
         self.training = True
-    
+
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
@@ -34,7 +35,6 @@ class Module:
                             if param not in params:
                                 params.append(param)
 
-
         return params
 
     def eval(self):
@@ -42,8 +42,8 @@ class Module:
         for name, item in self.__dict__.items():
             if hasattr(item, "eval"):
                 item.eval()
-           
-    def train(self, mode = True):
+
+    def train(self, mode=True):
         self.training = mode
         for name, item in self.__dict__.items():
             if hasattr(item, "train"):
@@ -97,7 +97,7 @@ class Sequential:
             if hasattr(layer, "eval"):
                 layer.eval()
 
-    def train(self, mode = True):
+    def train(self, mode=True):
         self.training = mode
         for layer in self.layers:
             if hasattr(layer, "train"):
@@ -109,7 +109,6 @@ class Sequential:
                 layer.to(device)
 
         return self
-
 
 
 class ModuleList:

@@ -2,13 +2,13 @@ from neunet.autograd import Tensor
 import numpy as np
 
 
-
-
-
-
-class LayerNorm():
+class LayerNorm:
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
-        self.normalized_shape = (normalized_shape, ) if isinstance(normalized_shape, int) else normalized_shape
+        self.normalized_shape = (
+            (normalized_shape,)
+            if isinstance(normalized_shape, int)
+            else normalized_shape
+        )
         self.eps = eps
         self.elementwise_affine = elementwise_affine
 
@@ -18,23 +18,24 @@ class LayerNorm():
     def forward(self, X):
         axis = tuple(range(-len(self.normalized_shape), 0))
 
-        mean = X.mean(axis = axis, keepdims=True)
-        var = X.var(axis = axis, keepdims=True)
+        mean = X.mean(axis=axis, keepdims=True)
+        var = X.var(axis=axis, keepdims=True)
 
         X_centered = X + mean
         varaddeps = var + self.eps
         powvaraddeps = varaddeps.power(0.5)
-        stddev_inv = Tensor(1).div(powvaraddeps) #1 / np.sqrt(var + self.eps) BUG
+        stddev_inv = Tensor(1).div(powvaraddeps)  # 1 / np.sqrt(var + self.eps) BUG
 
         O = X_centered * stddev_inv
 
         if self.elementwise_affine:
             O = self.weight * O + self.bias
-        
+
         return O
 
     def __call__(self, X):
         return self.forward(X)
+
 
 x_arr = np.random.randn(2, 3, 3)
 x = Tensor(x_arr)
@@ -51,10 +52,16 @@ print(ln.bias.grad)
 
 import torch
 import torch.nn as nn
+
+
 class LayerNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
         super().__init__()
-        self.normalized_shape = (normalized_shape, ) if isinstance(normalized_shape, int) else normalized_shape
+        self.normalized_shape = (
+            (normalized_shape,)
+            if isinstance(normalized_shape, int)
+            else normalized_shape
+        )
         self.eps = eps
         self.elementwise_affine = elementwise_affine
 
@@ -82,7 +89,7 @@ class LayerNorm(nn.Module):
 
         # if self.elementwise_affine:
         #     O = self.weight * O + self.bias
-        
+
         return O
 
     def __call__(self, X):
@@ -165,6 +172,7 @@ print(x_grad / xt_grad)
 
 import sys, os
 from pathlib import Path
+
 sys.path[0] = str(Path(sys.path[0]).parent)
 
 

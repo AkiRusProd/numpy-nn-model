@@ -7,30 +7,31 @@ from mnist_data_downloader import download_data
 def prepare_data(data):
     inputs, targets = [], []
 
-    for raw_line in tqdm(data, desc = 'preparing data'):
-        line = raw_line.split(',')
-    
+    for raw_line in tqdm(data, desc="preparing data"):
+        line = raw_line.split(",")
+
         inputs.append(np.asfarray(line[1:]))
         targets.append(int(line[0]))
 
     return inputs, targets
 
-def load_mnist(path = "datasets/mnist/"):
 
-    if not os.path.exists(path + "mnist_train.csv") or not os.path.exists(path + "mnist_test.csv"):
-        train_url = 'https://pjreddie.com/media/files/mnist_train.csv'
-        test_url = 'https://pjreddie.com/media/files/mnist_test.csv'
+def load_mnist(path="datasets/mnist/"):
+    if not os.path.exists(path + "mnist_train.csv") or not os.path.exists(
+        path + "mnist_test.csv"
+    ):
+        train_url = "https://pjreddie.com/media/files/mnist_train.csv"
+        test_url = "https://pjreddie.com/media/files/mnist_test.csv"
 
         download_data(train_url, path + "mnist_train.csv")
         download_data(test_url, path + "mnist_test.csv")
 
-
     training_data = open(path + "mnist_train.csv", "r").readlines()
-    test_data = open(path + "mnist_test.csv", 'r').readlines()
+    test_data = open(path + "mnist_test.csv", "r").readlines()
 
-
-    if not os.path.exists(path + "mnist_train.npy") or not os.path.exists(path + "mnist_test.npy"):
-
+    if not os.path.exists(path + "mnist_train.npy") or not os.path.exists(
+        path + "mnist_test.npy"
+    ):
         training_inputs, training_targets = prepare_data(training_data)
         training_inputs = np.asfarray(training_inputs)
 

@@ -27,8 +27,6 @@
 # print(x.grad)
 
 
-
-
 # loss_fn = nnn.CrossEntropyLoss(reduction =  'none', weight=nnet.tensor([1, 2, 3]), ignore_index=-100)
 # xnnet = nnet.tensor(x.detach().numpy(), requires_grad=True)
 # ynnet = nnet.tensor(y.detach().numpy(), dtype=np.int32)
@@ -68,7 +66,6 @@
 # print(type(y))
 
 
-
 import torch
 import torch.nn as nn
 
@@ -94,7 +91,7 @@ print(x.grad)
 import neunet
 import neunet.nn as nnn
 
-x = neunet.tensor([[1, 2, 3]]) 
+x = neunet.tensor([[1, 2, 3]])
 
 y = nnn.Softmax(axis=1)(x)
 

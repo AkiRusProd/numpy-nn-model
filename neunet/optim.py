@@ -21,7 +21,7 @@ class Adam:
                 continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
-            self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad ** 2
+            self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad**2
 
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
             v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
@@ -30,8 +30,9 @@ class Adam:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad) # ??? 0 or None
-
+            param.grad = (
+                None if param.grad is None else param.xp.zeros_like(param.grad)
+            )  # ??? 0 or None
 
 
 class SGD:
@@ -43,14 +44,14 @@ class SGD:
         for param in self.params:
             if param.grad is None:
                 continue
-            
-            param.data -= self.lr * param.grad
 
+            param.data -= self.lr * param.grad
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad) # ??? 0 or None
-
+            param.grad = (
+                None if param.grad is None else param.xp.zeros_like(param.grad)
+            )  # ??? 0 or None
 
 
 class Momentum:
@@ -74,7 +75,6 @@ class Momentum:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
-
 class RMSprop:
     def __init__(self, params, lr=0.01, alpha=0.99, eps=1e-8):
         self.params = params
@@ -89,13 +89,12 @@ class RMSprop:
             if param.grad is None:
                 continue
 
-            self.m[i] = self.alpha * self.m[i] + (1 - self.alpha) * param.grad ** 2
+            self.m[i] = self.alpha * self.m[i] + (1 - self.alpha) * param.grad**2
             param.data -= self.lr * param.grad / (param.xp.sqrt(self.m[i]) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
-
 
 
 class Adagrad:
@@ -111,13 +110,12 @@ class Adagrad:
             if param.grad is None:
                 continue
 
-            self.m[i] += param.grad ** 2
+            self.m[i] += param.grad**2
             param.data -= self.lr * param.grad / (param.xp.sqrt(self.m[i]) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
-
 
 
 class Adadelta:
@@ -135,15 +133,20 @@ class Adadelta:
             if param.grad is None:
                 continue
 
-            self.m[i] = self.rho * self.m[i] + (1 - self.rho) * param.grad ** 2
-            delta_x = - (param.xp.sqrt(self.v[i] + self.eps) / param.xp.sqrt(self.m[i] + self.eps)) * param.grad
-            self.v[i] = self.rho * self.v[i] + (1 - self.rho) * delta_x ** 2
+            self.m[i] = self.rho * self.m[i] + (1 - self.rho) * param.grad**2
+            delta_x = (
+                -(
+                    param.xp.sqrt(self.v[i] + self.eps)
+                    / param.xp.sqrt(self.m[i] + self.eps)
+                )
+                * param.grad
+            )
+            self.v[i] = self.rho * self.v[i] + (1 - self.rho) * delta_x**2
             param.data += delta_x
 
     def zero_grad(self):
         for param in self.params:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
-
 
 
 class Adamax:
@@ -165,7 +168,9 @@ class Adamax:
                 continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
-            self.v[i] = param.xp.maximum(self.betas[1] * self.v[i], param.xp.abs(param.grad))
+            self.v[i] = param.xp.maximum(
+                self.betas[1] * self.v[i], param.xp.abs(param.grad)
+            )
 
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
 
@@ -174,7 +179,6 @@ class Adamax:
     def zero_grad(self):
         for param in self.params:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
-
 
 
 class NAdam:
@@ -196,9 +200,11 @@ class NAdam:
                 continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
-            self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad ** 2
+            self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad**2
 
-            m_hat = self.m[i] / (1 - self.betas[0] ** self.t) + (1 - self.betas[0]) * param.grad / (1 - self.betas[0] ** self.t)
+            m_hat = self.m[i] / (1 - self.betas[0] ** self.t) + (
+                1 - self.betas[0]
+            ) * param.grad / (1 - self.betas[0] ** self.t)
             v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
 
             param.data -= self.lr * m_hat / (param.xp.sqrt(v_hat) + self.eps)
@@ -206,5 +212,3 @@ class NAdam:
     def zero_grad(self):
         for param in self.params:
             param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
-
-

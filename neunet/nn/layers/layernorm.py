@@ -3,10 +3,6 @@ import numpy as np
 import cupy as cp
 
 
-
-
-
-
 # class LayerNorm(): #layer with dynamic backpropagation
 #     def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True):
 #         self.normalized_shape = (normalized_shape, ) if isinstance(normalized_shape, int) else normalized_shape
@@ -34,18 +30,18 @@ import cupy as cp
 
 #         if self.elementwise_affine:
 #             O = self.weight * O + self.bias
-        
+
 #         return O
 
 #     def __call__(self, X):
 #         return self.forward(X)
 
 
-class _LayerNormTensor(Tensor): # tensor for static backpropagation
+class _LayerNormTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad = 1):
+    def backward(self, grad=1):
         X, weight, bias, X_centered, stddev_inv, axis, elementwise_affine = self.args
 
         # _axis = list(axis) if isinstance(axis, tuple) else axis
@@ -55,9 +51,20 @@ class _LayerNormTensor(Tensor): # tensor for static backpropagation
         weight_size = weight.size if elementwise_affine else 1
 
         dX_hat = weight_data * grad
-        dstddev_inv = -0.5 * self.xp.power(stddev_inv, 3) * self.xp.sum(dX_hat * X_centered, axis = axis, keepdims = True)
-        dvar = self.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / weight_size #self.xp.prod(self.xp.array(X.shape)[_axis])
-        dmean = self.xp.ones_like(X.data) * self.xp.sum(dX_hat * stddev_inv, axis = axis, keepdims = True) * (-1) / weight_size #self.xp.prod(self.xp.array(X.shape)[_axis])
+        dstddev_inv = (
+            -0.5
+            * self.xp.power(stddev_inv, 3)
+            * self.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
+        )
+        dvar = (
+            self.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / weight_size
+        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
+        dmean = (
+            self.xp.ones_like(X.data)
+            * self.xp.sum(dX_hat * stddev_inv, axis=axis, keepdims=True)
+            * (-1)
+            / weight_size
+        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
         grad_X = dX_hat * stddev_inv + dvar + dmean
 
         # grad_X = (1 / weight_size) * weight_data * stddev_inv * (
@@ -72,8 +79,8 @@ class _LayerNormTensor(Tensor): # tensor for static backpropagation
         # grad_X = dX_hat * stddev_inv + dvar + dmean
 
         if elementwise_affine:
-            grad_weight = self.xp.sum(grad * X_hat, axis = 0)
-            grad_bias = self.xp.sum(grad, axis = 0)
+            grad_weight = self.xp.sum(grad * X_hat, axis=0)
+            grad_bias = self.xp.sum(grad, axis=0)
 
         X.backward(grad_X)
         if elementwise_affine:
@@ -81,11 +88,15 @@ class _LayerNormTensor(Tensor): # tensor for static backpropagation
             bias.backward(grad_bias)
 
 
-
-
-class LayerNorm(): # layer with static backpropagation
-    def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True, device = "cpu"):
-        self.normalized_shape = (normalized_shape, ) if isinstance(normalized_shape, int) else normalized_shape
+class LayerNorm:  # layer with static backpropagation
+    def __init__(
+        self, normalized_shape, eps=1e-05, elementwise_affine=True, device="cpu"
+    ):
+        self.normalized_shape = (
+            (normalized_shape,)
+            if isinstance(normalized_shape, int)
+            else normalized_shape
+        )
         self.eps = eps
         self.elementwise_affine = elementwise_affine
 
@@ -101,8 +112,8 @@ class LayerNorm(): # layer with static backpropagation
     def forward(self, X):
         axis = tuple(range(-len(self.normalized_shape), 0))
 
-        mean = self.xp.mean(X.data, axis = axis, keepdims=True)
-        var = self.xp.var(X.data, axis = axis, keepdims=True)
+        mean = self.xp.mean(X.data, axis=axis, keepdims=True)
+        var = self.xp.var(X.data, axis=axis, keepdims=True)
 
         X_centered = X.data - mean
         stddev_inv = 1 / self.xp.sqrt(var + self.eps)
@@ -112,12 +123,25 @@ class LayerNorm(): # layer with static backpropagation
         if self.elementwise_affine:
             O = self.weight.data * O + self.bias.data
 
-        return _LayerNormTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv, axis, self.elementwise_affine], "layernorm", device = self.device)
+        return _LayerNormTensor(
+            O,
+            [
+                X,
+                self.weight,
+                self.bias,
+                X_centered,
+                stddev_inv,
+                axis,
+                self.elementwise_affine,
+            ],
+            "layernorm",
+            device=self.device,
+        )
 
     def __call__(self, X):
         return self.forward(X)
 
-    def to (self, device):
+    def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
             self.xp = np
@@ -130,4 +154,3 @@ class LayerNorm(): # layer with static backpropagation
             self.bias = self.bias.to(device)
 
         return self
-

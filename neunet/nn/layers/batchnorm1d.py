@@ -3,27 +3,34 @@ import numpy as np
 import cupy as cp
 
 
-class _BatchNorm1dTensor(Tensor): # tensor for static backpropagation
+class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
-        super().__init__(data, args, op, device = device)
+        super().__init__(data, args, op, device=device)
 
     def backward(self, grad=1):
         X, weight, bias, X_centered, stddev_inv, affine = self.args
-        
+
         X_hat = X_centered * stddev_inv
         batch_size = X.data.shape[0]
 
         weight_data = weight.data if affine else 1
 
-        grad_X = (1 / batch_size) * weight_data * stddev_inv * (
-            batch_size * grad
-            - self.xp.sum(grad, axis = 0)
-            - X_centered * self.xp.power(stddev_inv, 2) * self.xp.sum(grad * X_centered, axis = 0)
+        grad_X = (
+            (1 / batch_size)
+            * weight_data
+            * stddev_inv
+            * (
+                batch_size * grad
+                - self.xp.sum(grad, axis=0)
+                - X_centered
+                * self.xp.power(stddev_inv, 2)
+                * self.xp.sum(grad * X_centered, axis=0)
             )
-        
+        )
+
         if affine:
-            grad_weight = self.xp.sum(grad * X_hat, axis = 0, keepdims = True)
-            grad_bias = self.xp.sum(grad, axis = 0, keepdims = True)
+            grad_weight = self.xp.sum(grad * X_hat, axis=0, keepdims=True)
+            grad_bias = self.xp.sum(grad, axis=0, keepdims=True)
 
         X.backward(grad_X)
         if affine:
@@ -31,9 +38,8 @@ class _BatchNorm1dTensor(Tensor): # tensor for static backpropagation
             bias.backward(grad_bias)
 
 
-
-class BatchNorm1d(): # layer with static backpropagation
-    def __init__(self, num_features, eps = 1e-5, momentum = 0.1, affine = True, device = "cpu"):
+class BatchNorm1d:  # layer with static backpropagation
+    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, device="cpu"):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
@@ -53,37 +59,45 @@ class BatchNorm1d(): # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
-
         if self.training:
-            mean = self.xp.mean(X.data, axis = 0, keepdims = True)
-            var = self.xp.var(X.data, axis = 0, keepdims = True)
+            mean = self.xp.mean(X.data, axis=0, keepdims=True)
+            var = self.xp.var(X.data, axis=0, keepdims=True)
 
-            self.running_mean.data = self.momentum * self.running_mean.data + (1 - self.momentum) * mean
-            self.running_var.data = self.momentum * self.running_var.data + (1 - self.momentum) * var
+            self.running_mean.data = (
+                self.momentum * self.running_mean.data + (1 - self.momentum) * mean
+            )
+            self.running_var.data = (
+                self.momentum * self.running_var.data + (1 - self.momentum) * var
+            )
         else:
             mean = self.running_mean.data
             var = self.running_var.data
 
         X_centered = X.data - mean
         stddev_inv = 1 / self.xp.sqrt(var + self.eps)
-        
+
         O = X_centered * stddev_inv
-       
+
         if self.affine:
             O = self.weight.data * O + self.bias.data
-        
-        return _BatchNorm1dTensor(O, [X, self.weight, self.bias, X_centered, stddev_inv, self.affine], "batchnorm", device = self.device)
+
+        return _BatchNorm1dTensor(
+            O,
+            [X, self.weight, self.bias, X_centered, stddev_inv, self.affine],
+            "batchnorm",
+            device=self.device,
+        )
 
     def __call__(self, X):
         return self.forward(X)
 
-    def train(self, mode = True):
+    def train(self, mode=True):
         self.training = mode
 
     def eval(self):
         self.training = False
 
-    def to (self, device):
+    def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
             self.xp = np
@@ -98,8 +112,6 @@ class BatchNorm1d(): # layer with static backpropagation
             self.bias = self.bias.to(device)
 
         return self
-
-
 
 
 # x_arr = self.xp.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
@@ -148,9 +160,9 @@ class BatchNorm1d(): # layer with static backpropagation
 #         else:
 #             mean = self.running_mean
 #             var = self.running_var
-        
+
 #         X_centered = (X - mean) #errro
-        
+
 #         stddev_inv = 1 / Tensor.sqrt(var + self.eps)
 
 #         O = X_centered * stddev_inv
@@ -163,11 +175,11 @@ class BatchNorm1d(): # layer with static backpropagation
 #     def __call__(self, X):
 #         return self.forward(X)
 
-    # def train(self, mode = True):
-    #     self.training = mode
+# def train(self, mode = True):
+#     self.training = mode
 
-    # def eval(self):
-    #     self.training = False
+# def eval(self):
+#     self.training = False
 
 
 # # x = self.xp.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])

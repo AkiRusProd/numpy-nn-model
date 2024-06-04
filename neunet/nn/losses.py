@@ -4,7 +4,7 @@ import neunet as nnet
 import numpy as np
 
 
-class MSELoss():
+class MSELoss:
     def __init__(self):
         pass
 
@@ -15,20 +15,23 @@ class MSELoss():
         return self.forward(y_pred, y_true)
 
 
-
-class BCELoss():
-    def __init__(self, weight = None, reduction = "mean"):
+class BCELoss:
+    def __init__(self, weight=None, reduction="mean"):
         self.weight = weight
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert y_pred.device == y_true.device, "y_pred and y_true must be on the same device"
+        assert (
+            y_pred.device == y_true.device
+        ), "y_pred and y_true must be on the same device"
         loss = y_true.mul(y_pred.log()).add((1.0 - y_true).mul((1.0 - y_pred).log()))
 
         if self.weight is None:
             self.weight = y_pred.xp.ones((1))
 
-        assert (self.weight * y_pred.data).shape == y_pred.data.shape, "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
+        assert (
+            (self.weight * y_pred.data).shape == y_pred.data.shape
+        ), "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
 
         loss = loss.mul(self.weight)
 
@@ -43,10 +46,8 @@ class BCELoss():
         return self.forward(y_pred, y_true)
 
 
-
-
-class CrossEntropyLoss():
-    def __init__(self, weight = None, ignore_index = -100, reduction = "mean"):
+class CrossEntropyLoss:
+    def __init__(self, weight=None, ignore_index=-100, reduction="mean"):
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
@@ -62,19 +63,27 @@ class CrossEntropyLoss():
         return self.forward(y_pred, y_true)
 
 
-class NLLLoss():
-    def __init__(self, weight = None, ignore_index = -100, reduction = "mean"):
+class NLLLoss:
+    def __init__(self, weight=None, ignore_index=-100, reduction="mean"):
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert y_pred.device == y_true.device, "y_pred and y_true must be on the same device"
+        assert (
+            y_pred.device == y_true.device
+        ), "y_pred and y_true must be on the same device"
         if self.weight is None:
             self.weight = y_pred.xp.ones((y_pred.data.shape[1]))
 
-        assert self.weight.shape == (y_pred.data.shape[1], ), "Weight shape must be equal to number of classes"
-        assert y_true.dtype in (np.int16, np.int32, np.int64), "Target must be of int dtype"
+        assert self.weight.shape == (
+            y_pred.data.shape[1],
+        ), "Weight shape must be equal to number of classes"
+        assert y_true.dtype in (
+            np.int16,
+            np.int32,
+            np.int64,
+        ), "Target must be of int dtype"
 
         if y_pred.data.ndim == 2:
             y_pred = y_pred[..., None]
@@ -89,7 +98,7 @@ class NLLLoss():
 
         if self.reduction == "mean":
             return nnet.sum(loss / nnet.sum(self.weight[y_true.data] * ignore_mask))
-            
+
         elif self.reduction == "sum":
             return loss.sum()
         else:
@@ -99,9 +108,8 @@ class NLLLoss():
         return self.forward(y_pred, y_true)
 
 
-
 class L1Loss(Tensor):
-    def __init__(self, reduction = "mean"):
+    def __init__(self, reduction="mean"):
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
@@ -116,10 +124,10 @@ class L1Loss(Tensor):
 
     def __call__(self, y_pred, y_true):
         return self.forward(y_pred, y_true)
-    
+
 
 class KLDivLoss(Tensor):
-    def __init__(self, reduction = "mean", log_target = False):
+    def __init__(self, reduction="mean", log_target=False):
         self.reduction = reduction
         self.log_target = log_target
 
@@ -137,6 +145,6 @@ class KLDivLoss(Tensor):
             return loss.sum()
         else:
             return loss
-        
+
     def __call__(self, y_pred, y_true):
         return self.forward(y_pred, y_true)

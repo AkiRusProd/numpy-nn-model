@@ -5,9 +5,6 @@ import torch
 import torch.nn as nn
 
 
-
-
-
 # class Dense(Tensor):
 #     def __init__(self, in_features, out_features):
 #         self.in_features = in_features
@@ -22,8 +19,6 @@ import torch.nn as nn
 
 #     def __call__(self, x):
 #         return self.forward(x)
-
-
 
 
 # latent_size = 2
@@ -60,16 +55,14 @@ import torch.nn as nn
 # logvar_encoder.weight.data = np.ones((latent_size, latent_size))
 
 
-
-
 # def forward(x):
 #     x_enc = encoder(x)
- 
+
 #     # mu = mu_encoder(x_enc)
 #     # logvar = logvar_encoder(x_enc)
 #     mu, logvar = x_enc[:, :latent_size], x_enc[:, latent_size:]
 
-    
+
 #     std = logvar.mul(0.5).exp()
 #     eps = Tensor(np.ones_like(std.data))
 #     z = mu + eps * std
@@ -82,7 +75,6 @@ import torch.nn as nn
 #     MSE = loss_fn(x_recon, x)
 #     KLD = Tensor(-0.5) * Tensor.sum(Tensor(1) + logvar - mu.power(2) - logvar.exp())
 #     return MSE + KLD
-    
 
 
 # def train(x):
@@ -105,7 +97,6 @@ import torch.nn as nn
 #     return loss
 
 # train(x)
-
 
 
 # x = np.random.randn(2, 2)
@@ -165,7 +156,7 @@ def add_grad(x, grad):
             print("axis: ", axis)
             grad = grad.sum(axis=axis, keepdims=True)
 
-        elif x.ndim > grad.ndim: #this case never happens
+        elif x.ndim > grad.ndim:  # this case never happens
             print("x.ndim > grad.ndim")
             grad = grad.sum(axis=tuple(range(grad.ndim - x.ndim)), keepdims=True)
         # else:
@@ -185,14 +176,10 @@ def add_grad(x, grad):
             print("axis: ", axis)
             grad = grad.sum(axis=axis).reshape(x.shape)
             print("grad.shape: ", grad.shape)
-       
 
     print("x: ", x.shape)
     print("grad: ", grad.shape)
     print(x.shape == grad.shape)
-
-
-
 
 
 # def add_grad(x, grad):
@@ -206,7 +193,6 @@ def add_grad(x, grad):
 #     print(x.shape == grad.shape)
 
 add_grad(y, z)
-
 
 
 # x = Tensor(x)

@@ -41,7 +41,6 @@
 # # print(x.grad)
 
 
-
 # # x = torch.tensor(np.array([[1, 2, 3], [4, 5, 6]]), dtype=torch.float32, requires_grad=True)
 # # var = x.var(axis = 0, unbiased=False)
 # # print(torch.ones_like(var).shape)
@@ -77,7 +76,7 @@
 # # l = 2 * x
 # # nll = l * 3
 
-# # z = nll + l 
+# # z = nll + l
 
 # # z.backward()
 # # print(x.grad)
@@ -90,7 +89,7 @@
 # #         stdv = 1. / np.sqrt(in_features)
 # #         # self.weight = Tensor(np.random.uniform(-stdv, stdv, (in_features, out_features)))
 # #         self.weight = Tensor(np.ones((in_features, out_features)))
-      
+
 # #     def forward(self, x):
 # #         return x.mm(self.weight)
 
@@ -115,7 +114,6 @@
 # # print(dense2.weight.grad)
 
 
-
 # # x = Tensor(np.array([[1, 2, 3], [4, 5, 6]]))
 # # y = x.mean()
 # # print(y)
@@ -127,7 +125,6 @@
 # # print(y)
 # # y.backward(torch.ones_like(y))
 # # print(x.grad)
-
 
 
 # # x = Tensor(np.array([[1, 2, 3], [4, 5, 6]]))
@@ -213,7 +210,6 @@
 # # print(x.grad)
 
 
-
 # # x = np.random.randn(2, 2, 5, 5)
 # # x = np.ones((1, 1, 9, 9))
 # # layer = AvgPool2d(4, 2, 1)
@@ -247,7 +243,6 @@
 # # out, hn = rnn(x, h0)
 # # print(out.shape, hn.shape)
 # # print(out)
-
 
 
 # # rnn = nn.RNN(10, 20, 1, batch_first=True)
@@ -310,8 +305,6 @@
 # # # print(output1.shape, hn.shape)
 
 
-
-
 # # arr = np.random.randn(2, 3, 4, 5)
 # # my_x = Tensor(arr)
 # # # gelu = TanhExp()
@@ -340,7 +333,6 @@
 # # print(y)
 # # y.backward()
 # # print(x.grad)
-
 
 
 # # arr = np.random.randn(3, 4, 5)
@@ -394,8 +386,6 @@
 
 # # print(np.allclose(y.data, my_y.data))
 # # print(np.allclose(x.grad, my_x.grad))
-
-
 
 
 # x = Tensor(4)
@@ -533,6 +523,7 @@
 
 import sys, os
 from pathlib import Path
+
 sys.path[0] = str(Path(sys.path[0]).parent)
 
 
@@ -541,9 +532,16 @@ from neunet import nn
 from neunet.autograd import Tensor
 
 x = Tensor([[1.1, 2.0, 3.6], [4.7, 3.14, 2.718]], requires_grad=True)
-y = Tensor([[2., 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
+y = Tensor([[2.0, 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
 
-output = Tensor.tanh(1/(Tensor.concatenate(Tensor.sin((Tensor.exp(x ** 1.4) / 3.1 ** Tensor.log(x)).mm(y)), y).mean()))
+output = Tensor.tanh(
+    1
+    / (
+        Tensor.concatenate(
+            Tensor.sin((Tensor.exp(x**1.4) / 3.1 ** Tensor.log(x)).mm(y)), y
+        ).mean()
+    )
+)
 
 print(output)
 output.backward()
@@ -552,16 +550,22 @@ print(x.grad)
 print(y.grad)
 
 x = nnet.tensor([[1.1, 2.0, 3.6], [4.7, 3.14, 2.718]], requires_grad=True)
-y = nnet.tensor([[2., 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
+y = nnet.tensor([[2.0, 3.99], [8.4, 1.5], [2.5, 7.8]], requires_grad=True)
 
-output = nnet.tanh(1/(nnet.concatenate([nnet.sin((nnet.exp(x ** 1.4) / 3.1 ** nnet.log(x)).mm(y)), y]).mean()))
+output = nnet.tanh(
+    1
+    / (
+        nnet.concatenate(
+            [nnet.sin((nnet.exp(x**1.4) / 3.1 ** nnet.log(x)).mm(y)), y]
+        ).mean()
+    )
+)
 
 print(output)
 output.backward()
 
 print(x.grad)
 print(y.grad)
-
 
 
 # x = nnet.tensor([1])

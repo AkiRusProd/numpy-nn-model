@@ -4,37 +4,36 @@ import copy as copy_object
 from neunet.autograd import Tensor
 
 
-#In feature can be moved to rnn layer as argument
+# In feature can be moved to rnn layer as argument
 
-class _BidirectionalTensor(Tensor): 
+
+class _BidirectionalTensor(Tensor):
     def __init__(self, data, args, op, device):
-        super().__init__(data, args, op, device = device)
+        super().__init__(data, args, op, device=device)
 
     def backward(self, grad=1):
         X, D_O, R_O, merge_mode = self.args
-        
+
         if merge_mode == "concat":
-            direct_grad, reverse_grad = self.xp.split(grad, 2, axis = -1)
+            direct_grad, reverse_grad = self.xp.split(grad, 2, axis=-1)
         elif merge_mode == "sum":
             direct_grad, reverse_grad = grad, grad
         elif merge_mode == "mul":
             direct_grad, reverse_grad = grad * R_O.data, grad * D_O.data
         elif merge_mode == "avg":
-            direct_grad, reverse_grad = grad/2, grad/2
+            direct_grad, reverse_grad = grad / 2, grad / 2
 
         D_O.backward(direct_grad)
         R_O.backward(reverse_grad)
 
 
-
-
-
-
-
-
-class Bidirectional():
-    def __init__(self, layer, merge_mode="sum", device = "cpu"):
-        assert layer.__class__.__name__ in ["LSTM", "GRU", "RNN"], "Bidirectional layer can only be used with LSTM, GRU or RNN layers"
+class Bidirectional:
+    def __init__(self, layer, merge_mode="sum", device="cpu"):
+        assert layer.__class__.__name__ in [
+            "LSTM",
+            "GRU",
+            "RNN",
+        ], "Bidirectional layer can only be used with LSTM, GRU or RNN layers"
         self.direct_layer = layer
         self.reverse_layer = copy_object.copy(layer)
 
@@ -51,24 +50,43 @@ class Bidirectional():
 
         D_O = self.direct_layer(X)
         R_O = self.reverse_layer(X.flip(1))
-        
+
         if self.return_sequences == "both":
             O = (self.merge(D_O[0], R_O[0]), self.merge(D_O[1], R_O[1]))
 
-            return (_BidirectionalTensor(O[0], [X, D_O[0], R_O[0], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device), 
-                    _BidirectionalTensor(O[1], [X, D_O[1], R_O[1], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device))
+            return (
+                _BidirectionalTensor(
+                    O[0],
+                    [X, D_O[0], R_O[0], self.merge_mode],
+                    f"bidirectional{self.direct_layer.__class__.__name__}",
+                    self.device,
+                ),
+                _BidirectionalTensor(
+                    O[1],
+                    [X, D_O[1], R_O[1], self.merge_mode],
+                    f"bidirectional{self.direct_layer.__class__.__name__}",
+                    self.device,
+                ),
+            )
         else:
             O = self.merge(D_O, R_O)
-        
-            return _BidirectionalTensor(O, [X, D_O, R_O, self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device)
+
+            return _BidirectionalTensor(
+                O,
+                [X, D_O, R_O, self.merge_mode],
+                f"bidirectional{self.direct_layer.__class__.__name__}",
+                self.device,
+            )
 
     def named_parameters(self):
-        return self.direct_layer.named_parameters() + self.reverse_layer.named_parameters()
+        return (
+            self.direct_layer.named_parameters() + self.reverse_layer.named_parameters()
+        )
 
     def __call__(self, X):
         return self.forward(X)
 
-    def to (self, device):
+    def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
             self.xp = np
@@ -84,19 +102,19 @@ class Bidirectional():
 
 def concat(D_O, R_O):
     xp = D_O.xp
-    return xp.concatenate((D_O.data, R_O.data), axis = -1)
+    return xp.concatenate((D_O.data, R_O.data), axis=-1)
+
+
 def sum(D_O, R_O):
     return D_O.data + R_O.data
+
+
 def mul(D_O, R_O):
     return D_O.data * R_O.data
+
+
 def avg(D_O, R_O):
-    return (D_O.data + R_O.data)/2
-
-merge_modes = {
-    "concat": concat,
-    "sum": sum,
-    "mul": mul,
-    "avg": avg
-}
+    return (D_O.data + R_O.data) / 2
 
 
+merge_modes = {"concat": concat, "sum": sum, "mul": mul, "avg": avg}

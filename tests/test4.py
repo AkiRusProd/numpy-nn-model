@@ -37,7 +37,6 @@ import torch
 # loss.backward()
 
 
-
 # x = Tensor(np.array([[1, 0], [0, 1]]))
 
 
@@ -57,7 +56,6 @@ import torch
 # print(f'x.grad: {x.grad}')
 
 
-
 x = Tensor(np.array([[1, 0], [0, 1]]))
 x2 = Tensor(np.array([[1, 0], [0, 1]]))
 x3 = Tensor(np.array([[1, 0], [0, 1], [1, 0], [0, 1]]).T)
@@ -68,13 +66,13 @@ print(f"x3.shape: {x3.shape}")
 y = x.concatenate(x2, x2, x3, axis=1)
 print(y.shape)
 
-print(f'y: {y}')
+print(f"y: {y}")
 
 y.backward(np.ones_like(y.data))
 
-print(f'x.grad: {x.grad}')
-print(f'x2.grad: {x2.grad}')
-print(f'x3.grad: {x3.grad}')
+print(f"x.grad: {x.grad}")
+print(f"x2.grad: {x2.grad}")
+print(f"x3.grad: {x3.grad}")
 
 x = torch.tensor([[1, 0], [0, 1]], dtype=torch.float32, requires_grad=True)
 x2 = torch.tensor([[1, 0], [0, 1]], dtype=torch.float32, requires_grad=True)
@@ -92,8 +90,6 @@ print(x.grad)
 print(x2.grad)
 
 
-
-
 def reverse_concatenate(shapes, axis=0):
     """
     Reverse the operation of concatenate
@@ -108,6 +104,7 @@ def reverse_concatenate(shapes, axis=0):
         slices.append((start, end))
         start = end
     return slices
+
 
 print(reverse_concatenate([x.shape, x2.shape, x2.shape, x3.shape], axis=1))
 
@@ -130,7 +127,6 @@ print(reverse_concatenate([x.shape, x2.shape, x2.shape, x3.shape], axis=1))
 # print(x0, x1)
 # y = x0 * x1
 # y = y.reshape(4, 1)
-
 
 
 # x = Tensor(1)
@@ -158,7 +154,6 @@ import neunet as nnet
 
 import torch
 import torch.nn as nn
-
 
 
 # x = np.random.randn(1, 2, 3 ,4)
@@ -214,4 +209,3 @@ print(linear.weight.grad.shape)
 
 x = nnet.rand((1, 2, 3))
 print(x.shape, "x.shape")
-
