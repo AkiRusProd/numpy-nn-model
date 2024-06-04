@@ -1,5 +1,5 @@
 from neunet.autograd import Tensor
-import numpy as np
+# import numpy as np
 
 
 class Adam:
@@ -9,8 +9,8 @@ class Adam:
         self.betas = betas
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
-        self.v = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
+        self.v = [param.xp.zeros_like(param.data) for param in self.params]
 
         self.t = 0
 
@@ -26,11 +26,11 @@ class Adam:
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
             v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
 
-            param.data -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+            param.data -= self.lr * m_hat / (param.xp.sqrt(v_hat) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad) # ??? 0 or None
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad) # ??? 0 or None
 
 
 
@@ -49,7 +49,7 @@ class SGD:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad) # ??? 0 or None
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad) # ??? 0 or None
 
 
 
@@ -59,7 +59,7 @@ class Momentum:
         self.lr = lr
         self.momentum = momentum
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -71,7 +71,7 @@ class Momentum:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
 
@@ -82,7 +82,7 @@ class RMSprop:
         self.alpha = alpha
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -90,11 +90,11 @@ class RMSprop:
                 continue
 
             self.m[i] = self.alpha * self.m[i] + (1 - self.alpha) * param.grad ** 2
-            param.data -= self.lr * param.grad / (np.sqrt(self.m[i]) + self.eps)
+            param.data -= self.lr * param.grad / (param.xp.sqrt(self.m[i]) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
 
@@ -104,7 +104,7 @@ class Adagrad:
         self.lr = lr
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -112,11 +112,11 @@ class Adagrad:
                 continue
 
             self.m[i] += param.grad ** 2
-            param.data -= self.lr * param.grad / (np.sqrt(self.m[i]) + self.eps)
+            param.data -= self.lr * param.grad / (param.xp.sqrt(self.m[i]) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
 
@@ -127,8 +127,8 @@ class Adadelta:
         self.rho = rho
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
-        self.v = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
+        self.v = [param.xp.zeros_like(param.data) for param in self.params]
 
     def step(self):
         for i, param in enumerate(self.params):
@@ -136,13 +136,13 @@ class Adadelta:
                 continue
 
             self.m[i] = self.rho * self.m[i] + (1 - self.rho) * param.grad ** 2
-            delta_x = - (np.sqrt(self.v[i] + self.eps) / np.sqrt(self.m[i] + self.eps)) * param.grad
+            delta_x = - (param.xp.sqrt(self.v[i] + self.eps) / param.xp.sqrt(self.m[i] + self.eps)) * param.grad
             self.v[i] = self.rho * self.v[i] + (1 - self.rho) * delta_x ** 2
             param.data += delta_x
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
 
@@ -153,8 +153,8 @@ class Adamax:
         self.betas = betas
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
-        self.v = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
+        self.v = [param.xp.zeros_like(param.data) for param in self.params]
 
         self.t = 0
 
@@ -165,7 +165,7 @@ class Adamax:
                 continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
-            self.v[i] = np.maximum(self.betas[1] * self.v[i], np.abs(param.grad))
+            self.v[i] = param.xp.maximum(self.betas[1] * self.v[i], param.xp.abs(param.grad))
 
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
 
@@ -173,7 +173,7 @@ class Adamax:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 
 
@@ -184,8 +184,8 @@ class NAdam:
         self.betas = betas
         self.eps = eps
 
-        self.m = [np.zeros_like(param.data) for param in self.params]
-        self.v = [np.zeros_like(param.data) for param in self.params]
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
+        self.v = [param.xp.zeros_like(param.data) for param in self.params]
 
         self.t = 0
 
@@ -201,10 +201,10 @@ class NAdam:
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t) + (1 - self.betas[0]) * param.grad / (1 - self.betas[0] ** self.t)
             v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
 
-            param.data -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+            param.data -= self.lr * m_hat / (param.xp.sqrt(v_hat) + self.eps)
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else np.zeros_like(param.grad)
+            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
 
 

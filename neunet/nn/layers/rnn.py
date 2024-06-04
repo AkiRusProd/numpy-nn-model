@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 from neunet.autograd import Tensor
 
 
@@ -6,38 +7,38 @@ from neunet.autograd import Tensor
 
 
 class _RNNTensor(Tensor):
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         X, weight, weight_h, bias, states, unactivated_states, input_size, hidden_size, timesteps, nonlinearity = self.args
         X_data = X.data
         
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
 
         if self.data.shape != states[:, 0 : -1, :].shape: # if return_sequences == "last"
-            temp = np.zeros_like((states))
+            temp = self.xp.zeros_like((states))
             temp[:, [-2], :] = grad #[-2] saves dims when slicing
             grad = temp
 
-        next_grad_states= np.zeros((hidden_size))
+        next_grad_states= self.xp.zeros((hidden_size))
 
-        grad_weight = np.zeros_like(weight.data)
-        grad_weight_h = np.zeros_like(weight_h.data)
-        grad_bias = np.zeros(hidden_size)
+        grad_weight = self.xp.zeros_like(weight.data)
+        grad_weight_h = self.xp.zeros_like(weight_h.data)
+        grad_bias = self.xp.zeros(hidden_size)
 
-        grad_X = np.zeros_like(X_data)
+        grad_X = self.xp.zeros_like(X_data)
 
         for t in reversed(range(timesteps)):
             grad_states = (next_grad_states + grad[:, t, :]) *  nonlinearity.derivative(unactivated_states[:, t, :])
 
-            grad_weight += np.dot(X_data[:, t, :].T, grad_states)
-            grad_weight_h += np.dot(states[:, t - 1, :].T, grad_states)
-            grad_bias += np.sum(grad_states, axis = 0)
+            grad_weight += self.xp.dot(X_data[:, t, :].T, grad_states)
+            grad_weight_h += self.xp.dot(states[:, t - 1, :].T, grad_states)
+            grad_bias += self.xp.sum(grad_states, axis = 0)
 
-            grad_X[:, t, :] = np.dot(grad_states, weight.data.T)
-            next_grad_states = np.dot(grad_states, weight_h.data.T)
+            grad_X[:, t, :] = self.xp.dot(grad_states, weight.data.T)
+            next_grad_states = self.xp.dot(grad_states, weight_h.data.T)
 
 
         X.backward(grad_X.reshape(X.shape))
@@ -64,7 +65,7 @@ class RNN():
             output: data with shape (batch_size, timesteps, hidden_size)
     """
 
-    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', bias = True, cycled_states = False, return_sequences = "both"):
+    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', bias = True, cycled_states = False, return_sequences = "both", device = "cpu"):
         self.input_size  = input_size
         self.hidden_size   = hidden_size
         self.nonlinearity  = nonlinearities.get(nonlinearity)
@@ -82,6 +83,8 @@ class RNN():
 
         self.hprev = None
 
+        self.to(device)
+
     def named_parameters(self):
         return [
             ("weight", self.weight), 
@@ -95,12 +98,12 @@ class RNN():
         X_data = X.data
         
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
        
         batch_size, timesteps, input_size = X_data.shape
 
-        states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
-        unactivated_states = np.zeros_like(states)
+        states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        unactivated_states = self.xp.zeros_like(states)
         
         if self.cycled_states == False:
             self.hprev = hprev
@@ -109,13 +112,13 @@ class RNN():
         assert self.input_size == input_size, "input_size must be equal to input shape[2]"
         
         if self.hprev is None: 
-            self.hprev = np.zeros_like(states[:, 0, :])
+            self.hprev = self.xp.zeros_like(states[:, 0, :])
 
         states[:, -1, :] = self.hprev.copy()
 
         
         for t in range(timesteps):
-            unactivated_states[:, t, :] = np.dot(X_data[:, t, :], self.weight.data) + np.dot(states[:, t-1, :], self.weight_h.data) + self.bias.data if self.bias is not None else + 0
+            unactivated_states[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight.data) + self.xp.dot(states[:, t-1, :], self.weight_h.data) + self.bias.data if self.bias is not None else + 0
             states[:, t, :] =  self.nonlinearity.function(unactivated_states[:, t, :])
 
         if self.cycled_states == True:
@@ -127,39 +130,72 @@ class RNN():
         cache = [X, self.weight, self.weight_h, self.bias, states, unactivated_states, self.input_size, self.hidden_size, timesteps, self.nonlinearity]
 
         if self.return_sequences in ["all", True]:
-            return _RNNTensor(all_states, cache, "rnn")
+            return _RNNTensor(all_states, cache, "rnn", self.device)
         elif self.return_sequences in ["last", False]:
-            return _RNNTensor(last_state, cache, "rnn")
+            return _RNNTensor(last_state, cache, "rnn", self.device)
         elif self.return_sequences == "both":
-            return (_RNNTensor(all_states, cache, "rnn"), _RNNTensor(last_state, cache, "rnn"))
+            return (_RNNTensor(all_states, cache, "rnn", self.device), _RNNTensor(last_state, cache, "rnn", self.device))
 
     def __call__(self, X, hprev = None):
         return self.forward(X, hprev)
+
+    def to (self, device):
+        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
+        for weight in self.named_parameters():
+            setattr(self, weight[0], weight[1].to(device))
+
+        return self
     
 
 
 
-class Tanh():
+class NonLinearity(object):
     def function(self, x):
-        return np.tanh(x)
+        raise NotImplementedError
 
     def derivative(self, x):
-        return 1.0 - np.power(self.function(x), 2)
+        raise NotImplementedError
 
-class Sigmoid():
+    def select_lib(self, x):
+        if isinstance(x, np.ndarray):
+            xp = np
+        else:
+            xp = cp
+
+        return xp
+
+class Tanh(NonLinearity):
     def function(self, x):
-        return 1 / (1 + np.exp(-x))
+        xp = self.select_lib(x)
+        return xp.tanh(x)
+
+    def derivative(self, x):
+        xp = self.select_lib(x)
+        return 1.0 - xp.power(self.function(x), 2)
+
+class Sigmoid(NonLinearity):
+    def function(self, x):
+        xp = self.select_lib(x)
+        return 1 / (1 + xp.exp(-x))
 
     def derivative(self, x):
         f_x = self.function(x)
         return f_x * (1.0 - f_x)
 
-class ReLU():
+class ReLU(NonLinearity):
     def function(self, x):
-        return np.maximum(0, x)
+        xp = self.select_lib(x)
+        return xp.maximum(0, x)
 
     def derivative(self, x):
-        return np.where(x <= 0, 0, 1)
+        xp = self.select_lib(x)
+        return xp.where(x <= 0, 0, 1)
 
 
 nonlinearities = {

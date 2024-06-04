@@ -78,7 +78,7 @@ class GameOfLife(nn.Module):
         kernel = neunet.tensor([[[[1, 1, 1],
                                  [1, 0, 1],
                                  [1, 1, 1]]]])
-        self.conv.weight.data = kernel
+        self.conv.weight.data = kernel.data
 
     def forward(self, grid: np.ndarray):
         '''

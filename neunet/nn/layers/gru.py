@@ -1,11 +1,12 @@
 import numpy as np
+import cupy as cp   
 from neunet.autograd import Tensor
 
 
 
 class _GRUTensor(Tensor):
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         (X, weight_z, weight_r, weight_h, weight_hz, weight_hr, weight_hh, bias_z, bias_r, bias_h, 
@@ -14,53 +15,53 @@ class _GRUTensor(Tensor):
         X_data = X.data
         
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
 
         if self.data.shape != hidden_states[:, 0 : -1, :].shape: # if return_sequences == "last"
-            temp = np.zeros_like((hidden_states))
+            temp = self.xp.zeros_like((hidden_states))
             temp[:, [-2], :] = grad #[-2] saves dims when slicing
             grad = temp
 
-        next_hidden_delta = np.zeros((hidden_size))
+        next_hidden_delta = self.xp.zeros((hidden_size))
 
-        grad_weight_z = np.zeros_like(weight_z.data)
-        grad_weight_r = np.zeros_like(weight_r.data)
-        grad_weight_h = np.zeros_like(weight_h.data)
+        grad_weight_z = self.xp.zeros_like(weight_z.data)
+        grad_weight_r = self.xp.zeros_like(weight_r.data)
+        grad_weight_h = self.xp.zeros_like(weight_h.data)
 
-        grad_weight_hz = np.zeros_like(weight_hz.data)
-        grad_weight_hr = np.zeros_like(weight_hr.data)
-        grad_weight_hh = np.zeros_like(weight_hh.data)
+        grad_weight_hz = self.xp.zeros_like(weight_hz.data)
+        grad_weight_hr = self.xp.zeros_like(weight_hr.data)
+        grad_weight_hh = self.xp.zeros_like(weight_hh.data)
 
-        grad_bias_z = np.zeros(hidden_size)
-        grad_bias_r = np.zeros(hidden_size)
-        grad_bias_h = np.zeros(hidden_size)
+        grad_bias_z = self.xp.zeros(hidden_size)
+        grad_bias_r = self.xp.zeros(hidden_size)
+        grad_bias_h = self.xp.zeros(hidden_size)
 
-        grad_X = np.zeros_like(X_data)
+        grad_X = self.xp.zeros_like(X_data)
 
         for t in reversed(range(timesteps)):
             
             hidden_delta = grad[:, t, :] + next_hidden_delta
             
             cell_gates_delta = hidden_delta * (1 - update_gates[:, t, :]) * nonlinearity.derivative(unactivated_cell_states[:, t, :])
-            grad_weight_h   += np.dot(X_data[:, t, :].T,  cell_gates_delta)
-            grad_weight_hh  += np.dot(hidden_states[:, t - 1, :].T * reset_gates[:, t, :].T, cell_gates_delta)
+            grad_weight_h   += self.xp.dot(X_data[:, t, :].T,  cell_gates_delta)
+            grad_weight_hh  += self.xp.dot(hidden_states[:, t - 1, :].T * reset_gates[:, t, :].T, cell_gates_delta)
             grad_bias_h   += cell_gates_delta.sum(axis=0)
         
-            reset_gates_delta = np.dot(cell_gates_delta, weight_hh.data.T) * hidden_states[:, t - 1, :] * recurrent_nonlinearity.derivative(unactivated_reset_gates[:, t, :])
+            reset_gates_delta = self.xp.dot(cell_gates_delta, weight_hh.data.T) * hidden_states[:, t - 1, :] * recurrent_nonlinearity.derivative(unactivated_reset_gates[:, t, :])
             
-            grad_weight_r   += np.dot(X_data[:, t, :].T,  reset_gates_delta)
-            grad_weight_hr  += np.dot(hidden_states[:, t - 1, :].T, reset_gates_delta)
+            grad_weight_r   += self.xp.dot(X_data[:, t, :].T,  reset_gates_delta)
+            grad_weight_hr  += self.xp.dot(hidden_states[:, t - 1, :].T, reset_gates_delta)
             grad_bias_r   += reset_gates_delta.sum(axis=0)
 
             update_gates_delta = hidden_delta * (hidden_states[:, t - 1, :] - cell_states[:, t, :]) * recurrent_nonlinearity.derivative(unactivated_update_gates[:, t, :])
-            grad_weight_z   += np.dot(X_data[:, t, :].T,  update_gates_delta)
-            grad_weight_hz  += np.dot(hidden_states[:, t - 1, :].T,  update_gates_delta)
+            grad_weight_z   += self.xp.dot(X_data[:, t, :].T,  update_gates_delta)
+            grad_weight_hz  += self.xp.dot(hidden_states[:, t - 1, :].T,  update_gates_delta)
             grad_bias_z   += update_gates_delta.sum(axis=0)
 
 
-            next_hidden_delta =  np.dot(update_gates_delta, weight_hz.data.T) + np.dot(reset_gates_delta, weight_hr.data.T) + np.dot(cell_gates_delta, weight_hh.data.T) * reset_gates[:, t, :] + hidden_delta * update_gates[:, t, :] 
+            next_hidden_delta =  self.xp.dot(update_gates_delta, weight_hz.data.T) + self.xp.dot(reset_gates_delta, weight_hr.data.T) + self.xp.dot(cell_gates_delta, weight_hh.data.T) * reset_gates[:, t, :] + hidden_delta * update_gates[:, t, :] 
     
-            grad_X[:, t, :] = np.dot(cell_gates_delta, weight_h.data.T) + np.dot(update_gates_delta, weight_z.data.T) + np.dot(reset_gates_delta, weight_r.data.T)
+            grad_X[:, t, :] = self.xp.dot(cell_gates_delta, weight_h.data.T) + self.xp.dot(update_gates_delta, weight_z.data.T) + self.xp.dot(reset_gates_delta, weight_r.data.T)
 
         X.backward(grad_X)
         weight_z.backward(grad_weight_z)
@@ -108,7 +109,7 @@ class GRU():
         
     """
 
-    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', recurrent_nonlinearity = 'sigmoid',  return_sequences = "both", bias = True, cycled_states = False):
+    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', recurrent_nonlinearity = 'sigmoid',  return_sequences = "both", bias = True, cycled_states = False, device = "cpu"):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.nonlinearity  = nonlinearities.get(nonlinearity)
@@ -140,6 +141,8 @@ class GRU():
         self.cprev = None
         self.hprev = None
 
+        self.to(device)
+
     def named_parameters(self):
         return [
             ('weight_z', self.weight_z),
@@ -158,20 +161,20 @@ class GRU():
         X_data = X.data
 
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
        
         batch_size, timesteps, input_size = X_data.shape
 
-        update_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_update_gates = np.zeros_like(update_gates)
+        update_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_update_gates = self.xp.zeros_like(update_gates)
 
-        reset_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_reset_gates = np.zeros_like(reset_gates)
+        reset_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_reset_gates = self.xp.zeros_like(reset_gates)
 
-        cell_states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
-        unactivated_cell_states = np.zeros_like(cell_states)
+        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        unactivated_cell_states = self.xp.zeros_like(cell_states)
 
-        hidden_states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
+        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
 
         if self.cycled_states == False:
             self.hprev = hprev
@@ -182,9 +185,9 @@ class GRU():
         assert self.input_size == input_size, "input_size must be equal to input shape[2]"
 
         if self.hprev is None: 
-            self.hprev = np.zeros_like(hidden_states[:, 0, :])
+            self.hprev = self.xp.zeros_like(hidden_states[:, 0, :])
         if self.cprev is None: 
-            self.cprev = np.zeros_like(cell_states[:, 0, :])
+            self.cprev = self.xp.zeros_like(cell_states[:, 0, :])
 
 
         cell_states[:, -1, :] = self.cprev.copy()
@@ -196,13 +199,13 @@ class GRU():
 
         
         for t in range(timesteps):
-            unactivated_update_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_z.data) + np.dot(hidden_states[:, t-1, :], self.weight_hz.data) + self.bias_z.data if self.bias_z is not None else 0
+            unactivated_update_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_z.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_hz.data) + self.bias_z.data if self.bias_z is not None else 0
             update_gates[:, t, :] = self.recurrent_nonlinearity.function(unactivated_update_gates[:, t, :])
 
-            unactivated_reset_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_r.data) + np.dot(hidden_states[:, t-1, :], self.weight_hr.data) + self.bias_r.data if self.bias_r is not None else 0
+            unactivated_reset_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_r.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_hr.data) + self.bias_r.data if self.bias_r is not None else 0
             reset_gates[:, t, :]  = self.recurrent_nonlinearity.function(unactivated_reset_gates[:, t, :])
 
-            unactivated_cell_states[:, t, :] = np.dot(X_data[:, t, :], self.weight_h.data) + np.dot(reset_gates[:, t, :] * hidden_states[:, t - 1, :], self.weight_hh.data) + self.bias_h.data if self.bias_h is not None else 0
+            unactivated_cell_states[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_h.data) + self.xp.dot(reset_gates[:, t, :] * hidden_states[:, t - 1, :], self.weight_hh.data) + self.bias_h.data if self.bias_h is not None else 0
             cell_states[:, t, :] = self.nonlinearity.function(unactivated_cell_states[:, t, :])
 
             hidden_states[:, t, :] = update_gates[:, t, :] * hidden_states[:, t - 1, :] + (1 - update_gates[:, t, :]) * cell_states[:, t, :]
@@ -219,42 +222,74 @@ class GRU():
         self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.recurrent_nonlinearity]
 
         if self.return_sequences in ["all", True]:
-            return _GRUTensor(all_states, cache, "GRU")
+            return _GRUTensor(all_states, cache, "GRU", self.device)
         elif self.return_sequences in ["last", False]:
-            return _GRUTensor(last_state, cache, "GRU")
+            return _GRUTensor(last_state, cache, "GRU", self.device)
         elif self.return_sequences == "both":
-            return (_GRUTensor(all_states, cache, "GRU"), _GRUTensor(last_state, cache, "GRU"))
+            return (_GRUTensor(all_states, cache, "GRU", self.device), _GRUTensor(last_state, cache, "GRU", self.device))
 
 
     def __call__(self, X, hprev = None, cprev = None):
         return self.forward(X, hprev, cprev)
 
+    def to (self, device):
+        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
+        for weight in self.named_parameters():
+            setattr(self, weight[0], weight[1].to(device))
+
+        return self
 
 
 
 
-            
-class Tanh():
+
+class NonLinearity(object):
     def function(self, x):
-        return np.tanh(x)
+        raise NotImplementedError
 
     def derivative(self, x):
-        return 1.0 - np.power(self.function(x), 2)
+        raise NotImplementedError
 
-class Sigmoid():
+    def select_lib(self, x):
+        if isinstance(x, np.ndarray):
+            xp = np
+        else:
+            xp = cp
+
+        return xp
+
+class Tanh(NonLinearity):
     def function(self, x):
-        return 1 / (1 + np.exp(-x))
+        xp = self.select_lib(x)
+        return xp.tanh(x)
+
+    def derivative(self, x):
+        xp = self.select_lib(x)
+        return 1.0 - xp.power(self.function(x), 2)
+
+class Sigmoid(NonLinearity):
+    def function(self, x):
+        xp = self.select_lib(x)
+        return 1 / (1 + xp.exp(-x))
 
     def derivative(self, x):
         f_x = self.function(x)
         return f_x * (1.0 - f_x)
 
-class ReLU():
+class ReLU(NonLinearity):
     def function(self, x):
-        return np.maximum(0, x)
+        xp = self.select_lib(x)
+        return xp.maximum(0, x)
 
     def derivative(self, x):
-        return np.where(x <= 0, 0, 1)
+        xp = self.select_lib(x)
+        return xp.where(x <= 0, 0, 1)
 
 
 nonlinearities = {

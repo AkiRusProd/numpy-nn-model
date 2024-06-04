@@ -4,7 +4,7 @@ import neunet as nnet
 import numpy as np
 
 
-class MSELoss(Tensor):
+class MSELoss():
     def __init__(self):
         pass
 
@@ -16,16 +16,17 @@ class MSELoss(Tensor):
 
 
 
-class BCELoss(Tensor):
+class BCELoss():
     def __init__(self, weight = None, reduction = "mean"):
         self.weight = weight
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        loss = y_true.mul(y_pred.log()).add((Tensor(1) - y_true).mul((Tensor(1) - y_pred).log()))
+        assert y_pred.device == y_true.device, "y_pred and y_true must be on the same device"
+        loss = y_true.mul(y_pred.log()).add((1.0 - y_true).mul((1.0 - y_pred).log()))
 
         if self.weight is None:
-            self.weight = np.ones((1))
+            self.weight = y_pred.xp.ones((1))
 
         assert (self.weight * y_pred.data).shape == y_pred.data.shape, "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
 
@@ -44,7 +45,7 @@ class BCELoss(Tensor):
 
 
 
-class CrossEntropyLoss(Tensor):
+class CrossEntropyLoss():
     def __init__(self, weight = None, ignore_index = -100, reduction = "mean"):
         self.weight = weight
         self.ignore_index = ignore_index
@@ -61,15 +62,16 @@ class CrossEntropyLoss(Tensor):
         return self.forward(y_pred, y_true)
 
 
-class NLLLoss(Tensor):
+class NLLLoss():
     def __init__(self, weight = None, ignore_index = -100, reduction = "mean"):
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
+        assert y_pred.device == y_true.device, "y_pred and y_true must be on the same device"
         if self.weight is None:
-            self.weight = np.ones((y_pred.data.shape[1]))
+            self.weight = y_pred.xp.ones((y_pred.data.shape[1]))
 
         assert self.weight.shape == (y_pred.data.shape[1], ), "Weight shape must be equal to number of classes"
         assert y_true.dtype in (np.int16, np.int32, np.int64), "Target must be of int dtype"

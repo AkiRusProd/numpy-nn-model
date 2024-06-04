@@ -20,7 +20,7 @@ training_dataset, test_dataset, training_targets, test_targets = load_mnist()
 training_dataset = training_dataset / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 test_dataset = test_dataset / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
-
+device = 'cpu'
 
 class RecurrentClassifier(nn.Module):
     def __init__(self):
@@ -41,7 +41,7 @@ class RecurrentClassifier(nn.Module):
         return x
 
 
-classifier = RecurrentClassifier()
+classifier = RecurrentClassifier().to(device)
 
 def one_hot_encode(labels):
     one_hot_labels = np.zeros((labels.shape[0], 10))
@@ -66,7 +66,7 @@ for epoch in range(epochs):
 
         batch = batch.reshape(batch.shape[0], image_size[1], image_size[2])
 
-        batch = nnet.tensor(batch)
+        batch = nnet.tensor(batch, requires_grad = True, device = device)
 
         labels = one_hot_encode(training_targets[i:i+batch_size])
 
@@ -91,7 +91,7 @@ total = 0
 for i in tqdm(range(len(test_dataset)), desc = 'evaluating'):
     img = test_dataset[i]
     img = img.reshape(1, image_size[1], image_size[2])
-    img = nnet.tensor(img)
+    img = nnet.tensor(img, requires_grad = False, device = device)
 
     outputs = classifier(img)
     predicted = np.argmax(outputs.data)

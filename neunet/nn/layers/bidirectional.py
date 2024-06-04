@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 import copy as copy_object
 from neunet.autograd import Tensor
 
@@ -6,14 +7,14 @@ from neunet.autograd import Tensor
 #In feature can be moved to rnn layer as argument
 
 class _BidirectionalTensor(Tensor): 
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         X, D_O, R_O, merge_mode = self.args
         
         if merge_mode == "concat":
-            direct_grad, reverse_grad = np.split(grad, 2, axis = -1)
+            direct_grad, reverse_grad = self.xp.split(grad, 2, axis = -1)
         elif merge_mode == "sum":
             direct_grad, reverse_grad = grad, grad
         elif merge_mode == "mul":
@@ -32,15 +33,17 @@ class _BidirectionalTensor(Tensor):
 
 
 class Bidirectional():
-    def __init__(self, layer, merge_mode="sum"):
+    def __init__(self, layer, merge_mode="sum", device = "cpu"):
         assert layer.__class__.__name__ in ["LSTM", "GRU", "RNN"], "Bidirectional layer can only be used with LSTM, GRU or RNN layers"
         self.direct_layer = layer
-        self.reverse_layer = copy_object.deepcopy(layer)
+        self.reverse_layer = copy_object.copy(layer)
 
         self.merge_mode = merge_mode
         self.merge = merge_modes[self.merge_mode]
 
         self.return_sequences = layer.return_sequences
+
+        self.to(device)
 
     def forward(self, X):
         if len(X.shape) == 2:
@@ -52,12 +55,12 @@ class Bidirectional():
         if self.return_sequences == "both":
             O = (self.merge(D_O[0], R_O[0]), self.merge(D_O[1], R_O[1]))
 
-            return (_BidirectionalTensor(O[0], [X, D_O[0], R_O[0], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}"), 
-                    _BidirectionalTensor(O[1], [X, D_O[1], R_O[1], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}"))
+            return (_BidirectionalTensor(O[0], [X, D_O[0], R_O[0], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device), 
+                    _BidirectionalTensor(O[1], [X, D_O[1], R_O[1], self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device))
         else:
             O = self.merge(D_O, R_O)
         
-            return _BidirectionalTensor(O, [X, D_O, R_O, self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}")
+            return _BidirectionalTensor(O, [X, D_O, R_O, self.merge_mode], f"bidirectional{self.direct_layer.__class__.__name__}", self.device)
 
     def named_parameters(self):
         return self.direct_layer.named_parameters() + self.reverse_layer.named_parameters()
@@ -65,9 +68,23 @@ class Bidirectional():
     def __call__(self, X):
         return self.forward(X)
 
+    def to (self, device):
+        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
+        self.direct_layer = self.direct_layer.to(device)
+        self.reverse_layer = self.reverse_layer.to(device)
+
+        return self
+
 
 def concat(D_O, R_O):
-    return np.concatenate((D_O.data, R_O.data), axis = -1)
+    xp = D_O.xp
+    return xp.concatenate((D_O.data, R_O.data), axis = -1)
 def sum(D_O, R_O):
     return D_O.data + R_O.data
 def mul(D_O, R_O):

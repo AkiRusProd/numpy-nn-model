@@ -1,12 +1,12 @@
 from neunet.autograd import Tensor
 import numpy as np
-
+import cupy as cp
 
 # from numba import njit
 
 class _ConvTranspose2dTensor(Tensor): #tensor for static backpropagation
-    def __init__(self, data, args, op):
-            super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+            super().__init__(data, args, op, device = device)
     
     def backward(self, grad = 1):
         (
@@ -30,11 +30,11 @@ class _ConvTranspose2dTensor(Tensor): #tensor for static backpropagation
         input_size = (in_height, in_width)
 
 
-        grad_pattern = np.zeros((
+        grad_pattern = self.xp.zeros((
                 batch_size,
                 out_channels, 
-                prepared_input_size[0] + np.max(np.array([conv_size[0], dilated_kernel_size[0]])) - 1, 
-                prepared_input_size[1] + np.max(np.array([conv_size[1], dilated_kernel_size[1]])) - 1
+                int(prepared_input_size[0] + self.xp.max(self.xp.array([conv_size[0], dilated_kernel_size[0]])) - 1), 
+                int(prepared_input_size[1] + self.xp.max(self.xp.array([conv_size[1], dilated_kernel_size[1]])) - 1)
                 ))
 
         grad_pattern[
@@ -45,17 +45,17 @@ class _ConvTranspose2dTensor(Tensor): #tensor for static backpropagation
         ] = grad
 
         batch_str, channel_str, kern_h_str, kern_w_str = grad_pattern.strides
-        grad_windows = np.lib.stride_tricks.as_strided(grad_pattern,
+        grad_windows = self.xp.lib.stride_tricks.as_strided(grad_pattern,
             (batch_size, out_channels, prepared_input_size[0], prepared_input_size[1], dilated_kernel_size[0], dilated_kernel_size[1]),
             (batch_str, channel_str, kern_h_str, kern_w_str, kern_h_str, kern_w_str)
         )
 
-        weight_rot_180 = np.rot90(weight.data, 2, axes=(2, 3))
+        weight_rot_180 = self.xp.rot90(weight.data, 2, axes=(2, 3))
 
-        grad_weight = np.einsum('bihwkl,bohw->oikl', windows, grad)
-        grad_bias = np.sum(grad, axis=(0, 2, 3))
+        grad_weight = self.xp.einsum('bihwkl,bohw->oikl', windows, grad)
+        grad_bias = self.xp.sum(grad, axis=(0, 2, 3))
 
-        grad_X = np.einsum('bohwkl,oikl->bihw', grad_windows, weight_rot_180)
+        grad_X = self.xp.einsum('bohwkl,oikl->bihw', grad_windows, weight_rot_180)
         grad_X = self.prepare_grad(grad_X, padding, stride, dilated_kernel_size, output_padding)
 
         weight.data = remove_stride(weight.data, dilation)
@@ -104,7 +104,7 @@ class ConvTranspose2d():  # layer with static backpropagation
             https://pytorch.org/docs/stable/generated/torch.nn.ConvTranspose2d.html
     """
     
-    def __init__(self, in_channels, out_channels, kernel_size, stride = (1, 1), padding = (0, 0), dilation = (1, 1), output_padding = (0, 0), bias = True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride = (1, 1), padding = (0, 0), dilation = (1, 1), output_padding = (0, 0), bias = True, device = "cpu"):
         self.in_channels  = in_channels
         self.out_channels = out_channels
         self.kernel_size  = kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
@@ -123,6 +123,7 @@ class ConvTranspose2d():  # layer with static backpropagation
             self.bias = None
 
         self.input_size = None
+        self.to(device)
 
     def build(self):
         
@@ -184,35 +185,35 @@ class ConvTranspose2d():  # layer with static backpropagation
         
 
         batch_str, channel_str, kern_h_str, kern_w_str = X_data.strides
-        windows = np.lib.stride_tricks.as_strided(
+        windows = self.xp.lib.stride_tricks.as_strided(
             X_data,
             (batch_size, self.in_channels, self.conv_size[0], self.conv_size[1], self.dilated_kernel_size[0], self.dilated_kernel_size[1]),
             (batch_str, channel_str, kern_h_str, kern_w_str, kern_h_str, kern_w_str)
         )
 
-        O = np.einsum('bihwkl,oikl->bohw', windows, self.weight.data)
+        O = self.xp.einsum('bihwkl,oikl->bohw', windows, self.weight.data)
 
         if self.bias is not None:
             O += self.bias.data[:, None, None]
 
         return _ConvTranspose2dTensor(O, 
             [X, self.weight, self.bias, self.in_channels, self.out_channels, self.kernel_size, self.padding, self.stride, self.dilation, self.output_padding,
-            self.prepared_input_size, self.conv_size, self.dilated_kernel_size, windows], "convtranspose2d")
+            self.prepared_input_size, self.conv_size, self.dilated_kernel_size, windows], "convtranspose2d", self.device)
 
 
 
     def prepare_inputs(self, input_data):
-
+        xp = np if isinstance(input_data, np.ndarray) else cp
         temp_strided = set_stride(input_data, self.stride) #ADD STRIDING
 
         #add output_padding here #WARNING output padding must be smaller than either stride or dilation,
-        temp_out = np.zeros((temp_strided.shape[0], 
+        temp_out = xp.zeros((temp_strided.shape[0], 
                                        temp_strided.shape[1], 
                                        temp_strided.shape[2] + self.output_padding[0],
                                        temp_strided.shape[3] + self.output_padding[1]))
         temp_out[:, :, : temp_strided.shape[2], : temp_strided.shape[3]] = temp_strided #ADD output_padding
 
-        input_data = np.zeros((#add kernel padding
+        input_data = xp.zeros((#add kernel padding
                         input_data.shape[0],
                         input_data.shape[1], 
                         temp_out.shape[2] + 2 * (self.dilated_kernel_size[0] - 1), 
@@ -228,11 +229,25 @@ class ConvTranspose2d():  # layer with static backpropagation
     def __call__(self, X):
         return self.forward(X)
 
+    def to (self, device):
+        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
+        self.weight = self.weight.to(device)
+        if self.bias:
+            self.bias = self.bias.to(device)
+
+        return self
 
 
 def set_padding(layer, padding):
     # padded_layer = np.pad(layer, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
-    padded_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp
+    padded_layer = xp.zeros(
         (   
             layer.shape[0],
             layer.shape[1],
@@ -253,7 +268,8 @@ def set_padding(layer, padding):
 
 def remove_padding(layer, padding):
     # unpadded_layer = unpadded_layer[:, :, padding[0]:-padding[1], padding[1]:-padding[0]]
-    unpadded_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp
+    unpadded_layer = xp.zeros(
         (
             layer.shape[0],
             layer.shape[1],
@@ -275,8 +291,8 @@ def remove_padding(layer, padding):
 
 
 def set_stride(layer, stride):
-    
-    transposed_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp
+    transposed_layer = xp.zeros(
         (
             layer.shape[0],
             layer.shape[1],
@@ -293,7 +309,8 @@ def set_stride(layer, stride):
 
 def remove_stride(layer, stride):
     # losses[k] = losses[k][:,::self.topology[k+1]['stride'], ::self.topology[k+1]['stride']]
-    untransposed_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp
+    untransposed_layer = xp.zeros(
         (
             layer.shape[0],
             layer.shape[1],

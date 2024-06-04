@@ -49,6 +49,13 @@ class Module:
             if hasattr(item, "train"):
                 item.train(mode)
 
+    def to(self, device):
+        for name, item in self.__dict__.items():
+            if hasattr(item, "to"):
+                item.to(device)
+
+        return self
+
 
 class Sequential:
     def __init__(self, *layers):
@@ -96,3 +103,81 @@ class Sequential:
             if hasattr(layer, "train"):
                 layer.train(mode)
 
+    def to(self, device):
+        for layer in self.layers:
+            if hasattr(layer, "to"):
+                layer.to(device)
+
+        return self
+
+
+
+class ModuleList:
+    def __init__(self, modules):
+        self.modules = list(modules)
+
+    def __getitem__(self, index):
+        return self.modules[index]
+
+    def __setitem__(self, index, module):
+        self.modules[index] = module
+
+    def __delitem__(self, index):
+        del self.modules[index]
+
+    def __len__(self):
+        return len(self.modules)
+
+    def append(self, module):
+        self.modules.append(module)
+
+    def extend(self, modules):
+        self.modules.extend(modules)
+
+    def insert(self, index, module):
+        self.modules.insert(index, module)
+
+    def forward(self, X):
+        for module in self.modules:
+            X = module(X)
+        return X
+
+    def __call__(self, X):
+        return self.forward(X)
+
+    def parameters(self):
+        params = []
+        for module in self.modules:
+            if hasattr(module, "parameters"):
+                params.extend(module.parameters())
+            if hasattr(module, "weight"):
+                if hasattr(module.weight, "requires_grad"):
+                    if module.weight.requires_grad:
+                        params.append(module.weight)
+            if hasattr(module, "bias"):
+                if hasattr(module.bias, "requires_grad"):
+                    if module.bias.requires_grad:
+                        params.append(module.bias)
+            if hasattr(module, "named_parameters"):
+                for name, param in module.named_parameters():
+                    if hasattr(param, "requires_grad"):
+                        if param.requires_grad:
+                            if param not in params:
+                                params.append(param)
+        return params
+
+    def eval(self):
+        for module in self.modules:
+            if hasattr(module, "eval"):
+                module.eval()
+
+    def train(self, mode=True):
+        for module in self.modules:
+            if hasattr(module, "train"):
+                module.train(mode)
+
+    def to(self, device):
+        for module in self.modules:
+            if hasattr(module, "to"):
+                module.to(device)
+        return self

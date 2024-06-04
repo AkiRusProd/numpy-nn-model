@@ -21,7 +21,7 @@ training_dataset = training_dataset / 127.5-1 # normalization: / 255 => [0; 1]  
 test_dataset = test_dataset / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 
-
+device = 'cuda'
 
 class Conv2dClassifier(nn.Module):
     def __init__(self):
@@ -43,7 +43,7 @@ class Conv2dClassifier(nn.Module):
         x = self.conv1(x)
         x = self.leaky_relu(x)
         x = self.maxpool1(x)
-
+       
         x = self.conv2(x)
         x = self.leaky_relu(x)
         x = self.maxpool2(x)
@@ -56,7 +56,7 @@ class Conv2dClassifier(nn.Module):
         
         return x
 
-classifier = Conv2dClassifier()
+classifier = Conv2dClassifier().to(device)
 
 
 def one_hot_encode(labels):
@@ -82,9 +82,9 @@ for epoch in range(epochs):
 
         batch = batch.reshape(batch.shape[0], image_size[0], image_size[1], image_size[2])
 
-        batch = nnet.tensor(batch)
+        batch = nnet.tensor(batch, device = device)
 
-        labels = one_hot_encode(training_targets[i:i+batch_size])
+        labels = nnet.tensor(one_hot_encode(training_targets[i:i+batch_size]), device = device)
 
         optimizer.zero_grad()
 
@@ -108,8 +108,7 @@ classifier.eval()
 for i in tqdm(range(len(test_dataset)), desc = 'evaluating'):
     img = test_dataset[i]
     img = img.reshape(1, image_size[0], image_size[1], image_size[2])
-    img = nnet.tensor(img)
-
+    img = nnet.tensor(img, requires_grad = False, device = device)
     outputs = classifier(img)
     predicted = np.argmax(outputs.data)
 

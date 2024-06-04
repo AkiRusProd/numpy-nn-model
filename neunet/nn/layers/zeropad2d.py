@@ -1,10 +1,11 @@
 import numpy as np
+import cupy as cp
 from neunet.autograd import Tensor
 
 
 class ZeroPad2dTensor(Tensor):
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         X, padding = self.args
@@ -30,7 +31,7 @@ class ZeroPad2d():
         else:
             padded_data = set_padding(X.data, self.padding)
 
-        return ZeroPad2dTensor(padded_data, [X, self.padding], "zeropad2d")
+        return ZeroPad2dTensor(padded_data, [X, self.padding], "zeropad2d", device = X.device)
 
     def __call__(self, X):
         return self.forward(X)
@@ -39,7 +40,8 @@ class ZeroPad2d():
 
 
 def set_padding(layer, padding):
-    padded_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp 
+    padded_layer = xp.zeros(
         (   
             layer.shape[0],
             layer.shape[1],
@@ -58,7 +60,8 @@ def set_padding(layer, padding):
     return padded_layer
 
 def remove_padding(layer, padding):
-    unpadded_layer = np.zeros(
+    xp = np if isinstance(layer, np.ndarray) else cp 
+    unpadded_layer = xp.zeros(
         (
             layer.shape[0],
             layer.shape[1],

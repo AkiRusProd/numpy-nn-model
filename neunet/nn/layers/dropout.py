@@ -1,11 +1,12 @@
 from neunet.autograd import Tensor
 import numpy as np
+import cupy as cp
 
 
 
 class _DropoutTensor(Tensor): # tensor for static backpropagation
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         self.args[0].backward(grad * self.args[1])
@@ -17,15 +18,15 @@ class Dropout(): # layer with static backpropagation
         self.mask = None
         self.training = True
 
-    def forward(self, X):
+    def forward(self, X: Tensor):
         if self.training:
-            self.mask = np.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
+            self.mask = X.xp.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
         else:
             self.mask = 1
 
         self.O = X.data * self.mask
 
-        return _DropoutTensor(self.O, [X, self.mask], "dropout")
+        return _DropoutTensor(self.O, [X, self.mask], "dropout", device = X.device)
 
     def __call__(self, X):
         return self.forward(X)
@@ -45,7 +46,7 @@ class Dropout(): # layer with static backpropagation
 
 #     def forward(self, X):
 #         if self.training:
-#             mask = np.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
+#             mask = X.xp.random.binomial(1, 1 - self.p, size = X.data.shape) * self.scale
 #         else:
 #             mask = 1
 

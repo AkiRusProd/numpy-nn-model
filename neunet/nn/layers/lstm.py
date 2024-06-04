@@ -1,11 +1,12 @@
 import numpy as np
+import cupy as cp
 from neunet.autograd import Tensor
 
 
 
 class _LSTMTensor(Tensor):
-    def __init__(self, data, args, op):
-        super().__init__(data, args, op)
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device = device)
 
     def backward(self, grad=1):
         (X, weight_f, weight_i, weight_o, weight_c, weight_hf, weight_hi, weight_ho, weight_hc, bias_f, bias_i, bias_o, bias_c, 
@@ -15,32 +16,32 @@ class _LSTMTensor(Tensor):
         X_data = X.data
         
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
 
         if self.data.shape != hidden_states[:, 0 : -1, :].shape: # if return_sequences == "last"
-            temp = np.zeros_like((hidden_states))
+            temp = self.xp.zeros_like((hidden_states))
             temp[:, [-2], :] = grad #[-2] saves dims when slicing
             grad = temp
 
-        next_hidden_delta = np.zeros((hidden_size))
-        next_cell_delta = np.zeros((hidden_size))
+        next_hidden_delta = self.xp.zeros((hidden_size))
+        next_cell_delta = self.xp.zeros((hidden_size))
 
-        grad_weight_f = np.zeros_like(weight_f.data)
-        grad_weight_i = np.zeros_like(weight_i.data)
-        grad_weight_o = np.zeros_like(weight_o.data)
-        grad_weight_c = np.zeros_like(weight_c.data)
+        grad_weight_f = self.xp.zeros_like(weight_f.data)
+        grad_weight_i = self.xp.zeros_like(weight_i.data)
+        grad_weight_o = self.xp.zeros_like(weight_o.data)
+        grad_weight_c = self.xp.zeros_like(weight_c.data)
 
-        grad_weight_hf = np.zeros_like(weight_hf.data)
-        grad_weight_hi = np.zeros_like(weight_hi.data)
-        grad_weight_ho = np.zeros_like(weight_ho.data)
-        grad_weight_hc = np.zeros_like(weight_hf.data)
+        grad_weight_hf = self.xp.zeros_like(weight_hf.data)
+        grad_weight_hi = self.xp.zeros_like(weight_hi.data)
+        grad_weight_ho = self.xp.zeros_like(weight_ho.data)
+        grad_weight_hc = self.xp.zeros_like(weight_hf.data)
 
-        grad_bias_f = np.zeros(hidden_size)
-        grad_bias_i = np.zeros(hidden_size)
-        grad_bias_o = np.zeros(hidden_size)
-        grad_bias_c = np.zeros(hidden_size)
+        grad_bias_f = self.xp.zeros(hidden_size)
+        grad_bias_i = self.xp.zeros(hidden_size)
+        grad_bias_o = self.xp.zeros(hidden_size)
+        grad_bias_c = self.xp.zeros(hidden_size)
 
-        grad_X = np.zeros_like(X_data)
+        grad_X = self.xp.zeros_like(X_data)
 
         for t in reversed(range(timesteps)):
             
@@ -48,30 +49,30 @@ class _LSTMTensor(Tensor):
             cell_delta = hidden_delta * output_gates[:, t, :] * nonlinearity.derivative(cell_states[:, t, :]) + next_cell_delta
 
             output_gates_delta = hidden_delta * nonlinearity.function(cell_states[:, t, :]) * recurrent_nonlinearity.derivative(unactivated_output_gates[:, t, :])
-            grad_weight_o   += np.dot(X_data[:, t, :].T,  output_gates_delta)
-            grad_weight_ho  += np.dot(hidden_states[:, t - 1, :].T, output_gates_delta)
+            grad_weight_o   += self.xp.dot(X_data[:, t, :].T,  output_gates_delta)
+            grad_weight_ho  += self.xp.dot(hidden_states[:, t - 1, :].T, output_gates_delta)
             grad_bias_o   += output_gates_delta.sum(axis=0)
 
             forget_gates_delta = (cell_delta * cell_states[:, t - 1, :]) * recurrent_nonlinearity.derivative(unactivated_forget_gates[:, t, :])
-            grad_weight_f   += np.dot(X_data[:, t, :].T,  forget_gates_delta)
-            grad_weight_hf  += np.dot(hidden_states[:, t - 1, :].T, forget_gates_delta)
+            grad_weight_f   += self.xp.dot(X_data[:, t, :].T,  forget_gates_delta)
+            grad_weight_hf  += self.xp.dot(hidden_states[:, t - 1, :].T, forget_gates_delta)
             grad_bias_f   += forget_gates_delta.sum(axis=0)
 
             input_gates_delta = (cell_delta * cell_gates[:, t, :]) * recurrent_nonlinearity.derivative(unactivated_input_gates[:, t, :])
-            grad_weight_i   += np.dot(X_data[:, t, :].T,  input_gates_delta)
-            grad_weight_hi  += np.dot(hidden_states[:, t - 1, :].T, input_gates_delta)
+            grad_weight_i   += self.xp.dot(X_data[:, t, :].T,  input_gates_delta)
+            grad_weight_hi  += self.xp.dot(hidden_states[:, t - 1, :].T, input_gates_delta)
             grad_bias_i   += input_gates_delta.sum(axis=0)
 
             cell_gates_delta = (cell_delta * input_gates[:, t, :]) * nonlinearity.derivative(unactivated_cell_gates[:, t, :])
-            grad_weight_c   += np.dot(X_data[:, t, :].T,  cell_gates_delta)
-            grad_weight_hc  += np.dot(hidden_states[:, t - 1, :].T, cell_gates_delta)
+            grad_weight_c   += self.xp.dot(X_data[:, t, :].T,  cell_gates_delta)
+            grad_weight_hc  += self.xp.dot(hidden_states[:, t - 1, :].T, cell_gates_delta)
             grad_bias_c   += cell_gates_delta.sum(axis=0)
 
-            next_hidden_delta = np.dot(cell_gates_delta, weight_hc.data.T) + np.dot(input_gates_delta, weight_hi.data.T) + np.dot(forget_gates_delta, weight_hf.data.T) + np.dot(output_gates_delta, weight_ho.data.T)
+            next_hidden_delta = self.xp.dot(cell_gates_delta, weight_hc.data.T) + self.xp.dot(input_gates_delta, weight_hi.data.T) + self.xp.dot(forget_gates_delta, weight_hf.data.T) + self.xp.dot(output_gates_delta, weight_ho.data.T)
             next_cell_delta = cell_delta * forget_gates[:, t, :]
 
 
-            grad_X[:, t, :] = np.dot(cell_gates_delta, weight_c.data.T) + np.dot(input_gates_delta, weight_i.data.T) + np.dot(forget_gates_delta, weight_f.data.T) + np.dot(output_gates_delta, weight_o.data.T)
+            grad_X[:, t, :] = self.xp.dot(cell_gates_delta, weight_c.data.T) + self.xp.dot(input_gates_delta, weight_i.data.T) + self.xp.dot(forget_gates_delta, weight_f.data.T) + self.xp.dot(output_gates_delta, weight_o.data.T)
 
         X.backward(grad_X)
         weight_f.backward(grad_weight_f)
@@ -114,7 +115,7 @@ class LSTM():
             https://arunmallya.github.io/writeups/nn/lstm/index.html#/
         
     """
-    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', recurrent_nonlinearity = 'sigmoid', input_shape = None, return_sequences = "both", bias = True, cycled_states = False):
+    def __init__(self, input_size, hidden_size, nonlinearity = 'tanh', recurrent_nonlinearity = 'sigmoid', return_sequences = "both", bias = True, cycled_states = False, device = "cpu"):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.nonlinearity  = nonlinearities.get(nonlinearity)
@@ -149,6 +150,8 @@ class LSTM():
         self.cprev = None
         self.hprev = None
 
+        self.to(device)
+
     def named_parameters(self):
         return [
             ("weight_f", self.weight_f), 
@@ -170,24 +173,24 @@ class LSTM():
         X_data = X.data
         
         if len(X_data.shape) == 2:
-            X_data = X_data[np.newaxis, :, :]
+            X_data = X_data[self.xp.newaxis, :, :]
 
         batch_size, timesteps, input_size = X_data.shape
 
-        forget_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_forget_gates = np.zeros_like(forget_gates)
+        forget_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_forget_gates = self.xp.zeros_like(forget_gates)
 
-        input_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_input_gates = np.zeros_like(input_gates)
+        input_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_input_gates = self.xp.zeros_like(input_gates)
 
-        output_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_output_gates = np.zeros_like(output_gates)
+        output_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_output_gates = self.xp.zeros_like(output_gates)
 
-        cell_gates = np.zeros((batch_size, timesteps, self.hidden_size))
-        unactivated_cell_gates = np.zeros_like(cell_gates)
+        cell_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        unactivated_cell_gates = self.xp.zeros_like(cell_gates)
         
-        cell_states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
-        hidden_states = np.zeros((batch_size, timesteps + 1, self.hidden_size))
+        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
 
         if self.cycled_states == False:
             self.hprev = hprev
@@ -198,9 +201,9 @@ class LSTM():
         assert self.input_size == input_size, "input_size must be equal to input shape[2]"
 
         if self.hprev is None: 
-            self.hprev = np.zeros_like(hidden_states[:, 0, :])
+            self.hprev = self.xp.zeros_like(hidden_states[:, 0, :])
         if self.cprev is None: 
-            self.cprev = np.zeros_like(cell_states[:, 0, :])
+            self.cprev = self.xp.zeros_like(cell_states[:, 0, :])
 
         cell_states[:, -1, :] = self.cprev.copy()
         hidden_states[:, -1, :] = self.hprev.copy()
@@ -213,16 +216,16 @@ class LSTM():
         #hs_t = o_t * nonlinearity(cs_t)
         
         for t in range(timesteps):
-            unactivated_forget_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_f.data) + np.dot(hidden_states[:, t-1, :], self.weight_hf.data) + self.bias_f.data if self.bias_f is not None else + 0
+            unactivated_forget_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_f.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_hf.data) + self.bias_f.data if self.bias_f is not None else + 0
             forget_gates[:, t, :] = self.recurrent_nonlinearity.function(unactivated_forget_gates[:, t, :])
 
-            unactivated_input_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_i.data) + np.dot(hidden_states[:, t-1, :], self.weight_hi.data) + self.bias_i.data if self.bias_i is not None else + 0
+            unactivated_input_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_i.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_hi.data) + self.bias_i.data if self.bias_i is not None else + 0
             input_gates[:, t, :]  = self.recurrent_nonlinearity.function(unactivated_input_gates[:, t, :])
 
-            unactivated_output_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_o.data) + np.dot(hidden_states[:, t-1, :], self.weight_ho.data) + self.bias_o.data if self.bias_o is not None else + 0
+            unactivated_output_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_o.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_ho.data) + self.bias_o.data if self.bias_o is not None else + 0
             output_gates[:, t, :] = self.recurrent_nonlinearity.function(unactivated_output_gates[:, t, :])
 
-            unactivated_cell_gates[:, t, :] = np.dot(X_data[:, t, :], self.weight_c.data) + np.dot(hidden_states[:, t-1, :], self.weight_hc.data) + self.bias_c.data if self.bias_c is not None else + 0
+            unactivated_cell_gates[:, t, :] = self.xp.dot(X_data[:, t, :], self.weight_c.data) + self.xp.dot(hidden_states[:, t-1, :], self.weight_hc.data) + self.bias_c.data if self.bias_c is not None else + 0
             cell_gates[:, t, :]   = self.nonlinearity.function(unactivated_cell_gates[:, t, :])
 
             cell_states[:, t, :] = forget_gates[:, t, :] * cell_states[:, t-1, :] + input_gates[:, t, :] * cell_gates[:, t, :]
@@ -241,41 +244,74 @@ class LSTM():
         unactivated_forget_gates, unactivated_input_gates, unactivated_output_gates, unactivated_cell_gates, self.input_size, self.hidden_size, timesteps, self.nonlinearity, self.recurrent_nonlinearity]
 
         if self.return_sequences in ["all", True]:
-            return _LSTMTensor(all_states, cache, "lstm")
+            return _LSTMTensor(all_states, cache, "lstm", self.device)
         elif self.return_sequences in ["last", False]:
-            return _LSTMTensor(last_state, cache, "lstm")
+            return _LSTMTensor(last_state, cache, "lstm", self.device)
         elif self.return_sequences == "both":
-            return (_LSTMTensor(all_states, cache, "lstm"), _LSTMTensor(last_state, cache, "lstm"))
+            return (_LSTMTensor(all_states, cache, "lstm", self.device), _LSTMTensor(last_state, cache, "lstm", self.device))
 
 
     def __call__(self, X, hprev=None, cprev=None):
         return self.forward(X, hprev, cprev)
 
+    def to (self, device):
+        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
+        for weight in self.named_parameters():
+            setattr(self, weight[0], weight[1].to(device))
+
+        return self
 
 
 
 
-class Tanh():
+
+class NonLinearity(object):
     def function(self, x):
-        return np.tanh(x)
+        raise NotImplementedError
 
     def derivative(self, x):
-        return 1.0 - np.power(self.function(x), 2)
+        raise NotImplementedError
 
-class Sigmoid():
+    def select_lib(self, x):
+        if isinstance(x, np.ndarray):
+            xp = np
+        else:
+            xp = cp
+
+        return xp
+
+class Tanh(NonLinearity):
     def function(self, x):
-        return 1 / (1 + np.exp(-x))
+        xp = self.select_lib(x)
+        return xp.tanh(x)
+
+    def derivative(self, x):
+        xp = self.select_lib(x)
+        return 1.0 - xp.power(self.function(x), 2)
+
+class Sigmoid(NonLinearity):
+    def function(self, x):
+        xp = self.select_lib(x)
+        return 1 / (1 + xp.exp(-x))
 
     def derivative(self, x):
         f_x = self.function(x)
         return f_x * (1.0 - f_x)
 
-class ReLU():
+class ReLU(NonLinearity):
     def function(self, x):
-        return np.maximum(0, x)
+        xp = self.select_lib(x)
+        return xp.maximum(0, x)
 
     def derivative(self, x):
-        return np.where(x <= 0, 0, 1)
+        xp = self.select_lib(x)
+        return xp.where(x <= 0, 0, 1)
 
 
 nonlinearities = {

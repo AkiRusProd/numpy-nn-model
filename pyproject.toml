@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "numpy-nn-model"
+version = "0.1.0"
+description = ""
+authors = ["AkiRusProd <akirusprod@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "1.24.0"
+matplotlib = "3.5.1"
+pillow = "9.3.0"
+tqdm = "4.66.1"
+cupy-cuda117 = "^10.6.0"
+requests = "^2.32.3"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

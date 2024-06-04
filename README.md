@@ -1,5 +1,5 @@
 # numpy-nn-model
-Сustom CPU torch style machine learning framework with automatic differentiation for creating neural networks, implemented on numpy.
+Сustom CPU/GPU torch style machine learning framework with automatic differentiation for creating neural networks, implemented on numpy with cupy.
 
 ## Some information and features:
 
@@ -110,12 +110,13 @@ Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/proj
 1. *[Autoencoder](examples/ae.py)*        
 2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.py)*    
 3. *[Conway`s Game of Life](examples/conway.py)*  
-4. *[Generative Adversarial Network](examples/gan.py)*     
-5. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
-6. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
-7. *[Variational Autoencoder](examples/vae.py)*    
-8. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
-9. *[Word2Vec](examples/word2vec.py)*
+4. *[Denoising Diffusion Probabilistic Model](examples/ddpm.py)*
+5. *[Generative Adversarial Network](examples/gan.py)*     
+6. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
+7. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
+8. *[Variational Autoencoder](examples/vae.py)*    
+9. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
+10. *[Word2Vec](examples/word2vec.py)*
 
 
 
@@ -768,4 +769,4 @@ Native implementation Example | Neural network Example
 - [ ] Add more Tensor operations
 - [ ] Add more layers, activations, optimizers, loss functions, etc
 - [ ] Add more examples
-- [ ] Add CuPy support
+- [x] Add CuPy support

@@ -32,6 +32,8 @@ training_data = training_data / 255 # normalization: / 255 => [0; 1]  #/ 127.5-1
 test_data = test_data / 255 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 latent_size = 2
+
+device = 'cpu'
 class VAE(nn.Module):
     def __init__(self, input_size, latent_size):
         super().__init__()
@@ -67,7 +69,7 @@ class VAE(nn.Module):
 
     def reparameterize(self, mu, logvar):
         std = logvar.mul(0.5).exp()
-        eps = nnet.tensor(np.random.normal(0, 1, size=std.shape))
+        eps = nnet.tensor(np.random.normal(0, 1, size=std.shape), device=device)
         z = mu + eps * std
         return z
 
@@ -113,12 +115,12 @@ class VAE(nn.Module):
     def reconstruct(self, x):
         return self.forward(x)[0]
 
-vae = VAE(28 * 28, latent_size)
+vae = VAE(28 * 28, latent_size).to(device)
 optimizer = Adam(vae.parameters(), lr=0.0005)
 
 
 batch_size = 100
-epochs = 30
+epochs = 20
 
 for epoch in range(epochs):
     
@@ -127,18 +129,18 @@ for epoch in range(epochs):
     for i in tqdm_range:
         batch = training_data[i:i+batch_size]
 
-        in_batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        in_batch = nnet.tensor(batch, requires_grad=False, device=device).reshape(-1, 28 * 28)
         if noisy_inputs:
-            in_batch = nnet.tensor(add_noise(in_batch.data), requires_grad=False)
+            in_batch = nnet.tensor(add_noise(in_batch.data), requires_grad=False, device=device)
 
-        out_batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        out_batch = nnet.tensor(batch, requires_grad=False, device=device).reshape(-1, 28 * 28)
 
         loss = vae.train_step(in_batch, out_batch, optimizer)
         
         tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
 
 
-    generated = vae.decode(nnet.tensor(np.random.normal(0, 1, size=(samples_num, latent_size)), requires_grad=False)).data
+    generated = vae.decode(nnet.tensor(np.random.normal(0, 1, size=(samples_num, latent_size)), requires_grad=False, device=device)).to('cpu').detach().data
     
     # samples = training_data[np.random.randint(0, len(training_data), samples_num)]
     # if noisy_inputs:
@@ -177,7 +179,7 @@ def get_images_set(images):
 samples = test_data[np.random.randint(0, len(test_data), samples_num)]
 if noisy_inputs:
     samples = add_noise(samples)
-generated = vae.reconstruct(nnet.tensor(samples, requires_grad=False).reshape(-1, 28 * 28)).data
+generated = vae.reconstruct(nnet.tensor(samples, requires_grad=False, device=device).reshape(-1, 28 * 28)).to('cpu').detach().data
 
 get_images_set(samples.reshape(-1, 28, 28) * 255).save('generated images/vae_in_samples.jpeg')
 get_images_set(generated.reshape(-1, 28, 28) * 255).save('generated images/vae_out_samples.jpeg')
@@ -200,7 +202,7 @@ def plot_latent_space_digits(n=30, figsize=15):
     for i, yi in enumerate(grid_y):
         for j, xi in enumerate(grid_x):
             z_sample = np.array([[xi, yi]])
-            x_decoded = vae.decode(nnet.tensor(z_sample, requires_grad=False)).data
+            x_decoded = vae.decode(nnet.tensor(z_sample, requires_grad=False, device=device)).to('cpu').detach().data
             digit = x_decoded[0].reshape(digit_size, digit_size)
             figure[
                 i * digit_size : (i + 1) * digit_size,
@@ -230,7 +232,7 @@ def plot_label_clusters(data, labels):
         print('Can`t plot 2d latent space for non-2d latent space')
         return
     # display a 2D plot of the digit classes in the latent space
-    z_mean = vae.encode(nnet.tensor(data, requires_grad=False).reshape(-1, 28 * 28)).data
+    z_mean = vae.encode(nnet.tensor(data, requires_grad=False, device=device).reshape(-1, 28 * 28)).to('cpu').detach().data
     plt.figure(figsize=(12, 10))
     plt.scatter(z_mean[:, 0], z_mean[:, 1], c=labels)
     plt.colorbar()

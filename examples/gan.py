@@ -8,6 +8,7 @@ from neunet.optim import Adam
 import neunet as nnet
 import neunet.nn as nn
 import numpy as np
+import cupy as cp
 import os
 
 from PIL import Image
@@ -26,6 +27,7 @@ dataset = dataset / 127.5-1 # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1;
 
 noise_size = 100
 
+device = 'cuda'
 
 generator = nn.Sequential(
     nn.Linear(noise_size, 256),
@@ -37,7 +39,7 @@ generator = nn.Sequential(
     nn.LeakyReLU(),
     nn.Linear(512, 784),
     nn.Tanh()
-)
+).to(device)
 
 discriminator = nn.Sequential(
     nn.Linear(784, 128),
@@ -46,7 +48,7 @@ discriminator = nn.Sequential(
     nn.LeakyReLU(),
     nn.Linear(64, 1),
     nn.Sigmoid()
-)
+).to(device)
 
 loss_fn = nn.MSELoss()
 
@@ -57,7 +59,7 @@ batch_size = 100
 epochs = 30
 
 each_epoch_generated_samples = []
-const_noise = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)), requires_grad = False)
+const_noise = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)), requires_grad = False, device = device)
 
 for epoch in range(epochs):
     tqdm_range = tqdm(range(0, len(dataset), batch_size), desc = f'epoch {epoch}')
@@ -65,7 +67,7 @@ for epoch in range(epochs):
     discriminator.train()
     for i in tqdm_range:
         batch = dataset[i:i+batch_size]
-        batch = nnet.tensor(batch, requires_grad = False)
+        batch = nnet.tensor(batch, requires_grad = False, device = device)
 
         d_optimizer.zero_grad()
 
@@ -74,24 +76,24 @@ for epoch in range(epochs):
         real_data = real_data.reshape(real_data.shape[0], -1)
 
         real_data_prediction = discriminator(real_data) 
-        real_data_loss = loss_fn(real_data_prediction, nnet.tensor(np.ones((real_data_prediction.shape[0], 1)), requires_grad = False))
+        real_data_loss = loss_fn(real_data_prediction, nnet.tensor(np.ones((real_data_prediction.shape[0], 1)), requires_grad = False, device = device))
         real_data_loss.backward()
         d_optimizer.step()
 
         # train discriminator on fake data
-        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False)
+        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False, device = device)
         fake_data = generator(noise)
         fake_data_prediction = discriminator(fake_data)
-        fake_data_loss = loss_fn(fake_data_prediction, nnet.tensor(np.zeros((fake_data_prediction.shape[0], 1)), requires_grad = False))
+        fake_data_loss = loss_fn(fake_data_prediction, nnet.tensor(np.zeros((fake_data_prediction.shape[0], 1)), requires_grad = False, device = device))
         fake_data_loss.backward()
         d_optimizer.step()
 
         g_optimizer.zero_grad()
 
-        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False)
+        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False, device = device)
         fake_data = generator(noise)
         fake_data_prediction = discriminator(fake_data)
-        fake_data_loss = loss_fn(fake_data_prediction, nnet.tensor(np.ones((fake_data_prediction.shape[0], 1)), requires_grad = False))
+        fake_data_loss = loss_fn(fake_data_prediction, nnet.tensor(np.ones((fake_data_prediction.shape[0], 1)), requires_grad = False, device = device))
         fake_data_loss.backward()
         g_optimizer.step()
 
@@ -102,11 +104,11 @@ for epoch in range(epochs):
         )
 
     if const_noise == None:
-        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False)
+        noise = nnet.tensor(np.random.normal(0, 1, (batch_size, noise_size)), requires_grad = False, device = device)
     else:
         noise = const_noise
 
-    each_epoch_generated_samples.append(generator(noise).data.reshape(-1, 28, 28))
+    each_epoch_generated_samples.append(generator(noise).data.reshape(-1, 28, 28) if device == 'cpu' else cp.asnumpy(generator(noise).data.reshape(-1, 28, 28)))
 
     generator.eval()
     discriminator.eval()
