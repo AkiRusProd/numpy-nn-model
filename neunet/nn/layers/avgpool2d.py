@@ -125,9 +125,9 @@ class AvgPool2d:
         self.output_size = (self.output_height, self.output_width)
 
     def forward(self, X: Tensor):
-        if self.input_size == None:
-            self.input_size = X.shape
-            self.build()
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        self.input_size = X.shape
+        self.build()
 
         X_data = set_padding(X.data, self.padding)
 

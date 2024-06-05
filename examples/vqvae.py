@@ -141,11 +141,11 @@ for epoch in range(epochs):
     for i in tqdm_range:
         batch = training_data[i : i + batch_size]
 
-        in_batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        in_batch = nnet.tensor(batch).reshape(-1, 28 * 28)
         if noisy_inputs:
-            in_batch = nnet.tensor(add_noise(in_batch.data), requires_grad=False)
+            in_batch = nnet.tensor(add_noise(in_batch.data))
 
-        out_batch = nnet.tensor(batch, requires_grad=False).reshape(-1, 28 * 28)
+        out_batch = nnet.tensor(batch).reshape(-1, 28 * 28)
 
         loss = vqvae.train_step(in_batch, out_batch, optimizer)
 
@@ -154,15 +154,13 @@ for epoch in range(epochs):
         )
 
     generated = vqvae.decode(
-        nnet.tensor(
-            np.random.normal(0, 1, size=(samples_num, latent_size)), requires_grad=False
-        )
+        nnet.tensor(np.random.normal(0, 1, size=(samples_num, latent_size)))
     ).data
 
     # samples = training_data[np.random.randint(0, len(training_data), samples_num)]
     # if noisy_inputs:
     #     samples = add_noise(samples)
-    # generated = vqvae.reconstruct(nnet.tensor(samples, requires_grad=False).reshape(-1, 28 * 28)).data
+    # generated = vqvae.reconstruct(nnet.tensor(samples).reshape(-1, 28 * 28)).data
     vqvae.eval()
     for i in range(25):
         image = generated[i] * 255
@@ -201,9 +199,7 @@ def get_images_set(images):
 samples = test_data[np.random.randint(0, len(test_data), samples_num)]
 if noisy_inputs:
     samples = add_noise(samples)
-generated = vqvae.reconstruct(
-    nnet.tensor(samples, requires_grad=False).reshape(-1, 28 * 28)
-).data
+generated = vqvae.reconstruct(nnet.tensor(samples).reshape(-1, 28 * 28)).data
 
 get_images_set(samples.reshape(-1, 28, 28) * 255).save(
     "generated images/vqvae_in_samples.jpeg"
@@ -232,7 +228,7 @@ def plot_latent_space_digits(n=30, figsize=15):
     for i, yi in enumerate(grid_y):
         for j, xi in enumerate(grid_x):
             z_sample = np.array([[xi, yi]])
-            x_decoded = vqvae.decode(nnet.tensor(z_sample, requires_grad=False)).data
+            x_decoded = vqvae.decode(nnet.tensor(z_sample)).data
             digit = x_decoded[0].reshape(digit_size, digit_size)
             figure[
                 i * digit_size : (i + 1) * digit_size,
@@ -265,9 +261,7 @@ def plot_label_clusters(data, labels):
         print("Can`t plot 2d latent space for non-2d latent space")
         return
     # display a 2D plot of the digit classes in the latent space
-    z_mean = vqvae.encode(
-        nnet.tensor(data, requires_grad=False).reshape(-1, 28 * 28)
-    ).data
+    z_mean = vqvae.encode(nnet.tensor(data).reshape(-1, 28 * 28)).data
     plt.figure(figsize=(12, 10))
     plt.scatter(z_mean[:, 0], z_mean[:, 1], c=labels)
     plt.colorbar()

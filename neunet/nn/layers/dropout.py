@@ -19,6 +19,7 @@ class Dropout:  # layer with static backpropagation
         self.training = True
 
     def forward(self, X: Tensor):
+        assert isinstance(X, Tensor), "Input must be a tensor"
         if self.training:
             self.mask = (
                 X.xp.random.binomial(1, 1 - self.p, size=X.data.shape) * self.scale

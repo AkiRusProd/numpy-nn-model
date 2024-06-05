@@ -121,7 +121,7 @@ tqdm_range = tqdm(range(epochs))
 for epoch in tqdm_range:
     for i in range(padded_document.shape[0]):
         optimizer.zero_grad()
-        y_pred = model.forward(padded_document[i])
+        y_pred = model.forward(nnet.tensor(padded_document[i], dtype=nnet.int32))
 
         loss_ = loss_fn(y_pred, labels[i])
         loss_.backward()
@@ -133,7 +133,7 @@ for epoch in tqdm_range:
 
 acc = 0
 for i in range(padded_document.shape[0]):
-    y_pred = model.forward(padded_document[i])
+    y_pred = model.forward(nnet.tensor(padded_document[i], dtype=nnet.int32))
     if y_pred.data.round() == labels[i]:
         acc += 1
 

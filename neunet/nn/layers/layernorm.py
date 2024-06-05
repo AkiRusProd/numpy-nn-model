@@ -110,6 +110,8 @@ class LayerNorm:  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         axis = tuple(range(-len(self.normalized_shape), 0))
 
         mean = self.xp.mean(X.data, axis=axis, keepdims=True)

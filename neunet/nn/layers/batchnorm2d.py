@@ -72,6 +72,8 @@ class BatchNorm2d:  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         if self.training:
             mean = self.xp.mean(X.data, axis=(0, 2, 3))
             var = self.xp.var(X.data, axis=(0, 2, 3))

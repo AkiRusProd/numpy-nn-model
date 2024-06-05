@@ -60,7 +60,6 @@ epochs = 30
 each_epoch_generated_samples = []
 const_noise = nnet.tensor(
     np.random.normal(0, 1, (samples_num, noise_size)),
-    requires_grad=False,
     device=device,
 )
 
@@ -70,7 +69,7 @@ for epoch in range(epochs):
     discriminator.train()
     for i in tqdm_range:
         batch = dataset[i : i + batch_size]
-        batch = nnet.tensor(batch, requires_grad=False, device=device)
+        batch = nnet.tensor(batch, device=device)
 
         d_optimizer.zero_grad()
 
@@ -83,7 +82,6 @@ for epoch in range(epochs):
             real_data_prediction,
             nnet.tensor(
                 np.ones((real_data_prediction.shape[0], 1)),
-                requires_grad=False,
                 device=device,
             ),
         )
@@ -93,7 +91,6 @@ for epoch in range(epochs):
         # train discriminator on fake data
         noise = nnet.tensor(
             np.random.normal(0, 1, (batch_size, noise_size)),
-            requires_grad=False,
             device=device,
         )
         fake_data = generator(noise)
@@ -102,7 +99,6 @@ for epoch in range(epochs):
             fake_data_prediction,
             nnet.tensor(
                 np.zeros((fake_data_prediction.shape[0], 1)),
-                requires_grad=False,
                 device=device,
             ),
         )
@@ -113,7 +109,6 @@ for epoch in range(epochs):
 
         noise = nnet.tensor(
             np.random.normal(0, 1, (batch_size, noise_size)),
-            requires_grad=False,
             device=device,
         )
         fake_data = generator(noise)
@@ -122,7 +117,6 @@ for epoch in range(epochs):
             fake_data_prediction,
             nnet.tensor(
                 np.ones((fake_data_prediction.shape[0], 1)),
-                requires_grad=False,
                 device=device,
             ),
         )
@@ -141,7 +135,6 @@ for epoch in range(epochs):
     if const_noise == None:
         noise = nnet.tensor(
             np.random.normal(0, 1, (batch_size, noise_size)),
-            requires_grad=False,
             device=device,
         )
     else:
@@ -196,14 +189,10 @@ def create_vectors_interpolation():
     interval = 15
     images = []
 
-    noise_1 = nnet.tensor(
-        np.random.normal(0, 1, (samples_num, noise_size)), requires_grad=False
-    )
+    noise_1 = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)))
 
     for step in range(steps):
-        noise_2 = nnet.tensor(
-            np.random.normal(0, 1, (samples_num, noise_size)), requires_grad=False
-        )
+        noise_2 = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)))
 
         noise_interp = np.linspace(noise_1.data, noise_2.data, interval)
 
@@ -211,7 +200,12 @@ def create_vectors_interpolation():
 
         for vectors in noise_interp:
             generated_images = (
-                generator(vectors).reshape(-1, 28, 28).data * 127.5 + 127.5
+                generator(nnet.tensor(vectors, device=device))
+                .reshape(-1, 28, 28)
+                .to("cpu")
+                .data
+                * 127.5
+                + 127.5
             )
 
             images.append(get_images_set(generated_images).convert("L").convert("P"))

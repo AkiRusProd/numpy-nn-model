@@ -181,7 +181,7 @@ class Diffusion:
 
         Denoising Diffusion Implicit Models (DDIM) sampling; according to the paper
         """
-
+        # TODO: FIX LOOP with appropriate tensors types
         if mask is not None:
             assert orig_x is not None
             assert orig_x.shape == mask.shape

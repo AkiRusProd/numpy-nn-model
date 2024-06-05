@@ -37,6 +37,8 @@ class Linear:  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         self.X = X
         self.O = self.xp.matmul(self.X.data, self.weight.data.T)
         if self.bias is not None:

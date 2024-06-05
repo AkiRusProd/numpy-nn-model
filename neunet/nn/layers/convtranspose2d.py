@@ -291,7 +291,8 @@ class ConvTranspose2d:  # layer with static backpropagation
         )
 
     def forward(self, X):
-        # if self.input_size == None:
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         self.input_size = X.shape
         self.build()
 

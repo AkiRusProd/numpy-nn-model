@@ -302,7 +302,8 @@ class Conv2d:  # layer with static backpropagation
         )
 
     def forward(self, X):
-        # if self.input_size == None:
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         self.input_size = X.shape
         self.build()
 
@@ -377,7 +378,6 @@ class Conv2d:  # layer with static backpropagation
         return self
 
 
-# @njit
 def set_padding(layer, padding):
     # padded_layer = np.pad(layer, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
     xp = np if isinstance(layer, np.ndarray) else cp
@@ -400,7 +400,6 @@ def set_padding(layer, padding):
     return padded_layer
 
 
-# @njit
 def remove_padding(layer, padding):
     # unpadded_layer = unpadded_layer[:, :, padding[0]:-padding[1], padding[1]:-padding[0]]
     xp = np if isinstance(layer, np.ndarray) else cp
@@ -423,7 +422,6 @@ def remove_padding(layer, padding):
     return unpadded_layer
 
 
-# @njit
 def set_stride(layer, stride):
     xp = np if isinstance(layer, np.ndarray) else cp
     transposed_layer = xp.zeros(
@@ -441,7 +439,6 @@ def set_stride(layer, stride):
     return transposed_layer
 
 
-# @njit
 def remove_stride(layer, stride):
     # losses[k] = losses[k][:,::self.topology[k+1]['stride'], ::self.topology[k+1]['stride']]
     xp = np if isinstance(layer, np.ndarray) else cp

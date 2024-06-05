@@ -31,7 +31,6 @@ class Tensor:
         self.device = device
 
     def tensor(self, t, requires_grad=False):
-        # return t if isinstance(t, Tensor) else Tensor(t, requires_grad = requires_grad)
         if isinstance(t, Tensor):
             assert t.device == self.device, "Tensors must be on the same device"
 
@@ -65,6 +64,9 @@ class Tensor:
             dtype=self.data.dtype,
             device=self.device,
         )
+
+    def item(self):
+        return self.data.item()
 
     def add(self, t):
         t = self.tensor(t)

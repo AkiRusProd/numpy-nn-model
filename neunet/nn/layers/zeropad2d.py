@@ -28,6 +28,7 @@ class ZeroPad2d:
         )
 
     def forward(self, X):
+        assert isinstance(X, Tensor), "Input must be a tensor"
         assert X.ndim == 3 or X.ndim == 4, "X must be 3D or 4D tensor"
         X.data = X.data
 

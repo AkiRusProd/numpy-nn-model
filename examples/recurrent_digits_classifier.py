@@ -73,7 +73,7 @@ for epoch in range(epochs):
 
         batch = batch.reshape(batch.shape[0], image_size[1], image_size[2])
 
-        batch = nnet.tensor(batch, requires_grad=True, device=device)
+        batch = nnet.tensor(batch, device=device)
 
         labels = one_hot_encode(training_targets[i : i + batch_size])
 
@@ -100,7 +100,7 @@ total = 0
 for i in tqdm(range(len(test_dataset)), desc="evaluating"):
     img = test_dataset[i]
     img = img.reshape(1, image_size[1], image_size[2])
-    img = nnet.tensor(img, requires_grad=False, device=device)
+    img = nnet.tensor(img, device=device)
 
     outputs = classifier(img)
     predicted = np.argmax(outputs.data)

@@ -134,17 +134,11 @@ for epoch in range(epochs):
     for i in tqdm_range:
         batch = training_data[i : i + batch_size]
 
-        in_batch = nnet.tensor(batch, requires_grad=False, device=device).reshape(
-            -1, 28 * 28
-        )
+        in_batch = nnet.tensor(batch, device=device).reshape(-1, 28 * 28)
         if noisy_inputs:
-            in_batch = nnet.tensor(
-                add_noise(in_batch.data), requires_grad=False, device=device
-            )
+            in_batch = nnet.tensor(add_noise(in_batch.data), device=device)
 
-        out_batch = nnet.tensor(batch, requires_grad=False, device=device).reshape(
-            -1, 28 * 28
-        )
+        out_batch = nnet.tensor(batch, device=device).reshape(-1, 28 * 28)
 
         loss = vae.train_step(in_batch, out_batch, optimizer)
 
@@ -156,7 +150,6 @@ for epoch in range(epochs):
         vae.decode(
             nnet.tensor(
                 np.random.normal(0, 1, size=(samples_num, latent_size)),
-                requires_grad=False,
                 device=device,
             )
         )
@@ -208,9 +201,7 @@ samples = test_data[np.random.randint(0, len(test_data), samples_num)]
 if noisy_inputs:
     samples = add_noise(samples)
 generated = (
-    vae.reconstruct(
-        nnet.tensor(samples, requires_grad=False, device=device).reshape(-1, 28 * 28)
-    )
+    vae.reconstruct(nnet.tensor(samples, device=device).reshape(-1, 28 * 28))
     .to("cpu")
     .detach()
     .data
@@ -244,10 +235,7 @@ def plot_latent_space_digits(n=30, figsize=15):
         for j, xi in enumerate(grid_x):
             z_sample = np.array([[xi, yi]])
             x_decoded = (
-                vae.decode(nnet.tensor(z_sample, requires_grad=False, device=device))
-                .to("cpu")
-                .detach()
-                .data
+                vae.decode(nnet.tensor(z_sample, device=device)).to("cpu").detach().data
             )
             digit = x_decoded[0].reshape(digit_size, digit_size)
             figure[
@@ -282,9 +270,7 @@ def plot_label_clusters(data, labels):
         return
     # display a 2D plot of the digit classes in the latent space
     z_mean = (
-        vae.encode(
-            nnet.tensor(data, requires_grad=False, device=device).reshape(-1, 28 * 28)
-        )
+        vae.encode(nnet.tensor(data, device=device).reshape(-1, 28 * 28))
         .to("cpu")
         .detach()
         .data

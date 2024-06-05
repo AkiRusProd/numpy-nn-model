@@ -45,6 +45,8 @@ class Bidirectional:
         self.to(device)
 
     def forward(self, X):
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         if len(X.shape) == 2:
             X = X.reshape(1, *X.shape)
 

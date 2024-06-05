@@ -116,6 +116,8 @@ class RNN:
         ]
 
     def forward(self, X, hprev=None):
+        assert isinstance(X, Tensor), "Input must be a tensor"
+        assert X.device == self.device, "Tensors must be on the same device"
         X_data = X.data
 
         if len(X_data.shape) == 2:

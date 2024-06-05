@@ -8,6 +8,7 @@ class Flatten:
         self.end_dim = end_dim
 
     def forward(self, X: Tensor):
+        assert isinstance(X, Tensor), "Input must be a tensor"
         start = X.ndim + self.start_dim if self.start_dim < 0 else self.start_dim
         end = X.ndim + self.end_dim if self.end_dim < 0 else self.end_dim
         new_shape = (
