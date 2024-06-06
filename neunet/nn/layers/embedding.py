@@ -1,6 +1,9 @@
 import numpy as np
 import cupy as cp
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
+from neunet.nn.parameter import Parameter
 
 
 class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
@@ -17,15 +20,17 @@ class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
         weight.backward(weight_grad)
 
 
-class Embedding:
+class Embedding(Module):
     def __init__(self, num_embeddings, embedding_dim, device="cpu"):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
 
         # stdv = 1. / self.xp.sqrt(embedding_dim)
         # self.weight = Tensor(self.xp.random.uniform(-stdv, stdv, (num_embeddings, embedding_dim)), dtype=self.xp.float32)
-        self.weight = Tensor(
-            np.random.randn(num_embeddings, embedding_dim), dtype=np.float32
+        self.weight = Parameter(
+            neunet.tensor(
+                np.random.randn(num_embeddings, embedding_dim), dtype=np.float32
+            )
         )  # Torch's initialization
         self.to(device)
 

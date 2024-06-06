@@ -17,58 +17,84 @@ def tensor(data, requires_grad=False, dtype=float32, device="cpu"):
     return Tensor(data, requires_grad=requires_grad, dtype=dtype, device=device)
 
 
-def ones(*shape, dtype=None, requires_grad=True):
+def ones(*shape, dtype=None, requires_grad=True, device="cpu"):
     shape = (
         tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
     )
 
-    return Tensor(np.ones(shape, dtype=dtype), requires_grad=requires_grad)
+    return Tensor(
+        np.ones(shape, dtype=dtype), requires_grad=requires_grad, device=device
+    )
 
 
-def zeros(*shape, dtype=None, requires_grad=True):
+def zeros(*shape, dtype=None, requires_grad=True, device="cpu"):
     shape = (
         tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
     )
 
-    return Tensor(np.zeros(shape, dtype=dtype), requires_grad=requires_grad)
+    return Tensor(
+        np.zeros(shape, dtype=dtype), requires_grad=requires_grad, device=device
+    )
 
 
-def rand(*shape, dtype=None, requires_grad=True):
+def rand(*shape, dtype=None, requires_grad=True, device="cpu"):
     shape = (
         tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
     )
 
-    return Tensor(np.random.rand(*shape).astype(dtype), requires_grad=requires_grad)
+    return Tensor(
+        np.random.rand(*shape).astype(dtype), requires_grad=requires_grad, device=device
+    )
 
 
-def randn(*shape, dtype=None, requires_grad=True):
+def randn(*shape, dtype=None, requires_grad=True, device="cpu"):
     shape = (
         tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
     )
 
-    return Tensor(np.random.randn(*shape).astype(dtype), requires_grad=requires_grad)
+    return Tensor(
+        np.random.randn(*shape).astype(dtype),
+        requires_grad=requires_grad,
+        device=device,
+    )
 
 
-def arange(start=0, end=None, step=1, dtype=None, requires_grad=True):
+def arange(start=0, end=None, step=1, dtype=None, requires_grad=True, device="cpu"):
     if end is None:
         start, end = 0, start
-    return Tensor(np.arange(start, end, step, dtype=dtype), requires_grad=requires_grad)
+    return Tensor(
+        np.arange(start, end, step, dtype=dtype),
+        requires_grad=requires_grad,
+        device=device,
+    )
 
 
-def ones_like(tensor, dtype=None, requires_grad=True):
-    return Tensor(np.ones_like(tensor.data, dtype), requires_grad=requires_grad)
+def ones_like(tensor, dtype=None, requires_grad=True, device="cpu"):
+    return Tensor(
+        np.ones_like(tensor.data, dtype), requires_grad=requires_grad, device=device
+    )
 
 
-def zeros_like(tensor, dtype=None, requires_grad=True):
-    return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad)
+def zeros_like(tensor, dtype=None, requires_grad=True, device="cpu"):
+    return Tensor(
+        np.zeros_like(tensor.data, dtype), requires_grad=requires_grad, device=device
+    )
 
 
-def argmax(x, axis=None, keepdims=False):
-    return Tensor(np.argmax(x.data, axis=axis, keepdims=keepdims), requires_grad=False)
+def argmax(x, axis=None, keepdims=False, device="cpu"):
+    return Tensor(
+        np.argmax(x.data, axis=axis, keepdims=keepdims),
+        requires_grad=False,
+        device=device,
+    )
 
 
-def argmin(x, axis=None, keepdims=False):
-    return Tensor(np.argmin(x.data, axis=axis, keepdims=keepdims), requires_grad=False)
+def argmin(x, axis=None, keepdims=False, device="cpu"):
+    return Tensor(
+        np.argmin(x.data, axis=axis, keepdims=keepdims),
+        requires_grad=False,
+        device=device,
+    )
 
 
 def add(x, y):

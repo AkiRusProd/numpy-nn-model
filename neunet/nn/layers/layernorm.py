@@ -1,4 +1,7 @@
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -88,7 +91,7 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
             bias.backward(grad_bias)
 
 
-class LayerNorm:  # layer with static backpropagation
+class LayerNorm(Module):  # layer with static backpropagation
     def __init__(
         self, normalized_shape, eps=1e-05, elementwise_affine=True, device="cpu"
     ):
@@ -101,8 +104,12 @@ class LayerNorm:  # layer with static backpropagation
         self.elementwise_affine = elementwise_affine
 
         if elementwise_affine:
-            self.weight = Tensor(np.ones((normalized_shape)), dtype=np.float32)
-            self.bias = Tensor(np.zeros((normalized_shape)), dtype=np.float32)
+            self.weight = Parameter(
+                neunet.tensor(np.ones((normalized_shape)), dtype=np.float32)
+            )
+            self.bias = Parameter(
+                neunet.tensor(np.zeros((normalized_shape)), dtype=np.float32)
+            )
         else:
             self.weight = None
             self.bias = None

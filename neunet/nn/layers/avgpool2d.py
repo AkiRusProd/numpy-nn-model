@@ -1,4 +1,5 @@
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -42,7 +43,7 @@ class _AvgPool2dTensor(Tensor):
         X.backward(grad_X)
 
 
-class AvgPool2d:
+class AvgPool2d(Module):
     def __init__(self, kernel_size, stride=None, padding=0):
         self.kernel_size = (
             kernel_size

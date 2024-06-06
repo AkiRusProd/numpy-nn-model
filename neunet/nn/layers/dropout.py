@@ -1,6 +1,5 @@
 from neunet.autograd import Tensor
-import numpy as np
-import cupy as cp
+from neunet.nn.containers import Module
 
 
 class _DropoutTensor(Tensor):  # tensor for static backpropagation
@@ -11,7 +10,7 @@ class _DropoutTensor(Tensor):  # tensor for static backpropagation
         self.args[0].backward(grad * self.args[1])
 
 
-class Dropout:  # layer with static backpropagation
+class Dropout(Module):  # layer with static backpropagation
     def __init__(self, p=0.5):
         self.p = p
         self.scale = 1 / (1 - p)

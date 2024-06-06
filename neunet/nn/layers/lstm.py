@@ -1,6 +1,9 @@
 import numpy as np
 import cupy as cp
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 
 
 class _LSTMTensor(Tensor):
@@ -148,7 +151,7 @@ class _LSTMTensor(Tensor):
             bias_c.backward(grad_bias_c)
 
 
-class LSTM:
+class LSTM(Module):
     """
     Add LSTM layer
     --------------
@@ -191,45 +194,69 @@ class LSTM:
         self.cycled_states = cycled_states
 
         stdv = 1.0 / np.sqrt(self.hidden_size)
-        self.weight_f = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_f = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_i = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_i = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_o = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_o = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_c = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_c = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
 
-        self.weight_hf = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hf = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_hi = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hi = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_ho = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_ho = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_hc = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hc = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
 
         if bias:
-            self.bias_f = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            self.bias_i = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            self.bias_o = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            self.bias_c = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias_f = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
+            self.bias_i = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
+            self.bias_o = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
+            self.bias_c = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
         else:
             self.bias_f = None
             self.bias_i = None

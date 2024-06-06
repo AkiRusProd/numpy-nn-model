@@ -1,6 +1,9 @@
 import numpy as np
 import cupy as cp
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
+from neunet.nn.parameter import Parameter
 
 
 class _GRUTensor(Tensor):
@@ -123,7 +126,7 @@ class _GRUTensor(Tensor):
             bias_h.backward(grad_bias_h)
 
 
-class GRU:
+class GRU(Module):
     """
     Add GRU layer
     --------------
@@ -166,36 +169,54 @@ class GRU:
         self.cycled_states = cycled_states
 
         stdv = 1.0 / np.sqrt(self.hidden_size)
-        self.weight_z = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_z = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_r = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_r = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_h = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_h = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
 
-        self.weight_hz = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hz = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_hr = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hr = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_hh = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_hh = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
 
         if bias:
-            self.bias_z = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            self.bias_r = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            self.bias_h = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias_z = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
+            self.bias_r = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
+            self.bias_h = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
         else:
             self.bias_z = None
             self.bias_r = None

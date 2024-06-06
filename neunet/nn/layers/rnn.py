@@ -1,6 +1,9 @@
 import numpy as np
 import cupy as cp
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 
 
 class _RNNTensor(Tensor):
@@ -58,7 +61,7 @@ class _RNNTensor(Tensor):
             bias.backward(grad_bias)
 
 
-class RNN:
+class RNN(Module):
     """
     Add Vanilla RNN layer
     ---------------------
@@ -90,17 +93,23 @@ class RNN:
         self.return_sequences = return_sequences
 
         stdv = 1.0 / np.sqrt(self.hidden_size)
-        self.weight = Tensor(
-            np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.input_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
-        self.weight_h = Tensor(
-            np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
-            dtype=np.float32,
+        self.weight_h = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (self.hidden_size, self.hidden_size)),
+                dtype=np.float32,
+            )
         )
 
         if bias == True:
-            self.bias = Tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            self.bias = Parameter(
+                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
+            )
         else:
             self.bias = None
 

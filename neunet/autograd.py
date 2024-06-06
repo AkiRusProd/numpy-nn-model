@@ -4,7 +4,7 @@ import cupy as cp
 
 class Tensor:
     def __init__(
-        self, val, args=None, op=None, requires_grad=True, dtype=None, device="cpu"
+        self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"
     ):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
@@ -12,18 +12,11 @@ class Tensor:
         else:
             self.xp = cp
 
-        if isinstance(val, Tensor):  # If val is a tensor, copy its attributes
-            self.data = self.xp.array(
-                val.data, dtype=val.data.dtype if dtype is None else dtype
-            )
-            self.grad = val.grad
-            self.op = val.op if op is None else op
-            self.args = val.args if args is None else args
-            self.requires_grad = requires_grad
-            self.device = device
-            return
+        if isinstance(data, Tensor):
+            self.data = self.xp.array(data.data, dtype=dtype)
+        else:
+            self.data = self.xp.array(data, dtype=dtype)
 
-        self.data = self.xp.array(val, dtype=dtype)
         self.grad = None
         self.op = op
         self.args = args
@@ -57,7 +50,7 @@ class Tensor:
 
     def detach(self):
         return Tensor(
-            val=self.data,
+            data=self.data,
             args=self.args,
             op=self.op,
             requires_grad=False,

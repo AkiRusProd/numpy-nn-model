@@ -1,4 +1,7 @@
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -108,7 +111,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
         return unstrided_grad
 
 
-class ConvTranspose2d:  # layer with static backpropagation
+class ConvTranspose2d(Module):  # layer with static backpropagation
     """
     Add 2d transposed convolutional layer
     -------------------------------------
@@ -166,21 +169,25 @@ class ConvTranspose2d:  # layer with static backpropagation
             self.in_channels * self.kernel_size[0] * self.kernel_size[1]
         )
 
-        self.weight = Tensor(
-            np.random.uniform(
-                -stdv,
-                stdv,
-                (
-                    self.out_channels,
-                    self.in_channels,
-                    self.kernel_size[0],
-                    self.kernel_size[1],
+        self.weight = Parameter(
+            neunet.tensor(
+                np.random.uniform(
+                    -stdv,
+                    stdv,
+                    (
+                        self.out_channels,
+                        self.in_channels,
+                        self.kernel_size[0],
+                        self.kernel_size[1],
+                    ),
                 ),
-            ),
-            dtype=np.float32,
+                dtype=np.float32,
+            )
         )
         if bias == True:
-            self.bias = Tensor(np.zeros(self.out_channels), dtype=np.float32)
+            self.bias = Parameter(
+                neunet.tensor(np.zeros(self.out_channels), dtype=np.float32)
+            )
         else:
             self.bias = None
 

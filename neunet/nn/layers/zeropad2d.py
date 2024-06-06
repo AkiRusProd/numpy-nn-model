@@ -1,6 +1,7 @@
 import numpy as np
 import cupy as cp
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
 
 
 class ZeroPad2dTensor(Tensor):
@@ -18,7 +19,7 @@ class ZeroPad2dTensor(Tensor):
         X.backward(unpadded_grad)
 
 
-class ZeroPad2d:
+class ZeroPad2d(Module):
     def __init__(self, padding):
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
         self.padding = (

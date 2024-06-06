@@ -1,4 +1,7 @@
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -38,7 +41,7 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
             bias.backward(grad_bias)
 
 
-class BatchNorm1d:  # layer with static backpropagation
+class BatchNorm1d(Module):  # layer with static backpropagation
     def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, device="cpu"):
         self.num_features = num_features
         self.eps = eps
@@ -49,8 +52,12 @@ class BatchNorm1d:  # layer with static backpropagation
         self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
 
         if affine:
-            self.weight = Tensor(np.ones((1, num_features)), dtype=np.float32)
-            self.bias = Tensor(np.zeros((1, num_features)), dtype=np.float32)
+            self.weight = Parameter(
+                neunet.tensor(np.ones((1, num_features)), dtype=np.float32)
+            )
+            self.bias = Parameter(
+                neunet.tensor(np.zeros((1, num_features)), dtype=np.float32)
+            )
         else:
             self.weight = None
             self.bias = None

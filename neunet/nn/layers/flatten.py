@@ -1,8 +1,9 @@
 import numpy as np
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
 
 
-class Flatten:
+class Flatten(Module):
     def __init__(self, start_dim=1, end_dim=-1):
         self.start_dim = start_dim
         self.end_dim = end_dim

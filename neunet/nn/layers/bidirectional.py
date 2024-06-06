@@ -2,7 +2,7 @@ import numpy as np
 import cupy as cp
 import copy as copy_object
 from neunet.autograd import Tensor
-
+from neunet.nn.containers import Module
 
 # In feature can be moved to rnn layer as argument
 
@@ -27,7 +27,7 @@ class _BidirectionalTensor(Tensor):
         R_O.backward(reverse_grad)
 
 
-class Bidirectional:
+class Bidirectional(Module):
     def __init__(self, layer, merge_mode="sum", device="cpu"):
         assert layer.__class__.__name__ in [
             "LSTM",

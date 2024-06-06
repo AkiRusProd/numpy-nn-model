@@ -1,4 +1,5 @@
 from neunet.autograd import Tensor
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -78,7 +79,7 @@ class _MaxPool2dTensor(Tensor):
         X.backward(grad_X)
 
 
-class MaxPool2d:
+class MaxPool2d(Module):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1):
         self.kernel_size = (
             kernel_size

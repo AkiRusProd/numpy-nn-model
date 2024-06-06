@@ -18,22 +18,15 @@ class Module:
     def parameters(self):
         params = []
         for name, item in self.__dict__.items():
+            if isinstance(item, Tensor):
+                if (
+                    item.requires_grad
+                    and item.__class__.__name__ == "Parameter"
+                    and item not in params
+                ):
+                    params.append(item)
             if hasattr(item, "parameters"):
                 params.extend(item.parameters())
-            if hasattr(item, "weight"):
-                if hasattr(item.weight, "requires_grad"):
-                    if item.weight.requires_grad:
-                        params.append(item.weight)
-            if hasattr(item, "bias"):
-                if hasattr(item.bias, "requires_grad"):
-                    if item.bias.requires_grad:
-                        params.append(item.bias)
-            if hasattr(item, "named_parameters"):
-                for name, param in item.named_parameters():
-                    if hasattr(param, "requires_grad"):
-                        if param.requires_grad:
-                            if param not in params:
-                                params.append(param)
 
         return params
 
@@ -58,13 +51,13 @@ class Module:
 
 
 class Sequential:
-    def __init__(self, *layers):
-        self.layers = layers
+    def __init__(self, *modules: Module):
+        self.modules = modules
         self.training = True
 
     def forward(self, X):
-        for layer in self.layers:
-            X = layer(X)
+        for module in self.modules:
+            X = module(X)
         return X
 
     def __call__(self, X):
@@ -72,47 +65,34 @@ class Sequential:
 
     def parameters(self):
         params = []
-        for layer in self.layers:
-            if hasattr(layer, "parameters"):
-                params.extend(layer.parameters())
-            if hasattr(layer, "weight"):
-                if hasattr(layer.weight, "requires_grad"):
-                    if layer.weight.requires_grad:
-                        params.append(layer.weight)
-            if hasattr(layer, "bias"):
-                if hasattr(layer.bias, "requires_grad"):
-                    if layer.bias.requires_grad:
-                        params.append(layer.bias)
-            if hasattr(layer, "named_parameters"):
-                for name, param in layer.named_parameters():
-                    if hasattr(param, "requires_grad"):
-                        if param.requires_grad:
-                            if param not in params:
-                                params.append(param)
+        for module in self.modules:
+            if hasattr(module, "parameters"):
+                params.extend(module.parameters())
+
         return params
 
     def eval(self):
         self.training = False
-        for layer in self.layers:
-            if hasattr(layer, "eval"):
-                layer.eval()
+        for module in self.modules:
+            if hasattr(module, "eval"):
+                module.eval()
 
     def train(self, mode=True):
         self.training = mode
-        for layer in self.layers:
-            if hasattr(layer, "train"):
-                layer.train(mode)
+        for module in self.modules:
+            if hasattr(module, "train"):
+                module.train(mode)
 
     def to(self, device):
-        for layer in self.layers:
-            if hasattr(layer, "to"):
-                layer.to(device)
+        for module in self.modules:
+            if hasattr(module, "to"):
+                module.to(device)
 
         return self
 
 
 class ModuleList:
-    def __init__(self, modules):
+    def __init__(self, modules: list[Module]):
         self.modules = list(modules)
 
     def __getitem__(self, index):
@@ -149,20 +129,7 @@ class ModuleList:
         for module in self.modules:
             if hasattr(module, "parameters"):
                 params.extend(module.parameters())
-            if hasattr(module, "weight"):
-                if hasattr(module.weight, "requires_grad"):
-                    if module.weight.requires_grad:
-                        params.append(module.weight)
-            if hasattr(module, "bias"):
-                if hasattr(module.bias, "requires_grad"):
-                    if module.bias.requires_grad:
-                        params.append(module.bias)
-            if hasattr(module, "named_parameters"):
-                for name, param in module.named_parameters():
-                    if hasattr(param, "requires_grad"):
-                        if param.requires_grad:
-                            if param not in params:
-                                params.append(param)
+
         return params
 
     def eval(self):

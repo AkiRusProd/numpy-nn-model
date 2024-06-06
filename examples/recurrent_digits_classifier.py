@@ -75,7 +75,7 @@ for epoch in range(epochs):
 
         batch = nnet.tensor(batch, device=device)
 
-        labels = one_hot_encode(training_targets[i : i + batch_size])
+        labels = nnet.tensor(one_hot_encode(training_targets[i : i + batch_size]))
 
         optimizer.zero_grad()
 

@@ -1,4 +1,7 @@
+import neunet
 from neunet.autograd import Tensor
+from neunet.nn.parameter import Parameter
+from neunet.nn.containers import Module
 import numpy as np
 import cupy as cp
 
@@ -19,19 +22,23 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
             self.args[2].backward(self.xp.sum(grad, axis=0, keepdims=True))
 
 
-class Linear:  # layer with static backpropagation
+class Linear(Module):  # layer with static backpropagation
     def __init__(self, in_features, out_features, bias=True, device="cpu"):
         self.in_features = in_features
         self.out_features = out_features
 
         stdv = 1.0 / np.sqrt(in_features)
-        self.weight = Tensor(
-            np.random.uniform(-stdv, stdv, (out_features, in_features)),
-            dtype=np.float32,
+        self.weight = Parameter(
+            neunet.tensor(
+                np.random.uniform(-stdv, stdv, (out_features, in_features)),
+                dtype=np.float32,
+            )
         )
 
         if bias == True:
-            self.bias = Tensor(np.zeros((1, out_features)), dtype=np.float32)
+            self.bias = Parameter(
+                neunet.tensor(np.zeros((1, out_features)), dtype=np.float32)
+            )
         else:
             self.bias = None
         self.to(device)
