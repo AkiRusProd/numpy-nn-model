@@ -1,6 +1,8 @@
 import numpy as np
 import cupy as cp
 
+# BUGS
+# fix some activations dtype, fix dtype int init; (maybe fix dtype in backwards of some layers (like bnorm2d))
 
 class Tensor:
     def __init__(

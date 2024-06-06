@@ -21,7 +21,7 @@ class Dropout(Module):  # layer with static backpropagation
         assert isinstance(X, Tensor), "Input must be a tensor"
         if self.training:
             self.mask = (
-                X.xp.random.binomial(1, 1 - self.p, size=X.data.shape) * self.scale
+                X.xp.random.binomial(1, 1 - self.p, size=X.data.shape, dtype = X.data.dtype) * self.scale
             )
         else:
             self.mask = 1

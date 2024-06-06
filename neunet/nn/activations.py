@@ -70,7 +70,7 @@ class _LeakyReLUTensor(Tensor):  # Static LeakyReLU tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
     def backward(self, grad=1):
-        self.args[0].backward(grad * self.xp.where(self.data <= 0, self.args[1], 1))
+        self.args[0].backward(grad * self.xp.where(self.data <= 0, self.args[1], 1).astype(grad.dtype))
 
 
 class LeakyReLU:  # Static LeakyReLU computation
@@ -78,7 +78,7 @@ class LeakyReLU:  # Static LeakyReLU computation
         self.alpha = alpha
 
     def forward(self, x: Tensor):
-        f_x = x.xp.where(x.data <= 0, self.alpha * x.data, x.data)
+        f_x = x.xp.where(x.data <= 0, self.alpha * x.data, x.data).astype(x.dtype)
         return _LeakyReLUTensor(f_x, [x, self.alpha], "leakyrelu", device=x.device)
 
     def __call__(self, x):
@@ -327,7 +327,7 @@ class _ELUTensor(Tensor):  # Static ELU tensor for backpropagation
         x, alpha = self.args[0].data, self.args[1]
         f_x = self.data
 
-        grad_x = grad * (self.xp.where(x <= 0, alpha + f_x, 1))
+        grad_x = grad * (self.xp.where(x <= 0, alpha + f_x, 1).astype(grad.dtype))
 
         self.args[0].backward(grad_x)
 
@@ -337,7 +337,7 @@ class ELU:  # Static ELU computation
         self.alpha = alpha
 
     def forward(self, x: Tensor):
-        f_x = x.xp.where(x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data)
+        f_x = x.xp.where(x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data).astype(x.dtype)
 
         return _ELUTensor(f_x, [x, self.alpha], "elu", device=x.device)
 
@@ -353,7 +353,7 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
         x, alpha, lmbda = self.args[0].data, self.args[1], self.args[2]
         f_x = self.data
 
-        grad_x = grad * (lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)))
+        grad_x = grad * (lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)).astype(grad.dtype))
 
         self.args[0].backward(grad_x)
 
@@ -365,7 +365,7 @@ class SELU:  # Static SELU computation
 
     def forward(self, x: Tensor):
         f_x = self.lmbda * x.xp.where(
-            x.data > 0, x.data, self.alpha * (x.xp.exp(x.data) - 1)
+            x.data > 0, x.data, self.alpha * (x.xp.exp(x.data) - 1).astype(x.dtype)
         )
 
         return _SELUTensor(f_x, [x, self.alpha, self.lmbda], "selu", device=x.device)
