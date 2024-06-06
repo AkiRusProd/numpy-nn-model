@@ -12,7 +12,7 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+    def backward(self, grad):
         (
             X,
             weight,
@@ -43,7 +43,7 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
                 stride[1] * conv_size[1]
                 - (stride[1] - 1)
                 + 2 * (dilated_kernel_size[1] - 1),
-            )
+            ), dtype=grad.dtype
         )
 
         temp_grad = self.xp.zeros(
@@ -52,7 +52,7 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
                 out_channels,
                 stride[0] * conv_size[0] - (stride[0] - 1),
                 stride[1] * conv_size[1] - (stride[1] - 1),
-            )
+            ), dtype=grad.dtype
         )
 
         temp_grad[:, :, :: stride[0], :: stride[1]] = grad
@@ -394,7 +394,7 @@ def set_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] + padding[0] + padding[1],
             layer.shape[3] + padding[2] + padding[3],
-        )
+        ), dtype=layer.dtype
     )
 
     padded_layer[
@@ -416,7 +416,7 @@ def remove_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] - padding[0] - padding[1],
             layer.shape[3] - padding[2] - padding[3],
-        )
+        ), dtype=layer.dtype
     )
 
     unpadded_layer = layer[

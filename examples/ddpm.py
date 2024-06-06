@@ -44,22 +44,22 @@ class Diffusion:
 
         self.betas = linear_schedule(beta_start, beta_end, timesteps)
         self.sqrt_betas = nnet.tensor(
-            np.sqrt(self.betas.data), requires_grad=False, device=device
+            np.sqrt(self.betas.data, dtype=np.float32), requires_grad=False, device=device
         )
 
         self.alphas = 1 - self.betas
         self.inv_sqrt_alphas = nnet.tensor(
-            1 / np.sqrt(self.alphas.data), requires_grad=False, device=device
+            1 / np.sqrt(self.alphas.data, dtype=np.float32), requires_grad=False, device=device
         )
 
         self.alphas_cumprod = nnet.tensor(
-            np.cumprod(self.alphas.data, axis=0), requires_grad=False, device=device
+            np.cumprod(self.alphas.data, axis=0, dtype=np.float32), requires_grad=False, device=device
         )
         self.sqrt_alphas_cumprod = nnet.tensor(
-            np.sqrt(self.alphas_cumprod.data), requires_grad=False, device=device
+            np.sqrt(self.alphas_cumprod.data, dtype=np.float32), requires_grad=False, device=device
         )
         self.sqrt_one_minus_alphas_cumprod = nnet.tensor(
-            np.sqrt(1 - self.alphas_cumprod.data), requires_grad=False, device=device
+            np.sqrt(1 - self.alphas_cumprod.data, dtype=np.float32), requires_grad=False, device=device
         )
 
         self.scaled_alphas = (1 - self.alphas) / self.sqrt_one_minus_alphas_cumprod
@@ -77,8 +77,7 @@ class Diffusion:
 
         Algorithm 1: Training; according to the paper
         """
-
-        timesteps_selection = np.random.randint(1, self.timesteps, (x.shape[0],))
+        timesteps_selection = np.random.randint(1, self.timesteps, (x.shape[0],), dtype=np.int32)
         noise = nnet.tensor(
             np.random.normal(size=x.shape), requires_grad=False, device=x.device
         )
@@ -288,7 +287,7 @@ class Diffusion:
                 batch = batch.reshape(-1, channels, H_size, W_size)
                 # print(batch.shape)
                 output, noise = self.forward(
-                    nnet.tensor(batch, requires_grad=True, device=device)
+                    nnet.tensor(batch, requires_grad=True, device=device, dtype=nnet.float32)
                 )
                 loss = self.criterion(output, noise)
                 losses.append(loss.data)

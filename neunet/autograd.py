@@ -29,7 +29,7 @@ class Tensor:
 
             return t
 
-        return Tensor(t, requires_grad=requires_grad, device=self.device)
+        return Tensor(t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype)
 
     def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"

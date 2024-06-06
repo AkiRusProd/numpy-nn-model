@@ -27,7 +27,7 @@ class _AvgPool2dTensor(Tensor):
                 in_channels,
                 in_height + 2 * padding[0],
                 in_width + 2 * padding[1],
-            )
+            ), dtype=grad.dtype
         )
         for i in range(output_size[0]):
             for j in range(output_size[1]):
@@ -185,6 +185,7 @@ def set_padding(layer, padding):
             layer.shape[2] + padding[0] + padding[1],
             layer.shape[3] + padding[2] + padding[3],
         ),
+        dtype=layer.dtype,
     )
 
     padded_layer[
@@ -205,7 +206,8 @@ def remove_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] - padding[0] - padding[1],
             layer.shape[3] - padding[2] - padding[3],
-        )
+        ),
+        dtype=layer.dtype,
     )
 
     unpadded_layer = layer[

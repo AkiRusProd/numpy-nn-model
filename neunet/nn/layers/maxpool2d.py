@@ -44,7 +44,7 @@ class _MaxPool2dTensor(Tensor):
         grad = grad.reshape(-1, 1)
         windows = O_einsum.reshape(-1, dilated_kernel_size[0] * dilated_kernel_size[1])
 
-        grad_col = self.xp.zeros_like(windows)
+        grad_col = self.xp.zeros_like(windows, dtype=grad.dtype)
         grad_col[self.xp.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = (
             grad.reshape(-1)
         )
@@ -63,7 +63,8 @@ class _MaxPool2dTensor(Tensor):
                 in_channels,
                 in_height + 2 * padding[0],
                 in_width + 2 * padding[1],
-            )
+            ),
+            dtype=grad.dtype
         )
         for i in range(output_size[0]):
             for j in range(output_size[1]):
@@ -267,6 +268,7 @@ def set_dilation_stride(layer, stride, value=0):
             stride[1] * layer.shape[1] - (stride[1] - 1),
         ),
         value,
+        dtype=layer.dtype,
     )
 
     transposed_layer[:: stride[0], :: stride[1]] = layer
@@ -284,6 +286,7 @@ def set_padding(layer, padding, value=0):
             layer.shape[3] + padding[2] + padding[3],
         ),
         value,
+        dtype=layer.dtype,
     )
 
     padded_layer[
@@ -304,7 +307,8 @@ def remove_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] - padding[0] - padding[1],
             layer.shape[3] - padding[2] - padding[3],
-        )
+        ),
+        dtype=layer.dtype,
     )
 
     unpadded_layer = layer[
