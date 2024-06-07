@@ -80,11 +80,6 @@ class Bidirectional(Module):
                 self.device,
             )
 
-    def named_parameters(self):
-        return (
-            self.direct_layer.named_parameters() + self.reverse_layer.named_parameters()
-        )
-
     def __call__(self, X):
         return self.forward(X)
 
