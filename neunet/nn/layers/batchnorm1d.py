@@ -106,22 +106,6 @@ class BatchNorm1d(Module):  # layer with static backpropagation
     def eval(self):
         self.training = False
 
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        self.running_mean = self.running_mean.to(device)
-        self.running_var = self.running_var.to(device)
-        if self.affine:
-            self.weight = self.weight.to(device)
-            self.bias = self.bias.to(device)
-
-        return self
-
 
 # x_arr = self.xp.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]])
 # x_arr = self.xp.random.rand(5, 3)

@@ -117,13 +117,6 @@ class RNN(Module):
 
         self.to(device)
 
-    def named_parameters(self):
-        return [
-            ("weight", self.weight),
-            ("weight_h", self.weight_h),
-            ("bias", self.bias),
-        ]
-
     def forward(self, X, hprev=None):
         assert isinstance(X, Tensor), "Input must be a tensor"
         assert X.device == self.device, "Tensors must be on the same device"
@@ -195,19 +188,6 @@ class RNN(Module):
 
     def __call__(self, X, hprev=None):
         return self.forward(X, hprev)
-
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        for weight in self.named_parameters():
-            setattr(self, weight[0], weight[1].to(device))
-
-        return self
 
 
 class NonLinearity(object):

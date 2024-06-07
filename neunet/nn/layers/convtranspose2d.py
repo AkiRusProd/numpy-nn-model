@@ -397,21 +397,6 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
     def __call__(self, X):
         return self.forward(X)
 
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        self.weight = self.weight.to(device)
-        if self.bias:
-            self.bias = self.bias.to(device)
-
-        return self
-
-
 def set_padding(layer, padding):
     # padded_layer = np.pad(layer, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[1], padding[0])), constant_values = 0)
     xp = np if isinstance(layer, np.ndarray) else cp

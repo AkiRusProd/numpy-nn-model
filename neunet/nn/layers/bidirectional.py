@@ -88,20 +88,6 @@ class Bidirectional(Module):
     def __call__(self, X):
         return self.forward(X)
 
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        self.direct_layer = self.direct_layer.to(device)
-        self.reverse_layer = self.reverse_layer.to(device)
-
-        return self
-
-
 def concat(D_O, R_O):
     xp = D_O.xp
     return xp.concatenate((D_O.data, R_O.data), axis=-1)

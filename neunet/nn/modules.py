@@ -1,6 +1,6 @@
 from neunet.autograd import Tensor
 import numpy as np
-
+import cupy as cp
 
 class Module:
     def __init__(self):
@@ -43,16 +43,22 @@ class Module:
                 item.train(mode)
 
     def to(self, device):
+        if device == "cpu":
+            self.xp = np
+        else:
+            self.xp = cp
+
+        self.device = device
         for name, item in self.__dict__.items():
             if hasattr(item, "to"):
-                item.to(device)
+                self.__dict__[name] = item.to(device)
 
         return self
 
 
 class Sequential:
     def __init__(self, *modules: Module):
-        self.modules = modules
+        self.modules = list(modules)
         self.training = True
 
     def forward(self, X):
@@ -84,9 +90,9 @@ class Sequential:
                 module.train(mode)
 
     def to(self, device):
-        for module in self.modules:
+        for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
-                module.to(device)
+                self.modules[i] = module.to(device)
 
         return self
 
@@ -143,7 +149,7 @@ class ModuleList:
                 module.train(mode)
 
     def to(self, device):
-        for module in self.modules:
+        for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
-                module.to(device)
+                self.modules[i] = module.to(device)
         return self

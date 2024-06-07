@@ -53,15 +53,3 @@ class Embedding(Module):
 
     def __call__(self, X):
         return self.forward(X)
-
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        self.weight = self.weight.to(device)
-
-        return self

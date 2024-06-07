@@ -149,17 +149,3 @@ class LayerNorm(Module):  # layer with static backpropagation
 
     def __call__(self, X):
         return self.forward(X)
-
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        self.weight = self.weight.to(device)
-        if self.bias is not None:
-            self.bias = self.bias.to(device)
-
-        return self

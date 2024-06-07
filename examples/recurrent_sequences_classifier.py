@@ -13,8 +13,9 @@ import neunet.nn as nn
 import numpy as np
 import os
 
-from neunet.optim import SGD, Adam
+from neunet.optim import Adam
 
+device = 'cpu'
 
 document = [
     "Nice Clothes!",
@@ -103,7 +104,7 @@ model = nn.Sequential(
     nn.Bidirectional(nn.GRU(50, 50, return_sequences=False)),
     nn.Linear(50, 1),
     nn.Sigmoid(),
-)
+).to(device)
 
 
 loss_fn = nn.MSELoss()
@@ -112,8 +113,7 @@ optimizer = Adam(model.parameters(), lr=0.001)
 padded_document = np.array(padded_document)
 
 
-labels = np.array(labels).reshape(-1, 1)
-
+labels = nnet.tensor(np.array(labels).reshape(-1, 1), device=device)
 
 loss = []
 epochs = 100
@@ -121,7 +121,7 @@ tqdm_range = tqdm(range(epochs))
 for epoch in tqdm_range:
     for i in range(padded_document.shape[0]):
         optimizer.zero_grad()
-        y_pred = model.forward(nnet.tensor(padded_document[i], dtype=nnet.int32))
+        y_pred = model.forward(nnet.tensor(padded_document[i], dtype=nnet.int32).to(device))
 
         loss_ = loss_fn(y_pred, labels[i])
         loss_.backward()

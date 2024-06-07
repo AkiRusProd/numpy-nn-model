@@ -227,19 +227,6 @@ class GRU(Module):
 
         self.to(device)
 
-    def named_parameters(self):
-        return [
-            ("weight_z", self.weight_z),
-            ("weight_r", self.weight_r),
-            ("weight_h", self.weight_h),
-            ("weight_hz", self.weight_hz),
-            ("weight_hr", self.weight_hr),
-            ("weight_hh", self.weight_hh),
-            ("bias_z", self.bias_z),
-            ("bias_r", self.bias_r),
-            ("bias_h", self.bias_h),
-        ]
-
     def forward(self, X, hprev=None, cprev=None):
         assert isinstance(X, Tensor), "Input must be a tensor"
         assert X.device == self.device, "Tensors must be on the same device"
@@ -381,19 +368,6 @@ class GRU(Module):
 
     def __call__(self, X, hprev=None, cprev=None):
         return self.forward(X, hprev, cprev)
-
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        for weight in self.named_parameters():
-            setattr(self, weight[0], weight[1].to(device))
-
-        return self
 
 
 class NonLinearity(object):

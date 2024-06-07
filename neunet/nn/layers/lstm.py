@@ -268,22 +268,6 @@ class LSTM(Module):
 
         self.to(device)
 
-    def named_parameters(self):
-        return [
-            ("weight_f", self.weight_f),
-            ("weight_i", self.weight_i),
-            ("weight_o", self.weight_o),
-            ("weight_c", self.weight_c),
-            ("weight_hf", self.weight_hf),
-            ("weight_hi", self.weight_hi),
-            ("weight_ho", self.weight_ho),
-            ("weight_hc", self.weight_hc),
-            ("bias_f", self.bias_f),
-            ("bias_i", self.bias_i),
-            ("bias_o", self.bias_o),
-            ("bias_c", self.bias_c),
-        ]
-
     def forward(self, X, hprev=None, cprev=None):
         assert isinstance(X, Tensor), "Input must be a tensor"
         assert X.device == self.device, "Tensors must be on the same device"
@@ -453,19 +437,6 @@ class LSTM(Module):
 
     def __call__(self, X, hprev=None, cprev=None):
         return self.forward(X, hprev, cprev)
-
-    def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
-        if device == "cpu":
-            self.xp = np
-        else:
-            self.xp = cp
-
-        self.device = device
-        for weight in self.named_parameters():
-            setattr(self, weight[0], weight[1].to(device))
-
-        return self
 
 
 class NonLinearity(object):
