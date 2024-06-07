@@ -254,94 +254,36 @@ class MaxPool2d(Module):
             device=X.device,
         )
 
-    def backward(self, grad):
-        pass
-
     def __call__(self, X):
         return self.forward(X)
 
 
-def set_dilation_stride(layer, stride, value=0):
-    xp = np if isinstance(layer, np.ndarray) else cp
-    transposed_layer = xp.full(
+def set_dilation_stride(array, stride, value=0):
+    # New shape: (_, _, S[0] * H - (S[0] - 1), S[1] * W - (S[1] - 1)
+    xp = np if isinstance(array, np.ndarray) else cp
+    strided_layer = xp.full(
         (
-            stride[0] * layer.shape[0] - (stride[0] - 1),
-            stride[1] * layer.shape[1] - (stride[1] - 1),
+            stride[0] * array.shape[0] - (stride[0] - 1),
+            stride[1] * array.shape[1] - (stride[1] - 1),
         ),
         value,
-        dtype=layer.dtype,
+        dtype=array.dtype,
     )
 
-    transposed_layer[:: stride[0], :: stride[1]] = layer
+    strided_layer[:: stride[0], :: stride[1]] = array
 
-    return transposed_layer
+    return strided_layer
 
+def set_padding(array, padding, value=0):
+    # New shape: (_, _, H + P[0] + P[1], W + P[2] + P[3])
+    xp = np if isinstance(array, np.ndarray) else cp
+    return xp.pad(array, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])), constant_values=value)
 
-def set_padding(layer, padding, value=0):
-    xp = np if isinstance(layer, np.ndarray) else cp
-    padded_layer = xp.full(
-        (
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] + padding[0] + padding[1],
-            layer.shape[3] + padding[2] + padding[3],
-        ),
-        value,
-        dtype=layer.dtype,
-    )
-
-    padded_layer[
+def remove_padding(array, padding):
+    # New shape: (_, _, H - P[0] - P[1], W - P[2] - P[3])
+    return array[
         :,
         :,
-        padding[0] : padded_layer.shape[2] - padding[1],
-        padding[2] : padded_layer.shape[3] - padding[3],
-    ] = layer
-
-    return padded_layer
-
-
-def remove_padding(layer, padding):
-    xp = np if isinstance(layer, np.ndarray) else cp
-    unpadded_layer = xp.zeros(
-        (
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] - padding[0] - padding[1],
-            layer.shape[3] - padding[2] - padding[3],
-        ),
-        dtype=layer.dtype,
-    )
-
-    unpadded_layer = layer[
-        :,
-        :,
-        padding[0] : layer.shape[2] - padding[1],
-        padding[2] : layer.shape[3] - padding[3],
+        padding[0] : array.shape[2] - padding[1],
+        padding[2] : array.shape[3] - padding[3],
     ]
-
-    return unpadded_layer
-
-
-# x = np.random.randn(10, 4, 28, 28)
-# layer = Maxpool(2, 3, 0)
-# myy = layer.forward(x)
-# print(myy.shape)
-# print(myy)
-
-# mydx = layer.backward(np.ones_like(myy))
-# print(layer.dx.shape)
-# # print(layer.dx)
-
-# from torch.nn import MaxPool2d
-# import torch
-
-# x = torch.tensor(x, requires_grad=True, dtype=torch.float32)
-# layer = MaxPool2d(2, 3, 0)
-
-# y = layer(x)
-# y.backward(torch.ones_like(y))
-# print(x.grad)
-# print(x.grad.shape)
-
-# print(np.allclose(y.data, myy.data))
-# print(np.allclose(x.grad, mydx))

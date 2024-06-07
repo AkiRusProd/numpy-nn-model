@@ -1,5 +1,4 @@
 import numpy as np
-import cupy as cp
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module

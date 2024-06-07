@@ -1,4 +1,3 @@
-import numpy as np
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 

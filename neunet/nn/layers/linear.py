@@ -3,7 +3,7 @@ from neunet.autograd import Tensor
 from neunet.nn.parameter import Parameter
 from neunet.nn.modules import Module
 import numpy as np
-import cupy as cp
+
 
 
 # Y = X matmul W.T + b
