@@ -1,12 +1,10 @@
 import numpy as np
 import cupy as cp
 
-# BUGS
-# fix some activations dtype, fix dtype int init; (maybe fix dtype in backwards of some layers (like bnorm2d))
 
 class Tensor:
     def __init__(
-        self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"
+        self, data, args=None, op=None, requires_grad=True, dtype=np.float32, device="cpu"
     ):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":

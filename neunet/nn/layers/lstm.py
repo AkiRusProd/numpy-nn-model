@@ -53,8 +53,8 @@ class _LSTMTensor(Tensor):
             temp[:, [-2], :] = grad  # [-2] saves dims when slicing
             grad = temp
 
-        next_hidden_delta = self.xp.zeros((hidden_size))
-        next_cell_delta = self.xp.zeros((hidden_size))
+        next_hidden_delta = self.xp.zeros((hidden_size), dtype=grad.dtype)
+        next_cell_delta = self.xp.zeros((hidden_size), dtype=grad.dtype)
 
         grad_weight_f = self.xp.zeros_like(weight_f.data)
         grad_weight_i = self.xp.zeros_like(weight_i.data)
@@ -66,10 +66,10 @@ class _LSTMTensor(Tensor):
         grad_weight_ho = self.xp.zeros_like(weight_ho.data)
         grad_weight_hc = self.xp.zeros_like(weight_hf.data)
 
-        grad_bias_f = self.xp.zeros(hidden_size)
-        grad_bias_i = self.xp.zeros(hidden_size)
-        grad_bias_o = self.xp.zeros(hidden_size)
-        grad_bias_c = self.xp.zeros(hidden_size)
+        grad_bias_f = self.xp.zeros(hidden_size, dtype=grad.dtype)
+        grad_bias_i = self.xp.zeros(hidden_size, dtype=grad.dtype)
+        grad_bias_o = self.xp.zeros(hidden_size, dtype=grad.dtype)
+        grad_bias_c = self.xp.zeros(hidden_size, dtype=grad.dtype)
 
         grad_X = self.xp.zeros_like(X_data)
 
@@ -294,20 +294,20 @@ class LSTM(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        forget_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        forget_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_forget_gates = self.xp.zeros_like(forget_gates)
 
-        input_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        input_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_input_gates = self.xp.zeros_like(input_gates)
 
-        output_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        output_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_output_gates = self.xp.zeros_like(output_gates)
 
-        cell_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        cell_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_cell_gates = self.xp.zeros_like(cell_gates)
 
-        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
-        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
+        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
 
         if self.cycled_states == False:
             self.hprev = hprev

@@ -10,7 +10,7 @@ class _RNNTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+    def backward(self, grad):
         (
             X,
             weight,
@@ -33,11 +33,11 @@ class _RNNTensor(Tensor):
             temp[:, [-2], :] = grad  # [-2] saves dims when slicing
             grad = temp
 
-        next_grad_states = self.xp.zeros((hidden_size))
+        next_grad_states = self.xp.zeros((hidden_size), dtype=grad.dtype)
 
         grad_weight = self.xp.zeros_like(weight.data)
         grad_weight_h = self.xp.zeros_like(weight_h.data)
-        grad_bias = self.xp.zeros(hidden_size)
+        grad_bias = self.xp.zeros(hidden_size, dtype=grad.dtype)
 
         grad_X = self.xp.zeros_like(X_data)
 
@@ -134,7 +134,7 @@ class RNN(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
         unactivated_states = self.xp.zeros_like(states)
 
         if self.cycled_states == False:

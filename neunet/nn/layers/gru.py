@@ -47,7 +47,7 @@ class _GRUTensor(Tensor):
             temp[:, [-2], :] = grad  # [-2] saves dims when slicing
             grad = temp
 
-        next_hidden_delta = self.xp.zeros((hidden_size))
+        next_hidden_delta = self.xp.zeros((hidden_size), dtype=grad.dtype)
 
         grad_weight_z = self.xp.zeros_like(weight_z.data)
         grad_weight_r = self.xp.zeros_like(weight_r.data)
@@ -57,9 +57,9 @@ class _GRUTensor(Tensor):
         grad_weight_hr = self.xp.zeros_like(weight_hr.data)
         grad_weight_hh = self.xp.zeros_like(weight_hh.data)
 
-        grad_bias_z = self.xp.zeros(hidden_size)
-        grad_bias_r = self.xp.zeros(hidden_size)
-        grad_bias_h = self.xp.zeros(hidden_size)
+        grad_bias_z = self.xp.zeros(hidden_size, dtype=grad.dtype)
+        grad_bias_r = self.xp.zeros(hidden_size, dtype=grad.dtype)
+        grad_bias_h = self.xp.zeros(hidden_size, dtype=grad.dtype)
 
         grad_X = self.xp.zeros_like(X_data)
 
@@ -250,16 +250,16 @@ class GRU(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        update_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        update_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_update_gates = self.xp.zeros_like(update_gates)
 
-        reset_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size))
+        reset_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_reset_gates = self.xp.zeros_like(reset_gates)
 
-        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
         unactivated_cell_states = self.xp.zeros_like(cell_states)
 
-        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size))
+        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
 
         if self.cycled_states == False:
             self.hprev = hprev

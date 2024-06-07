@@ -35,7 +35,7 @@ class Embedding(Module):
         self.to(device)
 
     def one_hot(self, X):
-        O = self.xp.zeros((X.size, self.num_embeddings))
+        O = self.xp.zeros((X.size, self.num_embeddings), dtype=self.weight.dtype)
         O[self.xp.arange(X.size), X.reshape(1, -1)] = 1
 
         return O.reshape(*X.shape, self.num_embeddings)

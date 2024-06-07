@@ -181,7 +181,7 @@ class MaxPool2d(Module):
         )
 
         self.kernel = set_dilation_stride(
-            np.ones((self.kernel_height, self.kernel_width)),
+            np.ones((self.kernel_height, self.kernel_width), dtype=self.input_dtype),
             self.dilation,
             value=np.nan,
         )
@@ -189,6 +189,7 @@ class MaxPool2d(Module):
     def forward(self, X: Tensor):
         assert isinstance(X, Tensor), "Input must be a tensor"
         self.input_size = X.shape
+        self.input_dtype = X.dtype
         self.build()
 
         X_data = set_padding(X.data, self.padding, value=-np.inf)
