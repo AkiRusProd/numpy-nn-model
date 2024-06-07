@@ -3,7 +3,7 @@ import cupy as cp
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.parameter import Parameter
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 
 
 class _RNNTensor(Tensor):
@@ -134,7 +134,9 @@ class RNN(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
+        states = self.xp.zeros(
+            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_states = self.xp.zeros_like(states)
 
         if self.cycled_states == False:

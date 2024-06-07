@@ -2,7 +2,7 @@ import numpy as np
 import cupy as cp
 import copy as copy_object
 from neunet.autograd import Tensor
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 
 # In feature can be moved to rnn layer as argument
 

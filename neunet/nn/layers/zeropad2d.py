@@ -1,7 +1,7 @@
 import numpy as np
 import cupy as cp
 from neunet.autograd import Tensor
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 
 
 class ZeroPad2dTensor(Tensor):

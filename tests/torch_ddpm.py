@@ -78,7 +78,10 @@ class Diffusion:
 
         timesteps_selection = np.random.randint(1, self.timesteps, (x.shape[0],))
         noise = torch.tensor(
-            np.random.normal(size=x.shape), requires_grad=False, device=x.device, dtype=torch.float32
+            np.random.normal(size=x.shape),
+            requires_grad=False,
+            device=x.device,
+            dtype=torch.float32,
         )
 
         x_t = (
@@ -88,7 +91,12 @@ class Diffusion:
         )
         # print(f"init forward: {x_t.shape}, {noise.shape}")
         x = self.model.forward(
-            torch.tensor(x_t, requires_grad=False, device=x.device, dtype=torch.float32,),
+            torch.tensor(
+                x_t,
+                requires_grad=False,
+                device=x.device,
+                dtype=torch.float32,
+            ),
             timesteps_selection / self.timesteps,
         )
 
@@ -286,7 +294,9 @@ class Diffusion:
                 batch = batch.reshape(-1, channels, H_size, W_size)
                 # print(batch.shape)
                 output, noise = self.forward(
-                    torch.tensor(batch, requires_grad=True, device=device, dtype=torch.float32)
+                    torch.tensor(
+                        batch, requires_grad=True, device=device, dtype=torch.float32
+                    )
                 )
                 loss = self.criterion(output, noise)
                 losses.append(loss.data)
@@ -502,7 +512,7 @@ class SimpleUNet(nn.Module):
         #     t = layer.forward(t)
         t = self.time_embedding.forward(t)
         t = t.reshape(t.shape[0], -1)
-    
+
         x = self.input_conv.forward(x)
 
         residual_inputs = []

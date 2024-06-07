@@ -1,7 +1,7 @@
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.parameter import Parameter
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 import numpy as np
 import cupy as cp
 
@@ -43,7 +43,8 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
                 stride[1] * conv_size[1]
                 - (stride[1] - 1)
                 + 2 * (dilated_kernel_size[1] - 1),
-            ), dtype=grad.dtype
+            ),
+            dtype=grad.dtype,
         )
 
         temp_grad = self.xp.zeros(
@@ -52,7 +53,8 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
                 out_channels,
                 stride[0] * conv_size[0] - (stride[0] - 1),
                 stride[1] * conv_size[1] - (stride[1] - 1),
-            ), dtype=grad.dtype
+            ),
+            dtype=grad.dtype,
         )
 
         temp_grad[:, :, :: stride[0], :: stride[1]] = grad
@@ -394,7 +396,8 @@ def set_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] + padding[0] + padding[1],
             layer.shape[3] + padding[2] + padding[3],
-        ), dtype=layer.dtype
+        ),
+        dtype=layer.dtype,
     )
 
     padded_layer[
@@ -416,7 +419,8 @@ def remove_padding(layer, padding):
             layer.shape[1],
             layer.shape[2] - padding[0] - padding[1],
             layer.shape[3] - padding[2] - padding[3],
-        ), dtype=layer.dtype
+        ),
+        dtype=layer.dtype,
     )
 
     unpadded_layer = layer[

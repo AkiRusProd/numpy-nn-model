@@ -1,5 +1,5 @@
 from neunet.autograd import Tensor
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 
 
 class _DropoutTensor(Tensor):  # tensor for static backpropagation
@@ -21,7 +21,10 @@ class Dropout(Module):  # layer with static backpropagation
         assert isinstance(X, Tensor), "Input must be a tensor"
         if self.training:
             self.mask = (
-                X.xp.random.binomial(1, 1 - self.p, size=X.data.shape, dtype = X.data.dtype) * self.scale
+                X.xp.random.binomial(
+                    1, 1 - self.p, size=X.data.shape, dtype=X.data.dtype
+                )
+                * self.scale
             )
         else:
             self.mask = 1

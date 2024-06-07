@@ -1,5 +1,5 @@
 from neunet.autograd import Tensor
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 import numpy as np
 import cupy as cp
 
@@ -64,7 +64,7 @@ class _MaxPool2dTensor(Tensor):
                 in_height + 2 * padding[0],
                 in_width + 2 * padding[1],
             ),
-            dtype=grad.dtype
+            dtype=grad.dtype,
         )
         for i in range(output_size[0]):
             for j in range(output_size[1]):

@@ -4,7 +4,7 @@ import cupy as cp
 
 class Tensor:
     def __init__(
-        self, data, args=None, op=None, requires_grad=True, dtype=np.float32, device="cpu"
+        self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"
     ):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
@@ -29,7 +29,9 @@ class Tensor:
 
             return t
 
-        return Tensor(t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype)
+        return Tensor(
+            t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype
+        )
 
     def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"

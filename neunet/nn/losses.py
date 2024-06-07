@@ -9,6 +9,11 @@ class MSELoss:
         pass
 
     def forward(self, y_pred, y_true):
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be a tensor"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         return (y_pred.sub(y_true)).power(2).sum().div(np.prod(y_pred.data.shape))
 
     def __call__(self, y_pred, y_true):
@@ -21,9 +26,11 @@ class BCELoss:
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert (
-            y_pred.device == y_true.device
-        ), "y_pred and y_true must be on the same device"
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be tensors"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         loss = y_true.mul(y_pred.log()).add((1.0 - y_true).mul((1.0 - y_pred).log()))
 
         if self.weight is None:
@@ -56,6 +63,11 @@ class CrossEntropyLoss:
         self.nll_loss = NLLLoss(weight, ignore_index, reduction)
 
     def forward(self, y_pred, y_true):
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be tensors"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         y_pred = self.softmax(y_pred).log()
         return self.nll_loss(y_pred, y_true)
 
@@ -70,9 +82,11 @@ class NLLLoss:
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert (
-            y_pred.device == y_true.device
-        ), "y_pred and y_true must be on the same device"
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be tensors"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         if self.weight is None:
             self.weight = y_pred.xp.ones((y_pred.data.shape[1]))
 
@@ -108,11 +122,16 @@ class NLLLoss:
         return self.forward(y_pred, y_true)
 
 
-class L1Loss(Tensor):
+class L1Loss:
     def __init__(self, reduction="mean"):
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be tensors"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         loss = y_pred.sub(y_true).abs()
 
         if self.reduction == "mean":
@@ -126,12 +145,17 @@ class L1Loss(Tensor):
         return self.forward(y_pred, y_true)
 
 
-class KLDivLoss(Tensor):
+class KLDivLoss:
     def __init__(self, reduction="mean", log_target=False):
         self.reduction = reduction
         self.log_target = log_target
 
     def forward(self, y_pred, y_true):
+        assert isinstance(y_pred, Tensor) and isinstance(
+            y_true, Tensor
+        ), "Input values must be tensors"
+        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+
         if not self.log_target:
             loss = y_true.mul(y_true.log().sub(y_pred))
         else:

@@ -3,7 +3,7 @@ import cupy as cp
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.parameter import Parameter
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 
 
 class _LSTMTensor(Tensor):
@@ -294,20 +294,32 @@ class LSTM(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        forget_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        forget_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_forget_gates = self.xp.zeros_like(forget_gates)
 
-        input_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        input_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_input_gates = self.xp.zeros_like(input_gates)
 
-        output_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        output_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_output_gates = self.xp.zeros_like(output_gates)
 
-        cell_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        cell_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_cell_gates = self.xp.zeros_like(cell_gates)
 
-        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
-        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
+        cell_states = self.xp.zeros(
+            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
+        )
+        hidden_states = self.xp.zeros(
+            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
+        )
 
         if self.cycled_states == False:
             self.hprev = hprev

@@ -2,7 +2,7 @@ import numpy as np
 import cupy as cp
 import neunet
 from neunet.autograd import Tensor
-from neunet.nn.containers import Module
+from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
 
 
@@ -250,16 +250,24 @@ class GRU(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        update_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        update_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_update_gates = self.xp.zeros_like(update_gates)
 
-        reset_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
+        reset_gates = self.xp.zeros(
+            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_reset_gates = self.xp.zeros_like(reset_gates)
 
-        cell_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
+        cell_states = self.xp.zeros(
+            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
+        )
         unactivated_cell_states = self.xp.zeros_like(cell_states)
 
-        hidden_states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
+        hidden_states = self.xp.zeros(
+            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
+        )
 
         if self.cycled_states == False:
             self.hprev = hprev

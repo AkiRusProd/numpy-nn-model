@@ -70,7 +70,9 @@ class _LeakyReLUTensor(Tensor):  # Static LeakyReLU tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
     def backward(self, grad=1):
-        self.args[0].backward(grad * self.xp.where(self.data <= 0, self.args[1], 1).astype(grad.dtype))
+        self.args[0].backward(
+            grad * self.xp.where(self.data <= 0, self.args[1], 1).astype(grad.dtype)
+        )
 
 
 class LeakyReLU:  # Static LeakyReLU computation
@@ -337,7 +339,9 @@ class ELU:  # Static ELU computation
         self.alpha = alpha
 
     def forward(self, x: Tensor):
-        f_x = x.xp.where(x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data).astype(x.dtype)
+        f_x = x.xp.where(
+            x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data
+        ).astype(x.dtype)
 
         return _ELUTensor(f_x, [x, self.alpha], "elu", device=x.device)
 
@@ -353,7 +357,9 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
         x, alpha, lmbda = self.args[0].data, self.args[1], self.args[2]
         f_x = self.data
 
-        grad_x = grad * (lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)).astype(grad.dtype))
+        grad_x = grad * (
+            lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)).astype(grad.dtype)
+        )
 
         self.args[0].backward(grad_x)
 
