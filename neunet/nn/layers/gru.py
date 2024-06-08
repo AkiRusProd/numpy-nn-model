@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import cupy as cp
 import numpy as np
 
@@ -145,19 +147,19 @@ class GRU(Module):
 
     def __init__(
         self,
-        input_size,
-        hidden_size,
-        nonlinearity="tanh",
-        recurrent_nonlinearity="sigmoid",
-        return_sequences="both",
-        bias=True,
-        cycled_states=False,
-        device="cpu",
+        input_size: int,
+        hidden_size: int,
+        nonlinearity: str="tanh",
+        recurrent_nonlinearity: str="sigmoid",
+        return_sequences: Union[str, bool]="both",
+        bias: bool=True,
+        cycled_states: bool=False,
+        device: str="cpu",
     ):
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.nonlinearity = nonlinearities.get(nonlinearity)
-        self.recurrent_nonlinearity = nonlinearities.get(recurrent_nonlinearity)
+        self.nonlinearity: Union[NonLinearity, Any] = nonlinearities.get(nonlinearity) 
+        self.recurrent_nonlinearity: Union[NonLinearity, Any] = nonlinearities.get(recurrent_nonlinearity) 
 
         self.return_sequences = return_sequences
         self.cycled_states = cycled_states
@@ -202,9 +204,9 @@ class GRU(Module):
         )
 
         if bias:
-            self.bias_z = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
-            self.bias_r = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
-            self.bias_h = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_z: Union[Tensor, None]  = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_r: Union[Tensor, None]  = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_h: Union[Tensor, None]  = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
         else:
             self.bias_z = None
             self.bias_r = None
@@ -215,7 +217,7 @@ class GRU(Module):
 
         self.to(device)
 
-    def forward(self, X, hprev=None, cprev=None):
+    def forward(self, X: Tensor, hprev: Any=None, cprev: Any=None) -> Union[Tensor, tuple[Tensor, Tensor]]:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
@@ -259,8 +261,8 @@ class GRU(Module):
         if self.cprev is None:
             self.cprev = self.xp.zeros_like(cell_states[:, 0, :])
 
-        cell_states[:, -1, :] = self.cprev.copy()
-        hidden_states[:, -1, :] = self.hprev.copy()
+        cell_states[:, -1, :] = self.cprev.copy() # type: ignore
+        hidden_states[:, -1, :] = self.hprev.copy() # type: ignore
         # Z_t = recurrent_nonlinearity(x_t * weight_z + h_t-1 * U_z + bias_z)
         # R_t = recurrent_nonlinearity(x_t * weight_r + h_t-1 * U_r + bias_r)
         # C_t = nonlinearity(x_t * weight_h + R_t * h_t-1 * U_h + bias_h)
@@ -341,11 +343,11 @@ class GRU(Module):
             return _GRUTensor(all_states, cache, "GRU", self.device)
         elif self.return_sequences in ["last", False]:
             return _GRUTensor(last_state, cache, "GRU", self.device)
-        elif self.return_sequences == "both":
-            return (
-                _GRUTensor(all_states, cache, "GRU", self.device),
-                _GRUTensor(last_state, cache, "GRU", self.device),
-            )
+       
+        return (
+            _GRUTensor(all_states, cache, "GRU", self.device),
+            _GRUTensor(last_state, cache, "GRU", self.device),
+        )
 
     def __call__(self, X, hprev=None, cprev=None):
         return self.forward(X, hprev, cprev)

@@ -17,6 +17,9 @@ requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.7"
+pre-commit = "^3.7.1"
+mypy = "^1.10.0"
+types-requests = "^2.32.0.20240602"
 
 [tool.ruff]
 line-length = 100
@@ -24,7 +27,7 @@ target-version = "py311"
 exclude = ["venv", "tests"]
 
 [tool.ruff.lint]
-ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "A001", "C901"]
+ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "FBT001", "A001", "C901"]
 fixable = ["I", "B", "RUF", "F"]
 select = [
     "I",     # Isort rules
@@ -48,6 +51,9 @@ preview = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402", "F403"]
+
+[tool.mypy]
+exclude = ["venv", "tests"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -14,7 +14,7 @@ from neunet.autograd import Tensor
 
 
 class Parameter(Tensor):
-    def __init__(self, data: Tensor = None, requires_grad=True):
+    def __init__(self, data: Tensor, requires_grad=True):
         if not isinstance(data, Tensor):
             raise TypeError("Data must be a tensor")
 

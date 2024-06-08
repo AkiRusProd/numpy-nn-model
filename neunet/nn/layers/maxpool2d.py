@@ -1,3 +1,5 @@
+from typing import Any, Optional, Union
+
 import cupy as cp
 import numpy as np
 
@@ -79,7 +81,7 @@ class _MaxPool2dTensor(Tensor):
 
 
 class MaxPool2d(Module):
-    def __init__(self, kernel_size, stride=None, padding=0, dilation=1):
+    def __init__(self, kernel_size: Union[int, tuple[int, int]], stride: Optional[Union[int, tuple[int, int]]]=None, padding: Union[int, tuple[int, int]]=0, dilation: Union[int, tuple[int, int]]=1):
         self.kernel_size = (
             kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
         )
@@ -93,7 +95,7 @@ class MaxPool2d(Module):
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
         self.dilation = dilation if isinstance(dilation, tuple) else (dilation, dilation)
 
-        self.input_size = None
+        self.input_size: Any = None
 
     def build(self):
         self.kernel_height, self.kernel_width = self.kernel_size
@@ -176,7 +178,7 @@ class MaxPool2d(Module):
             value=np.nan,
         )
 
-    def forward(self, X: Tensor):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
 

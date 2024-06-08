@@ -3,11 +3,11 @@ from neunet.nn.modules import Module
 
 
 class Flatten(Module):
-    def __init__(self, start_dim=1, end_dim=-1):
+    def __init__(self, start_dim: int=1, end_dim: int=-1):
         self.start_dim = start_dim
         self.end_dim = end_dim
 
-    def forward(self, X: Tensor):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
 

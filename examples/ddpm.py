@@ -239,7 +239,7 @@ class Diffusion:
         x_num: int,
         y_num: int,
         margin: int,
-        images: np.float32,
+        images: np.ndarray,
         image_size: Tuple[int, int, int],
     ):
         def denormalize(x):

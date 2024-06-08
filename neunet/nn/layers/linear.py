@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 import neunet
@@ -22,7 +24,7 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
 
 
 class Linear(Module):  # layer with static backpropagation
-    def __init__(self, in_features, out_features, bias=True, device="cpu"):
+    def __init__(self, in_features: int, out_features: int, bias: bool=True, device: str="cpu"):
         self.in_features = in_features
         self.out_features = out_features
 
@@ -35,12 +37,12 @@ class Linear(Module):  # layer with static backpropagation
         )
 
         if bias == True:
-            self.bias = Parameter(neunet.tensor(np.zeros((1, out_features)), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros((1, out_features)), dtype=np.float32))
         else:
             self.bias = None
         self.to(device)
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:

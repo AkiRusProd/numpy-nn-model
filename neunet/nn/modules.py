@@ -38,13 +38,13 @@ class Module:
             if hasattr(item, "eval"):
                 item.eval()
 
-    def train(self, mode=True):
+    def train(self, mode: bool=True):
         self.training = mode
         for _, item in self.__dict__.items():
             if hasattr(item, "train"):
                 item.train(mode)
 
-    def to(self, device):
+    def to(self, device: str):
         if device == "cpu":
             self.xp = np
         else:
@@ -69,7 +69,7 @@ class Sequential:
         self.modules = list(modules)
         self.training = True
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         for module in self.modules:
             X = module(X)
         return X
@@ -91,13 +91,13 @@ class Sequential:
             if hasattr(module, "eval"):
                 module.eval()
 
-    def train(self, mode=True):
+    def train(self, mode: bool=True):
         self.training = mode
         for module in self.modules:
             if hasattr(module, "train"):
                 module.train(mode)
 
-    def to(self, device):
+    def to(self, device: str):
         for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
                 self.modules[i] = module.to(device)
@@ -130,7 +130,7 @@ class ModuleList:
     def insert(self, index, module):
         self.modules.insert(index, module)
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         for module in self.modules:
             X = module(X)
         return X
@@ -151,12 +151,12 @@ class ModuleList:
             if hasattr(module, "eval"):
                 module.eval()
 
-    def train(self, mode=True):
+    def train(self, mode: bool=True):
         for module in self.modules:
             if hasattr(module, "train"):
                 module.train(mode)
 
-    def to(self, device):
+    def to(self, device: str):
         for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
                 self.modules[i] = module.to(device)

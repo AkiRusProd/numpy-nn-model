@@ -3,13 +3,14 @@ import numpy as np
 import neunet as nnet
 from neunet.autograd import Tensor
 from neunet.nn.activations import Softmax
+from neunet.nn.modules import Module
 
 
-class MSELoss:
+class MSELoss(Module):
     def __init__(self):
         pass
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:
@@ -21,12 +22,12 @@ class MSELoss:
         return self.forward(y_pred, y_true)
 
 
-class BCELoss:
+class BCELoss(Module):
     def __init__(self, weight=None, reduction="mean"):
         self.weight = weight
         self.reduction = reduction
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:
@@ -55,7 +56,7 @@ class BCELoss:
         return self.forward(y_pred, y_true)
 
 
-class CrossEntropyLoss:
+class CrossEntropyLoss(Module):
     def __init__(self, weight=None, ignore_index=-100, reduction="mean"):
         self.weight = weight
         self.ignore_index = ignore_index
@@ -64,7 +65,7 @@ class CrossEntropyLoss:
         self.softmax = Softmax(axis=1)
         self.nll_loss = NLLLoss(weight, ignore_index, reduction)
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:
@@ -77,13 +78,13 @@ class CrossEntropyLoss:
         return self.forward(y_pred, y_true)
 
 
-class NLLLoss:
+class NLLLoss(Module):
     def __init__(self, weight=None, ignore_index=-100, reduction="mean"):
         self.weight = weight
         self.ignore_index = ignore_index
         self.reduction = reduction
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:
@@ -120,11 +121,11 @@ class NLLLoss:
         return self.forward(y_pred, y_true)
 
 
-class L1Loss:
+class L1Loss(Module):
     def __init__(self, reduction="mean"):
         self.reduction = reduction
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:
@@ -143,12 +144,12 @@ class L1Loss:
         return self.forward(y_pred, y_true)
 
 
-class KLDivLoss:
+class KLDivLoss(Module):
     def __init__(self, reduction="mean", log_target=False):
         self.reduction = reduction
         self.log_target = log_target
 
-    def forward(self, y_pred, y_true):
+    def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
         if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
             raise TypeError("Input values must be tensors")
         if y_pred.device != y_true.device:

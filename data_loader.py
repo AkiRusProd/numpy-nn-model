@@ -26,8 +26,8 @@ def load_mnist(path="datasets/mnist/"):
         download_data(train_url, path + "mnist_train.csv")
         download_data(test_url, path + "mnist_test.csv")
 
-    training_data = open(Path(path) / "mnist_train.csv", "r").readlines()
-    test_data = open(Path(path) / "mnist_test.csv", "r").readlines()
+    training_data = Path(path).joinpath("mnist_train.csv").open("r").readlines()
+    test_data = Path(path).joinpath("mnist_test.csv").open("r").readlines()
 
 
     if not (Path(path) / "mnist_train.npy").exists() or not (Path(path) / "mnist_test.npy").exists():

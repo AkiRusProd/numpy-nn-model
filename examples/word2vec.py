@@ -67,8 +67,8 @@ class CBOWModeler(nn.Module):
 
 
 loss_function = nn.NLLLoss()
-model = CBOWModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+cbow_model = CBOWModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+optimizer = optim.Adam(cbow_model.parameters(), lr=0.001)
 
 epochs = 50
 tqdm_range = tqdm(range(epochs))
@@ -79,7 +79,7 @@ for _ in tqdm_range:
 
         optimizer.zero_grad()
 
-        log_probs = model(context_idxs)
+        log_probs = cbow_model(context_idxs)
 
         loss = loss_function(
             log_probs,
@@ -93,7 +93,7 @@ for _ in tqdm_range:
 
     tqdm_range.set_description(f"CBOW loss: {total_loss:.7f}")
 
-print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
+print(f'Embedding of the word "beauty":\n{cbow_model.embeddings.weight[word_to_ix["beauty"]]}')
 
 
 class SkipGramModeler(nn.Module):
@@ -118,8 +118,8 @@ class SkipGramModeler(nn.Module):
 
 
 loss_function = nn.NLLLoss()
-model = SkipGramModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+skipgram_model = SkipGramModeler(len(vocab), EMBEDDING_DIM, CONTEXT_SIZE)
+optimizer = optim.Adam(skipgram_model.parameters(), lr=0.001)
 
 epochs = 50
 tqdm_range = tqdm(range(epochs))
@@ -130,7 +130,7 @@ for _ in tqdm_range:
 
         optimizer.zero_grad()
 
-        log_probs = model(context_idx)
+        log_probs = skipgram_model(context_idx)
 
         loss = loss_function(
             log_probs, nnet.tensor([word_to_ix[w] for w in context], dtype=nnet.int16)
@@ -143,4 +143,4 @@ for _ in tqdm_range:
 
     tqdm_range.set_description(f"Skip-Gram loss: {total_loss:.7f}")
 
-print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
+print(f'Embedding of the word "beauty":\n{skipgram_model.embeddings.weight[word_to_ix["beauty"]]}')

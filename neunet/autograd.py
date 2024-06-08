@@ -1,9 +1,11 @@
+from typing import Any, Iterator, Union
+
 import cupy as cp
 import numpy as np
 
 
 class Tensor:
-    def __init__(self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"):
+    def __init__(self, data: Any, args=None, op=None, requires_grad: bool=True, dtype = None, device: str="cpu"):
         if device not in ["cpu", "cuda"]:
             raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
@@ -12,7 +14,7 @@ class Tensor:
             self.xp = cp
 
         if isinstance(data, Tensor):
-            self.data = self.xp.array(data.data, dtype=dtype)
+            self.data: Union[np.ndarray, cp.ndarray] = self.xp.array(data.data, dtype=dtype)
         else:
             self.data = self.xp.array(data, dtype=dtype)
 
@@ -22,7 +24,7 @@ class Tensor:
         self.requires_grad = requires_grad
         self.device = device
 
-    def tensor(self, t, requires_grad=False):
+    def tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
         if isinstance(t, Tensor):
             if t.device != self.device:
                 raise ValueError("Tensors must be on the same device")
@@ -31,7 +33,7 @@ class Tensor:
 
         return Tensor(t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype)
 
-    def numpy(self):
+    def numpy(self) -> np.ndarray:
         if self.device != "cpu":
             raise ValueError("Tensor must be on the CPU")
         if self.requires_grad:
@@ -39,7 +41,7 @@ class Tensor:
 
         return self.data
 
-    def to(self, device):
+    def to(self, device: str) -> 'Tensor':
         if device not in ["cpu", "cuda"]:
             raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
@@ -61,7 +63,7 @@ class Tensor:
     def cuda(self):
         return self.to("cuda")
 
-    def detach(self):
+    def detach(self) -> 'Tensor':
         return Tensor(
             data=self.data,
             args=self.args,
@@ -71,10 +73,10 @@ class Tensor:
             device=self.device,
         )
 
-    def item(self):
+    def item(self) -> float:
         return self.data.item()
 
-    def add(self, t):
+    def add(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -88,7 +90,7 @@ class Tensor:
             device=self.device,
         )
 
-    def sub(self, t):
+    def sub(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -102,7 +104,7 @@ class Tensor:
             device=self.device,
         )
 
-    def mul(self, t):
+    def mul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -116,7 +118,7 @@ class Tensor:
             device=self.device,
         )
 
-    def div(self, t):
+    def div(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -130,21 +132,21 @@ class Tensor:
             device=self.device,
         )
 
-    def matmul(self, n):
-        n = self.tensor(n)
+    def matmul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
 
-        requires_grad = self.requires_grad or n.requires_grad
-        args = [self, n] if requires_grad else None
+        requires_grad = self.requires_grad or t.requires_grad
+        args = [self, t] if requires_grad else None
 
         return Tensor(
-            self.xp.matmul(self.data, n.data),
+            self.xp.matmul(self.data, t.data),
             args,
             "matmul",
             requires_grad=requires_grad,
             device=self.device,
         )
 
-    def sum(self, *args, **kwargs):
+    def sum(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(
             self.data.sum(*args, **kwargs),
@@ -154,7 +156,7 @@ class Tensor:
             device=self.device,
         )
 
-    def mean(self, *args, **kwargs):
+    def mean(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(
             self.data.mean(*args, **kwargs),
@@ -164,7 +166,7 @@ class Tensor:
             device=self.device,
         )
 
-    def var(self, *args, **kwargs):
+    def var(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         return Tensor(
             self.data.var(*args, **kwargs),
@@ -174,21 +176,21 @@ class Tensor:
             device=self.device,
         )  # ddof = 0;
 
-    def power(self, n):
-        n = self.tensor(n)
+    def power(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
 
-        requires_grad = self.requires_grad or n.requires_grad
-        args = [self, n] if requires_grad else None
+        requires_grad = self.requires_grad or t.requires_grad
+        args = [self, t] if requires_grad else None
 
         return Tensor(
-            self.data**n.data,
+            self.data**t.data,
             args,
             "power",
             requires_grad=requires_grad,
             device=self.device,
         )
 
-    def sqrt(self):
+    def sqrt(self) -> 'Tensor':
         return Tensor(
             self.xp.sqrt(self.data),
             [self],
@@ -197,7 +199,7 @@ class Tensor:
             device=self.device,
         )
 
-    def log(self):
+    def log(self) -> 'Tensor':
         return Tensor(
             self.xp.log(self.data),
             [self],
@@ -206,7 +208,7 @@ class Tensor:
             device=self.device,
         )
 
-    def exp(self):
+    def exp(self) -> 'Tensor':
         return Tensor(
             self.xp.exp(self.data),
             [self],
@@ -215,7 +217,7 @@ class Tensor:
             device=self.device,
         )
 
-    def tanh(self):
+    def tanh(self) -> 'Tensor':
         return Tensor(
             self.xp.tanh(self.data),
             [self],
@@ -233,7 +235,7 @@ class Tensor:
             device=self.device,
         )
 
-    def cos(self):
+    def cos(self) -> 'Tensor':
         return Tensor(
             self.xp.cos(self.data),
             [self],
@@ -242,7 +244,7 @@ class Tensor:
             device=self.device,
         )
 
-    def maximum(self, t):
+    def maximum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -256,7 +258,7 @@ class Tensor:
             device=self.device,
         )
 
-    def minimum(self, t):
+    def minimum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
@@ -270,7 +272,7 @@ class Tensor:
             device=self.device,
         )
 
-    def max(self, axis=None, keepdims=False):  # equivalent to torch.amax
+    def max(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amax
         return Tensor(
             self.data.max(axis=axis, keepdims=keepdims),
             [self, axis, keepdims],
@@ -279,7 +281,7 @@ class Tensor:
             device=self.device,
         )
 
-    def min(self, axis=None, keepdims=False):  # equivalent to torch.amin
+    def min(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amin
         return Tensor(
             self.data.min(axis=axis, keepdims=keepdims),
             [self, axis, keepdims],
@@ -288,8 +290,8 @@ class Tensor:
             device=self.device,
         )
 
-    def concatenate(self, *tensors, axis=0):
-        tensors = [self.tensor(t) for t in tensors]
+    def concatenate(self, *tensors: 'Tensor', axis=0) -> 'Tensor':
+        tensors = tuple(self.tensor(t) for t in tensors)
         return Tensor(
             self.xp.concatenate([self.data] + [t.data for t in tensors], axis=axis),
             [self, *tensors, axis],
@@ -298,7 +300,7 @@ class Tensor:
             device=self.device,
         )
 
-    def reshape(self, *shape):
+    def reshape(self, *shape: Any) -> 'Tensor':
         shape = shape[0] if len(shape) == 1 else shape
         return Tensor(
             self.data.reshape(shape),
@@ -312,7 +314,7 @@ class Tensor:
     #     # return Tensor(self.xp.split(self.data, n, axis = axis), [self], "split", requires_grad=self.requires_grad)
     #     return [Tensor(t, [self], "split", requires_grad=self.requires_grad) for t in self.xp.split(self.data, n, axis = axis)]
 
-    def abs(self):
+    def abs(self) -> 'Tensor':
         return Tensor(
             self.xp.abs(self.data),
             [self],
@@ -321,10 +323,10 @@ class Tensor:
             device=self.device,
         )
 
-    def transpose(self, *axes):
+    def transpose(self, *axes: Any) -> 'Tensor': 
         axes = axes[0] if len(axes) == 1 else axes
         if len(axes) == 0:
-            axes = range(self.data.ndim)[::-1]
+            axes = tuple(range(self.data.ndim)[::-1])
         return Tensor(
             self.data.transpose(axes),
             [self, axes],
@@ -333,7 +335,7 @@ class Tensor:
             device=self.device,
         )
 
-    def swapaxes(self, axis1, axis2):
+    def swapaxes(self, axis1: int, axis2: int) -> 'Tensor':
         return Tensor(
             self.xp.swapaxes(self.data, axis1, axis2),
             [self, axis1, axis2],
@@ -342,7 +344,7 @@ class Tensor:
             device=self.device,
         )
 
-    def flip(self, axis):
+    def flip(self, axis: Any) -> 'Tensor':
         if axis is None:
             axis = range(self.data.ndim)
         return Tensor(
@@ -353,7 +355,7 @@ class Tensor:
             device=self.device,
         )
 
-    def __neg__(self):
+    def __neg__(self) -> 'Tensor':
         return Tensor(
             -self.data,
             [self],
@@ -362,7 +364,7 @@ class Tensor:
             device=self.device,
         )
 
-    def __pos__(self):
+    def __pos__(self) -> 'Tensor':
         return Tensor(
             self.data,
             [self],
@@ -371,59 +373,59 @@ class Tensor:
             device=self.device,
         )
 
-    def __abs__(self):
+    def __abs__(self) -> 'Tensor':
         return self.abs()
 
-    def __add__(self, t):
+    def __add__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.add(t)
 
-    def __sub__(self, t):
+    def __sub__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.sub(t)
 
-    def __mul__(self, t):
+    def __mul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.mul(t)
 
-    def __truediv__(self, t):
+    def __truediv__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.div(t)
 
-    def __matmul__(self, t):
+    def __matmul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.matmul(t)
 
-    def __pow__(self, t):
+    def __pow__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         return self.power(t)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Tensor({self.data}, requires_grad={self.requires_grad}, dtype={self.data.dtype}, device={self.device})"
 
     # def __str__(self):
     #     return f"Tensor({self.data}, requires_grad={self.requires_grad})"
 
-    def __radd__(self, t):
+    def __radd__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.add(self)
 
-    def __rsub__(self, t):
+    def __rsub__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.sub(self)
 
-    def __rmul__(self, t):
+    def __rmul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.mul(self)
 
-    def __rtruediv__(self, t):
+    def __rtruediv__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.div(self)
 
-    def __rmatmul__(self, t):
+    def __rmatmul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.matmul(self)
 
-    def __rpow__(self, t):
+    def __rpow__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
         return t.power(self)
 
     # add unpacking of split tensors
-    def __iter__(self):
+    def __iter__(self) -> Iterator['Tensor']:
         return iter(
             Tensor(
                 self.data[i],
@@ -436,8 +438,8 @@ class Tensor:
         )
 
     def __getitem__(
-        self, index
-    ):  # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad
+        self, index: Any
+    ) -> 'Tensor':  # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad
         return Tensor(
             self.data[index],
             [self, index],
@@ -446,27 +448,27 @@ class Tensor:
             device=self.device,
         )
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype: Any=None) -> np.ndarray:
         return self.data.astype(dtype, copy=False)
 
     @property
-    def shape(self):
+    def shape(self) -> tuple:
         return self.data.shape
 
     @property
-    def T(self):
+    def T(self) -> 'Tensor':
         return self.transpose()
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self.data.dtype
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return self.data.ndim
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.data.size
 
     def backward(

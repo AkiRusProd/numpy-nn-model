@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 import neunet
@@ -40,7 +42,7 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
 
 
 class BatchNorm1d(Module):  # layer with static backpropagation
-    def __init__(self, num_features, eps=1e-5, momentum=0.1, affine=True, device="cpu"):
+    def __init__(self, num_features: int, eps: float=1e-5, momentum: float=0.1, affine: bool=True, device: str="cpu"):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
@@ -50,8 +52,8 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
 
         if affine:
-            self.weight = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))
-            self.bias = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32))
+            self.weight: Union[Tensor, None] = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32))
         else:
             self.weight = None
             self.bias = None
@@ -59,7 +61,7 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         self.training = True
         self.to(device)
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
@@ -85,7 +87,7 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         O = X_centered * stddev_inv
 
         if self.affine:
-            O = self.weight.data * O + self.bias.data
+            O = self.weight.data * O + self.bias.data # type: ignore
 
         return _BatchNorm1dTensor(
             O,

@@ -1,8 +1,8 @@
-# import numpy as np
+
 
 
 class Adam:
-    def __init__(self, params, lr=0.01, betas=(0.9, 0.999), eps=1e-8):
+    def __init__(self, params, lr: float=0.01, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
         self.params = params
         self.lr = lr
         self.betas = betas
@@ -35,7 +35,7 @@ class Adam:
 
 
 class SGD:
-    def __init__(self, params, lr=0.01):
+    def __init__(self, params, lr: float=0.01):
         self.params = params
         self.lr = lr
 
@@ -54,7 +54,7 @@ class SGD:
 
 
 class Momentum:
-    def __init__(self, params, lr=0.01, momentum=0.9):
+    def __init__(self, params, lr=0.01, momentum: float=0.9):
         self.params = params
         self.lr = lr
         self.momentum = momentum
@@ -75,7 +75,7 @@ class Momentum:
 
 
 class RMSprop:
-    def __init__(self, params, lr=0.01, alpha=0.99, eps=1e-8):
+    def __init__(self, params, lr: float=0.01, alpha: float=0.99, eps: float=1e-8):
         self.params = params
         self.lr = lr
         self.alpha = alpha
@@ -97,7 +97,7 @@ class RMSprop:
 
 
 class Adagrad:
-    def __init__(self, params, lr=0.01, eps=1e-8):
+    def __init__(self, params, lr: float=0.01, eps: float=1e-8):
         self.params = params
         self.lr = lr
         self.eps = eps
@@ -118,7 +118,7 @@ class Adagrad:
 
 
 class Adadelta:
-    def __init__(self, params, lr=1.0, rho=0.9, eps=1e-6):
+    def __init__(self, params, lr: float=1.0, rho: float=0.9, eps: float=1e-6):
         self.params = params
         self.lr = lr
         self.rho = rho
@@ -146,7 +146,7 @@ class Adadelta:
 
 
 class Adamax:
-    def __init__(self, params, lr=0.002, betas=(0.9, 0.999), eps=1e-8):
+    def __init__(self, params, lr: float=0.002, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
         self.params = params
         self.lr = lr
         self.betas = betas
@@ -176,7 +176,7 @@ class Adamax:
 
 
 class NAdam:
-    def __init__(self, params, lr=0.002, betas=(0.9, 0.999), eps=1e-8):
+    def __init__(self, params, lr: float=0.002, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
         self.params = params
         self.lr = lr
         self.betas = betas

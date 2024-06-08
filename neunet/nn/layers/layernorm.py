@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 import neunet
@@ -91,7 +93,7 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
 
 
 class LayerNorm(Module):  # layer with static backpropagation
-    def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True, device="cpu"):
+    def __init__(self, normalized_shape: Union[int, tuple[int]], eps: float=1e-05, elementwise_affine: bool=True, device: str="cpu"):
         self.normalized_shape = (
             (normalized_shape,) if isinstance(normalized_shape, int) else normalized_shape
         )
@@ -99,15 +101,15 @@ class LayerNorm(Module):  # layer with static backpropagation
         self.elementwise_affine = elementwise_affine
 
         if elementwise_affine:
-            self.weight = Parameter(neunet.tensor(np.ones((normalized_shape)), dtype=np.float32))
-            self.bias = Parameter(neunet.tensor(np.zeros((normalized_shape)), dtype=np.float32))
+            self.weight: Union[Tensor, None] = Parameter(neunet.tensor(np.ones((normalized_shape)), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros((normalized_shape)), dtype=np.float32))
         else:
             self.weight = None
             self.bias = None
 
         self.to(device)
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
@@ -124,7 +126,7 @@ class LayerNorm(Module):  # layer with static backpropagation
         O = X_centered * stddev_inv
 
         if self.elementwise_affine:
-            O = self.weight.data * O + self.bias.data
+            O = self.weight.data * O + self.bias.data # type: ignore
 
         return _LayerNormTensor(
             O,

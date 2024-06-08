@@ -11,13 +11,13 @@ class _DropoutTensor(Tensor):  # tensor for static backpropagation
 
 
 class Dropout(Module):  # layer with static backpropagation
-    def __init__(self, p=0.5):
+    def __init__(self, p: float=0.5):
         self.p = p
         self.scale = 1 / (1 - p)
-        self.mask = None
+        self.mask = 1
         self.training = True
 
-    def forward(self, X: Tensor):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
 

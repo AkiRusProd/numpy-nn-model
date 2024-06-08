@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import cupy as cp
 import numpy as np
 
@@ -164,19 +166,19 @@ class LSTM(Module):
 
     def __init__(
         self,
-        input_size,
-        hidden_size,
-        nonlinearity="tanh",
-        recurrent_nonlinearity="sigmoid",
-        return_sequences="both",
-        bias=True,
-        cycled_states=False,
-        device="cpu",
+        input_size: int,
+        hidden_size: int,
+        nonlinearity: str="tanh",
+        recurrent_nonlinearity: str="sigmoid",
+        return_sequences: Union[str, bool]="both",
+        bias: bool=True,
+        cycled_states: bool=False,
+        device: str="cpu",
     ):
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.nonlinearity = nonlinearities.get(nonlinearity)
-        self.recurrent_nonlinearity = nonlinearities.get(recurrent_nonlinearity)
+        self.nonlinearity: Union[NonLinearity, Any] = nonlinearities.get(nonlinearity) # type: ignore
+        self.recurrent_nonlinearity: Union[NonLinearity, Any] = nonlinearities.get(recurrent_nonlinearity) # type: ignore
 
         self.return_sequences = return_sequences
         self.cycled_states = cycled_states
@@ -233,10 +235,10 @@ class LSTM(Module):
         )
 
         if bias:
-            self.bias_f = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
-            self.bias_i = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
-            self.bias_o = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
-            self.bias_c = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_f: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_i: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_o: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_c: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
         else:
             self.bias_f = None
             self.bias_i = None
@@ -248,7 +250,7 @@ class LSTM(Module):
 
         self.to(device)
 
-    def forward(self, X, hprev=None, cprev=None):
+    def forward(self, X: Tensor, hprev: Any=None, cprev: Any=None) -> Union[Tensor, tuple[Tensor, Tensor]]:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
@@ -296,8 +298,8 @@ class LSTM(Module):
         if self.cprev is None:
             self.cprev = self.xp.zeros_like(cell_states[:, 0, :])
 
-        cell_states[:, -1, :] = self.cprev.copy()
-        hidden_states[:, -1, :] = self.hprev.copy()
+        cell_states[:, -1, :] = self.cprev.copy() # type: ignore
+        hidden_states[:, -1, :] = self.hprev.copy() # type: ignore
 
         # f_t = recurrent_nonlinearity(X_data @ self.weight_f + hs_t-1 @ self.weight_hf + self.bias_f)
         # i_t = recurrent_nonlinearity(X_data @ self.weight_i + hs_t-1 @ self.weight_hi + self.bias_i)
@@ -398,11 +400,11 @@ class LSTM(Module):
             return _LSTMTensor(all_states, cache, "lstm", self.device)
         elif self.return_sequences in ["last", False]:
             return _LSTMTensor(last_state, cache, "lstm", self.device)
-        elif self.return_sequences == "both":
-            return (
-                _LSTMTensor(all_states, cache, "lstm", self.device),
-                _LSTMTensor(last_state, cache, "lstm", self.device),
-            )
+     
+        return (
+            _LSTMTensor(all_states, cache, "lstm", self.device),
+            _LSTMTensor(last_state, cache, "lstm", self.device),
+        )
 
     def __call__(self, X, hprev=None, cprev=None):
         return self.forward(X, hprev, cprev)

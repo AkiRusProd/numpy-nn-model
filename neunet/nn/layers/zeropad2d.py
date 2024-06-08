@@ -1,3 +1,5 @@
+from typing import Union
+
 import cupy as cp
 import numpy as np
 
@@ -21,7 +23,7 @@ class ZeroPad2dTensor(Tensor):
 
 
 class ZeroPad2d(Module):
-    def __init__(self, padding):
+    def __init__(self, padding: Union[int, tuple[int]]):
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
         self.padding = (
             (self.padding[0], self.padding[0], self.padding[1], self.padding[1])
@@ -29,7 +31,7 @@ class ZeroPad2d(Module):
             else self.padding
         )
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.ndim != 3 and X.ndim != 4:
@@ -48,43 +50,20 @@ class ZeroPad2d(Module):
         return self.forward(X)
 
 
-def set_padding(layer, padding):
-    xp = np if isinstance(layer, np.ndarray) else cp
-    padded_layer = xp.zeros(
-        (
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] + padding[0] + padding[1],
-            layer.shape[3] + padding[2] + padding[3],
-        )
+def set_padding(array, padding):
+    # New shape: (_, _, H + P[0] + P[1], W + P[2] + P[3])
+    xp = np if isinstance(array, np.ndarray) else cp
+    return xp.pad(
+        array,
+        ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])),
+        constant_values=0,
     )
 
-    padded_layer[
+def remove_padding(array, padding):
+    # New shape: (_, _, H - P[0] - P[1], W - P[2] - P[3])
+    return array[
         :,
         :,
-        padding[0] : padded_layer.shape[2] - padding[1],
-        padding[2] : padded_layer.shape[3] - padding[3],
-    ] = layer
-
-    return padded_layer
-
-
-def remove_padding(layer, padding):
-    xp = np if isinstance(layer, np.ndarray) else cp
-    unpadded_layer = xp.zeros(
-        (
-            layer.shape[0],
-            layer.shape[1],
-            layer.shape[2] - padding[0] - padding[1],
-            layer.shape[3] - padding[2] - padding[3],
-        )
-    )
-
-    unpadded_layer = layer[
-        :,
-        :,
-        padding[0] : layer.shape[2] - padding[1],
-        padding[2] : layer.shape[3] - padding[3],
+        padding[0] : array.shape[2] - padding[1],
+        padding[2] : array.shape[3] - padding[3],
     ]
-
-    return unpadded_layer

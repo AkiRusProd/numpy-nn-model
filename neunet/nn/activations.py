@@ -1,4 +1,5 @@
 from neunet.autograd import Tensor
+from neunet.nn.modules import Module
 
 # import numpy as np
 
@@ -11,7 +12,7 @@ class _SigmoidTensor(Tensor):  # Static sigmoid tensor for backpropagation
         self.args[0].backward(grad * self.data * (1 - self.data))
 
 
-class Sigmoid:  # Static sigmoid computation
+class Sigmoid(Module):  # Static sigmoid computation
     def __init__(self):
         pass
 
@@ -43,7 +44,7 @@ class _ReLUTensor(Tensor):  # Static ReLU tensor for backpropagation
         self.args[0].backward(grad * (self.data > 0))
 
 
-class ReLU:  # Static ReLU computation
+class ReLU(Module):  # Static ReLU computation
     def __init__(self):
         pass
 
@@ -76,7 +77,7 @@ class _LeakyReLUTensor(Tensor):  # Static LeakyReLU tensor for backpropagation
         )
 
 
-class LeakyReLU:  # Static LeakyReLU computation
+class LeakyReLU(Module):  # Static LeakyReLU computation
     def __init__(self, alpha=0.01):
         self.alpha = alpha
 
@@ -107,7 +108,7 @@ class _TanhTensor(Tensor):  # Static Tanh tensor for backpropagation
         self.args[0].backward(grad * (1 - self.data**2))
 
 
-class Tanh:  # Static Tanh computation
+class Tanh(Module):  # Static Tanh computation
     def __init__(self):
         pass
 
@@ -139,7 +140,7 @@ class _SoftplusTensor(Tensor):  # Static Softplus tensor for backpropagation
         self.args[0].backward(grad * (1 / (1 + self.xp.exp(-x))))
 
 
-class Softplus:  # Static Softplus computation
+class Softplus(Module):  # Static Softplus computation
     def __init__(self):
         pass
 
@@ -171,7 +172,7 @@ class _SoftsignTensor(Tensor):  # Static Softsign tensor for backpropagation
         self.args[0].backward(grad * (1 / (1 + self.xp.abs(x)) ** 2))
 
 
-class Softsign:  # Static Softsign computation
+class Softsign(Module):  # Static Softsign computation
     def __init__(self):
         pass
 
@@ -207,7 +208,7 @@ class _SwishTensorTensor(Tensor):  # Static Swish tensor for backpropagation
         self.args[0].backward(grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x)))
 
 
-class Swish:  # Static Swish computation
+class Swish(Module):  # Static Swish computation
     def __init__(self, beta=1):
         self.beta = beta
 
@@ -253,7 +254,7 @@ class _MishTensor(Tensor):  # Static Mish tensor for backpropagation
         self.args[0].backward(grad_x)
 
 
-class Mish:  # Static Mish computation
+class Mish(Module):  # Static Mish computation
     def __init__(self):
         pass
 
@@ -289,7 +290,7 @@ class _TanhExpTensor(Tensor):  # Static TanhExp tensor for backpropagation
         self.args[0].backward(grad_x)
 
 
-class TanhExp:  # Static TanhExp computation
+class TanhExp(Module):  # Static TanhExp computation
     def __init__(self):
         pass
 
@@ -326,7 +327,7 @@ class _ELUTensor(Tensor):  # Static ELU tensor for backpropagation
         self.args[0].backward(grad_x)
 
 
-class ELU:  # Static ELU computation
+class ELU(Module):  # Static ELU computation
     def __init__(self, alpha=0.1):
         self.alpha = alpha
 
@@ -351,7 +352,7 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
         self.args[0].backward(grad_x)
 
 
-class SELU:  # Static SELU computation
+class SELU(Module):  # Static SELU computation
     def __init__(self):
         self.alpha = 1.6732632423543772848170429916717
         self.lmbda = 1.0507009873554804934193349852946
@@ -388,7 +389,7 @@ class _GELUTensor(Tensor):  # Static GELU tensor for backpropagation
         self.args[0].backward(grad_x)
 
 
-class GELU:  # Static GELU computation
+class GELU(Module):  # Static GELU computation
     def __init__(self):
         pass
 
@@ -405,7 +406,7 @@ class GELU:  # Static GELU computation
         return self.forward(x)
 
 
-class Softmax:  # Dynamic Softmax computation
+class Softmax(Module):  # Dynamic Softmax computation
     def __init__(self, axis=1):
         self.axis = axis
 

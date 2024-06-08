@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import cupy as cp
 import numpy as np
 
@@ -78,17 +80,17 @@ class RNN(Module):
 
     def __init__(
         self,
-        input_size,
-        hidden_size,
-        nonlinearity="tanh",
-        bias=True,
-        cycled_states=False,
-        return_sequences="both",
-        device="cpu",
+        input_size: int,
+        hidden_size: int,
+        nonlinearity: str="tanh",
+        bias: bool=True,
+        cycled_states: bool=False,
+        return_sequences: Union[str, bool]="both",
+        device: str="cpu",
     ):
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.nonlinearity = nonlinearities.get(nonlinearity)
+        self.nonlinearity: Union[NonLinearity, Any] = nonlinearities.get(nonlinearity)
         self.cycled_states = cycled_states
         self.return_sequences = return_sequences
 
@@ -107,15 +109,15 @@ class RNN(Module):
         )
 
         if bias == True:
-            self.bias = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)) # type: ignore
         else:
-            self.bias = None
+            self.bias = None # type: ignore
 
         self.hprev = None
 
         self.to(device)
 
-    def forward(self, X, hprev=None):
+    def forward(self, X: Tensor, hprev=None) -> Union[Tensor, tuple[Tensor, Tensor]]:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
@@ -142,7 +144,7 @@ class RNN(Module):
         if self.hprev is None:
             self.hprev = self.xp.zeros_like(states[:, 0, :])
 
-        states[:, -1, :] = self.hprev.copy()
+        states[:, -1, :] = self.hprev.copy() # type: ignore
 
         for t in range(timesteps):
             unactivated_states[:, t, :] = (
@@ -176,11 +178,11 @@ class RNN(Module):
             return _RNNTensor(all_states, cache, "rnn", self.device)
         elif self.return_sequences in ["last", False]:
             return _RNNTensor(last_state, cache, "rnn", self.device)
-        elif self.return_sequences == "both":
-            return (
-                _RNNTensor(all_states, cache, "rnn", self.device),
-                _RNNTensor(last_state, cache, "rnn", self.device),
-            )
+        
+        return (
+            _RNNTensor(all_states, cache, "rnn", self.device),
+            _RNNTensor(last_state, cache, "rnn", self.device),
+        )
 
     def __call__(self, X, hprev=None):
         return self.forward(X, hprev)

@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 import cupy as cp
 import numpy as np
 
@@ -112,16 +114,16 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
     -------------------------------------
         Args:
             `kernels_num`: number of kernels
-            `kernel_shape` (tuple), (list) of size 2 or (int): height and width of kernel
-            `padding` (tuple), (list) of size 2 or (int)  or `"same"`, `"real same"`, `"valid"` string value: the "inverted" padding of the input window (removing padding)
+            `kernel_shape` (tuple) of size 2 or (int): height and width of kernel
+            `padding` (tuple) of size 2 or (int)  or `"same"`, `"real same"`, `"valid"` string value: the "inverted" padding of the input window (removing padding)
 
             {
                 `"valid"`: padding is 0
                 `"same"`: keras "same" implementation, that returns the output of size "input_size + stride_size"
                 `"real same"`: my "same" implementation, that returns the output of size "input_size"
             }
-            `stride` (tuple), (list) of size 2 or (int): the transposed stride (operation similar to dilation) of the 2d input window
-            `dilation` (tuple), (list) of size 2 or (int): the dilation of the sliding kernel
+            `stride` (tuple) of size 2 or (int): the transposed stride (operation similar to dilation) of the 2d input window
+            `dilation` (tuple) of size 2 or (int): the dilation of the sliding kernel
             `use_bias` (bool):  `True` if used. `False` if not used
 
         Returns:
@@ -132,15 +134,15 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
 
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=(1, 1),
-        padding=(0, 0),
-        dilation=(1, 1),
-        output_padding=(0, 0),
-        bias=True,
-        device="cpu",
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, tuple[int, int]],
+        stride: Union[int, tuple[int, int]]=(1, 1),
+        padding: Union[int, tuple[int, int]]=(0, 0),
+        dilation: Union[int, tuple[int, int]]=(1, 1),
+        output_padding: Union[int, tuple[int, int]]=(0, 0),
+        bias: bool=True,
+        device: str="cpu",
     ):
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -174,11 +176,11 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
             )
         )
         if bias == True:
-            self.bias = Parameter(neunet.tensor(np.zeros(self.out_channels), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros(self.out_channels), dtype=np.float32))
         else:
             self.bias = None
 
-        self.input_size = None
+        self.input_size: Any = None
         self.to(device)
 
     def build(self):
@@ -284,7 +286,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
             self.prepared_input_width,
         )
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:

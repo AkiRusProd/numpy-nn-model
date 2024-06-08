@@ -21,7 +21,7 @@ class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
 
 
 class Embedding(Module):
-    def __init__(self, num_embeddings, embedding_dim, device="cpu"):
+    def __init__(self, num_embeddings: int, embedding_dim: int, device: str="cpu"):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
 
@@ -38,7 +38,7 @@ class Embedding(Module):
 
         return O.reshape(*X.shape, self.num_embeddings)
 
-    def forward(self, X):
+    def forward(self, X: Tensor) -> Tensor:
         if not isinstance(X, Tensor):
             raise TypeError("Input must be a tensor")
         if X.device != self.device:
