@@ -1,7 +1,8 @@
+import cupy as cp
+import numpy as np
+
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
-import numpy as np
-import cupy as cp
 
 
 class _AvgPool2dTensor(Tensor):
@@ -16,7 +17,6 @@ class _AvgPool2dTensor(Tensor):
             padding,
             input_size,
             output_size,
-            windows,
         ) = self.args
 
         batch_size, in_channels, in_height, in_width = input_size
@@ -47,9 +47,7 @@ class _AvgPool2dTensor(Tensor):
 class AvgPool2d(Module):
     def __init__(self, kernel_size, stride=None, padding=0):
         self.kernel_size = (
-            kernel_size
-            if isinstance(kernel_size, tuple)
-            else (kernel_size, kernel_size)
+            kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
         )
         self.stride = (
             stride
@@ -67,22 +65,18 @@ class AvgPool2d(Module):
         self.input_height, self.input_width = self.input_size[2:]
 
         if self.padding == "valid":
-            self.padding == (0, 0, 0, 0)
+            self.padding = (0, 0, 0, 0)
         elif self.padding == "same" or self.padding == "real same":
             if self.padding == "same":
-                padding_up_down = (
-                    self.dilation[0] * (self.kernel_height - 1) - self.stride[0] + 1
-                )
-                padding_left_right = (
-                    self.dilation[1] * (self.kernel_width - 1) - self.stride[1] + 1
-                )
+                padding_up_down = self.dilation[0] * (self.kernel_height - 1) - self.stride[0] + 1
+                padding_left_right = self.dilation[1] * (self.kernel_width - 1) - self.stride[1] + 1
             elif self.padding == "real same":
-                padding_up_down = (self.stride[0] - 1) * (
-                    self.input_height - 1
-                ) + self.dilation[0] * (self.kernel_height - 1)
-                padding_left_right = (self.stride[1] - 1) * (
-                    self.input_width - 1
-                ) + self.dilation[1] * (self.kernel_width - 1)
+                padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[
+                    0
+                ] * (self.kernel_height - 1)
+                padding_left_right = (self.stride[1] - 1) * (self.input_width - 1) + self.dilation[
+                    1
+                ] * (self.kernel_width - 1)
 
             if padding_up_down % 2 == 0:
                 padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
@@ -127,13 +121,15 @@ class AvgPool2d(Module):
         self.output_size = (self.output_height, self.output_width)
 
     def forward(self, X: Tensor):
-        assert isinstance(X, Tensor), "Input must be a tensor"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+
         self.input_size = X.shape
         self.build()
 
         X_data = set_padding(X.data, self.padding)
 
-        batch_size, in_channels, in_height, in_width = X_data.shape
+        batch_size, in_channels, _, _ = X_data.shape
 
         batch_str, channel_str, kern_h_str, kern_w_str = X_data.strides
         windows = X.xp.lib.stride_tricks.as_strided(
@@ -167,7 +163,6 @@ class AvgPool2d(Module):
                 self.padding,
                 self.input_size,
                 self.output_size,
-                windows,
             ],
             "maxpool2d",
             device=X.device,
@@ -180,7 +175,12 @@ class AvgPool2d(Module):
 def set_padding(array, padding):
     # New shape: (_, _, H + P[0] + P[1], W + P[2] + P[3])
     xp = np if isinstance(array, np.ndarray) else cp
-    return xp.pad(array, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])), constant_values=0)
+    return xp.pad(
+        array,
+        ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])),
+        constant_values=0,
+    )
+
 
 def remove_padding(array, padding):
     # New shape: (_, _, H - P[0] - P[1], W - P[2] - P[3])
@@ -190,5 +190,3 @@ def remove_padding(array, padding):
         padding[0] : array.shape[2] - padding[1],
         padding[2] : array.shape[3] - padding[3],
     ]
-
-

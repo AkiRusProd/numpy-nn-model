@@ -1,5 +1,6 @@
-import numpy as np
 import cupy as cp
+import numpy as np
+
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 
@@ -29,8 +30,11 @@ class ZeroPad2d(Module):
         )
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.ndim == 3 or X.ndim == 4, "X must be 3D or 4D tensor"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.ndim != 3 and X.ndim != 4:
+            raise ValueError("X must be 3D or 4D tensor")
+
         X.data = X.data
 
         if X.data.ndim == 3:
@@ -38,9 +42,7 @@ class ZeroPad2d(Module):
         else:
             padded_data = set_padding(X.data, self.padding)
 
-        return ZeroPad2dTensor(
-            padded_data, [X, self.padding], "zeropad2d", device=X.device
-        )
+        return ZeroPad2dTensor(padded_data, [X, self.padding], "zeropad2d", device=X.device)
 
     def __call__(self, X):
         return self.forward(X)

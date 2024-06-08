@@ -8,14 +8,12 @@ class Flatten(Module):
         self.end_dim = end_dim
 
     def forward(self, X: Tensor):
-        assert isinstance(X, Tensor), "Input must be a tensor"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+
         start = X.ndim + self.start_dim if self.start_dim < 0 else self.start_dim
         end = X.ndim + self.end_dim if self.end_dim < 0 else self.end_dim
-        new_shape = (
-            X.shape[:start]
-            + (X.xp.prod(X.shape[start : end + 1]),)
-            + X.shape[end + 1 :]
-        )
+        new_shape = X.shape[:start] + (X.xp.prod(X.shape[start : end + 1]),) + X.shape[end + 1 :]
 
         return X.reshape(*new_shape)
 

@@ -1,12 +1,14 @@
 import itertools
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import ListedColormap
+from tqdm import tqdm
+
 import neunet
 import neunet.nn as nn
 import neunet.optim as optim
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.colors import ListedColormap
-from tqdm import tqdm
 
 """
 Conway's Game of Life
@@ -41,9 +43,7 @@ OO........O...O.OO....O.O...........
 lines = gun_pattern_src.strip().split("\n")
 
 # Convert each line into an array of 1s and 0s
-gun_pattern_grid = np.array(
-    [[1 if char == "O" else 0 for char in line] for line in lines]
-)
+gun_pattern_grid = np.array([[1 if char == "O" else 0 for char in line] for line in lines])
 
 grid[0 : gun_pattern_grid.shape[0], 0 : gun_pattern_grid.shape[1]] = gun_pattern_grid
 
@@ -93,9 +93,7 @@ class GameOfLife(nn.Module):
         Implementation of Conway's Game of Life using a convolution (works much faster)
         """
         # Pad the grid to create a "toroidal" mesh effect
-        grid_tensor = neunet.tensor(np.pad(grid, pad_width=1, mode="wrap"))[
-            None, None, :, :
-        ]
+        grid_tensor = neunet.tensor(np.pad(grid, pad_width=1, mode="wrap"))[None, None, :, :]
         n_alive_neighbors = self.conv(grid_tensor).data
         updated_grid = (n_alive_neighbors.astype(int) == 3) | (
             (grid.astype(int) == 1) & (n_alive_neighbors.astype(int) == 2)
@@ -171,7 +169,7 @@ criterion = nn.MSELoss()
 epochs = 500
 
 for epoch in range(epochs):
-    tqdm_range = tqdm(zip(X, Y), total=len(X))
+    tqdm_range = tqdm(zip(X, Y, strict=False), total=len(X))
     perm = np.random.permutation(len(X))
 
     X = X[perm]

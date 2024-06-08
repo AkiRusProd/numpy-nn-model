@@ -1,12 +1,11 @@
-import numpy as np
 import cupy as cp
+import numpy as np
 
 
 class Tensor:
-    def __init__(
-        self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"
-    ):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+    def __init__(self, data, args=None, op=None, requires_grad=True, dtype=None, device="cpu"):
+        if device not in ["cpu", "cuda"]:
+            raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
             self.xp = np
         else:
@@ -25,24 +24,24 @@ class Tensor:
 
     def tensor(self, t, requires_grad=False):
         if isinstance(t, Tensor):
-            assert t.device == self.device, "Tensors must be on the same device"
+            if t.device != self.device:
+                raise ValueError("Tensors must be on the same device")
 
             return t
 
-        return Tensor(
-            t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype
-        )
+        return Tensor(t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype)
 
     def numpy(self):
         if self.device != "cpu":
             raise ValueError("Tensor must be on the CPU")
         if self.requires_grad:
             raise ValueError("Tensor must not require gradient")
-            
+
         return self.data
 
     def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device not in ["cpu", "cuda"]:
+            raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
             xp = np
         else:
@@ -54,9 +53,7 @@ class Tensor:
             else xp.array(self.data.get(), dtype=self.data.dtype)
         )
 
-        return Tensor(
-            data, requires_grad=self.requires_grad, dtype=self.data.dtype, device=device
-        )
+        return Tensor(data, requires_grad=self.requires_grad, dtype=self.data.dtype, device=device)
 
     def cpu(self):
         return self.to("cpu")
@@ -295,9 +292,9 @@ class Tensor:
         tensors = [self.tensor(t) for t in tensors]
         return Tensor(
             self.xp.concatenate([self.data] + [t.data for t in tensors], axis=axis),
-            [self] + tensors + [axis],
+            [self, *tensors, axis],
             "concatenate",
-            requires_grad=self.requires_grad or any([t.requires_grad for t in tensors]),
+            requires_grad=self.requires_grad or any(t.requires_grad for t in tensors),
             device=self.device,
         )
 
@@ -493,18 +490,18 @@ class Tensor:
             elif self.data.ndim == grad.ndim:
                 grad = grad.sum(
                     axis=tuple(
-                        self.xp.where(
-                            self.xp.array(self.data.shape) != self.xp.array(grad.shape)
-                        )[0].tolist()
+                        self.xp.where(self.xp.array(self.data.shape) != self.xp.array(grad.shape))[
+                            0
+                        ].tolist()
                     ),
                     keepdims=True,
                 )
             else:
                 data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
                 axis = tuple(
-                    self.xp.where(
-                        self.xp.array(data_shape) != self.xp.array(grad.shape)
-                    )[0].tolist()
+                    self.xp.where(self.xp.array(data_shape) != self.xp.array(grad.shape))[
+                        0
+                    ].tolist()
                 )
                 grad = grad.sum(axis=axis)
 
@@ -532,37 +529,21 @@ class Tensor:
             self.args[1].backward(-grad * self.args[0].data / self.args[1].data ** 2)
 
         elif self.op == "matmul":
-            if (
-                self.args[0].data.ndim > 1 and self.args[1].data.ndim > 1
-            ):  # [matrix x matrix]
-                self.args[0].backward(
-                    self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2))
-                )
-                self.args[1].backward(
-                    self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad)
-                )
+            if self.args[0].data.ndim > 1 and self.args[1].data.ndim > 1:  # [matrix x matrix]
+                self.args[0].backward(self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
+                self.args[1].backward(self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad))
 
-            elif (
-                self.args[0].data.ndim == 1 and self.args[1].data.ndim == 1
-            ):  # [vector x vector]
+            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim == 1:  # [vector x vector]
                 self.args[0].backward(grad * self.args[1].data)
                 self.args[1].backward(grad * self.args[0].data)
 
-            elif (
-                self.args[0].data.ndim == 1 and self.args[1].data.ndim > 1
-            ):  # [vector x matrix]
-                self.args[0].backward(
-                    self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2))
-                )
+            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim > 1:  # [vector x matrix]
+                self.args[0].backward(self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
                 self.args[1].backward(self.xp.outer(self.args[0].data, grad))
 
-            elif (
-                self.args[0].data.ndim > 1 and self.args[1].data.ndim == 1
-            ):  # [matrix x vector]
+            elif self.args[0].data.ndim > 1 and self.args[1].data.ndim == 1:  # [matrix x vector]
                 self.args[0].backward(self.xp.outer(grad, self.args[1].data))
-                self.args[1].backward(
-                    self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad)
-                )
+                self.args[1].backward(self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad))
 
         elif self.op == "sum":
             axis = self.args[1]
@@ -583,9 +564,7 @@ class Tensor:
                 / self.xp.prod(self.xp.array(self.args[0].data.shape)[_axis])
             )
 
-        elif (
-            self.op == "var"
-        ):  # axis=None, ddof=0, keepdims=False add params instead args kwargs
+        elif self.op == "var":  # axis=None, ddof=0, keepdims=False add params instead args kwargs
             axis = self.args[1]
 
             if grad.ndim != self.args[0].data.ndim and axis is not None:
@@ -605,9 +584,7 @@ class Tensor:
                 grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1)
             )
             self.args[1].backward(
-                grad
-                * self.args[0].data ** self.args[1].data
-                * self.xp.log(self.args[0].data)
+                grad * self.args[0].data ** self.args[1].data * self.xp.log(self.args[0].data)
             )
 
         elif self.op == "sqrt":
@@ -637,21 +614,19 @@ class Tensor:
             self.args[1].backward(grad * (self.args[0].data >= self.args[1].data))
 
         elif self.op == "max":
-            axis, keepdims = self.args[1:]
+            axis, _ = self.args[1:]
             if grad.ndim != self.args[0].data.ndim and axis is not None:
                 grad = self.xp.expand_dims(grad, axis)
             self.args[0].backward(
-                grad
-                * (self.args[0].data == self.args[0].data.max(axis=axis, keepdims=True))
+                grad * (self.args[0].data == self.args[0].data.max(axis=axis, keepdims=True))
             )
 
         elif self.op == "min":
-            axis, keepdims = self.args[1:]
+            axis, _ = self.args[1:]
             if grad.ndim != self.args[0].data.ndim and axis is not None:
                 grad = self.xp.expand_dims(grad, axis)
             self.args[0].backward(
-                grad
-                * (self.args[0].data == self.args[0].data.min(axis=axis, keepdims=True))
+                grad * (self.args[0].data == self.args[0].data.min(axis=axis, keepdims=True))
             )
 
         elif self.op == "concatenate":
@@ -661,9 +636,9 @@ class Tensor:
 
             grads = self.xp.split(
                 grad,
-                self.xp.cumsum(
-                    self.xp.array([arg_shape[axis] for arg_shape in args_shapes])
-                )[:-1].tolist(),
+                self.xp.cumsum(self.xp.array([arg_shape[axis] for arg_shape in args_shapes]))[
+                    :-1
+                ].tolist(),
                 axis=axis,
             )
 

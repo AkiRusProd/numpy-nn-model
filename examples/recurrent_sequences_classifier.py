@@ -3,19 +3,15 @@ from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
+
 import numpy as np
 from tqdm import tqdm
 
-from tqdm import tqdm
-from neunet.optim import Adam
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import os
-
 from neunet.optim import Adam
 
-device = 'cpu'
+device = "cpu"
 
 document = [
     "Nice Clothes!",
@@ -43,14 +39,14 @@ for line in document:
 
 print(f"Filtered document: {filtered_document}")
 
-
-words = set([word.lower() for line in filtered_document for word in line.split()])
+words = [word.lower() for line in filtered_document for word in line.split()]
+words = set(words)
 
 print(f"Words: {words}")
 
 
 words_labels = np.random.choice(range(1, vocab_size), len(words), replace=False)
-vocab = dict(zip(words, words_labels))
+vocab = dict(zip(words, words_labels, strict=False))
 
 encoded_document = []
 for line in filtered_document:

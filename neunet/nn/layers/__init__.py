@@ -1,16 +1,16 @@
-from neunet.nn.layers.linear import Linear
-from neunet.nn.layers.dropout import Dropout
-from neunet.nn.layers.batchnorm1d import BatchNorm1d
-from neunet.nn.layers.batchnorm2d import BatchNorm2d
-from neunet.nn.layers.layernorm import LayerNorm
-from neunet.nn.layers.conv2d import Conv2d
-from neunet.nn.layers.convtranspose2d import ConvTranspose2d
-from neunet.nn.layers.maxpool2d import MaxPool2d
-from neunet.nn.layers.avgpool2d import AvgPool2d
-from neunet.nn.layers.embedding import Embedding
-from neunet.nn.layers.rnn import RNN
-from neunet.nn.layers.lstm import LSTM
-from neunet.nn.layers.gru import GRU
-from neunet.nn.layers.bidirectional import Bidirectional
-from neunet.nn.layers.flatten import Flatten
-from neunet.nn.layers.zeropad2d import ZeroPad2d
+from neunet.nn.layers.avgpool2d import AvgPool2d as AvgPool2d
+from neunet.nn.layers.batchnorm1d import BatchNorm1d as BatchNorm1d
+from neunet.nn.layers.batchnorm2d import BatchNorm2d as BatchNorm2d
+from neunet.nn.layers.bidirectional import Bidirectional as Bidirectional
+from neunet.nn.layers.conv2d import Conv2d as Conv2d
+from neunet.nn.layers.convtranspose2d import ConvTranspose2d as ConvTranspose2d
+from neunet.nn.layers.dropout import Dropout as Dropout
+from neunet.nn.layers.embedding import Embedding as Embedding
+from neunet.nn.layers.flatten import Flatten as Flatten
+from neunet.nn.layers.gru import GRU as GRU
+from neunet.nn.layers.layernorm import LayerNorm as LayerNorm
+from neunet.nn.layers.linear import Linear as Linear
+from neunet.nn.layers.lstm import LSTM as LSTM
+from neunet.nn.layers.maxpool2d import MaxPool2d as MaxPool2d
+from neunet.nn.layers.rnn import RNN as RNN
+from neunet.nn.layers.zeropad2d import ZeroPad2d as ZeroPad2d

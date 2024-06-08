@@ -1,9 +1,10 @@
-import numpy as np
 import cupy as cp
+import numpy as np
+
 import neunet
 from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
 from neunet.nn.modules import Module
+from neunet.nn.parameter import Parameter
 
 
 class _RNNTensor(Tensor):
@@ -18,7 +19,6 @@ class _RNNTensor(Tensor):
             bias,
             states,
             unactivated_states,
-            input_size,
             hidden_size,
             timesteps,
             nonlinearity,
@@ -107,9 +107,7 @@ class RNN(Module):
         )
 
         if bias == True:
-            self.bias = Parameter(
-                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            )
+            self.bias = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
         else:
             self.bias = None
 
@@ -118,8 +116,11 @@ class RNN(Module):
         self.to(device)
 
     def forward(self, X, hprev=None):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         X_data = X.data
 
         if len(X_data.shape) == 2:
@@ -127,20 +128,16 @@ class RNN(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        states = self.xp.zeros(
-            (batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype
-        )
+        states = self.xp.zeros((batch_size, timesteps + 1, self.hidden_size), dtype=X_data.dtype)
         unactivated_states = self.xp.zeros_like(states)
 
         if self.cycled_states == False:
             self.hprev = hprev
 
-        assert (
-            self.hprev is None or self.hprev.shape == states[:, -1, :].shape
-        ), "hprev shape must be equal to (batch_size, 1, hidden_size)"
-        assert (
-            self.input_size == input_size
-        ), "input_size must be equal to input shape[2]"
+        if self.hprev is not None and self.hprev.shape != states[:, -1, :].shape:
+            raise ValueError("hprev shape must be equal to (batch_size, 1, hidden_size)")
+        if self.input_size != input_size:
+            raise ValueError("input_size must be equal to input shape[2]")
 
         if self.hprev is None:
             self.hprev = self.xp.zeros_like(states[:, 0, :])
@@ -170,7 +167,6 @@ class RNN(Module):
             self.bias,
             states,
             unactivated_states,
-            self.input_size,
             self.hidden_size,
             timesteps,
             self.nonlinearity,

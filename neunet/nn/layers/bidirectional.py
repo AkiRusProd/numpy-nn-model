@@ -1,4 +1,5 @@
 import copy as copy_object
+
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 
@@ -10,7 +11,7 @@ class _BidirectionalTensor(Tensor):
         super().__init__(data, args, op, device=device)
 
     def backward(self, grad=1):
-        X, D_O, R_O, merge_mode = self.args
+        D_O, R_O, merge_mode = self.args
 
         if merge_mode == "concat":
             direct_grad, reverse_grad = self.xp.split(grad, 2, axis=-1)
@@ -27,11 +28,9 @@ class _BidirectionalTensor(Tensor):
 
 class Bidirectional(Module):
     def __init__(self, layer, merge_mode="sum", device="cpu"):
-        assert layer.__class__.__name__ in [
-            "LSTM",
-            "GRU",
-            "RNN",
-        ], "Bidirectional layer can only be used with LSTM, GRU or RNN layers"
+        if layer.__class__.__name__ not in ["LSTM", "GRU", "RNN"]:
+            raise ValueError("Bidirectional layer can only be used with LSTM, GRU or RNN layers")
+
         self.direct_layer = layer
         self.reverse_layer = copy_object.copy(layer)
 
@@ -43,8 +42,11 @@ class Bidirectional(Module):
         self.to(device)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         if len(X.shape) == 2:
             X = X.reshape(1, *X.shape)
 
@@ -73,13 +75,14 @@ class Bidirectional(Module):
 
             return _BidirectionalTensor(
                 O,
-                [X, D_O, R_O, self.merge_mode],
+                [D_O, R_O, self.merge_mode],
                 f"bidirectional{self.direct_layer.__class__.__name__}",
                 self.device,
             )
 
     def __call__(self, X):
         return self.forward(X)
+
 
 def concat(D_O, R_O):
     xp = D_O.xp

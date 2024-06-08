@@ -1,4 +1,5 @@
 from neunet.autograd import Tensor
+
 # import numpy as np
 
 
@@ -203,9 +204,7 @@ class _SwishTensorTensor(Tensor):  # Static Swish tensor for backpropagation
 
         sigmoid = lambda x: 1 / (1 + self.xp.exp(-x))
 
-        self.args[0].backward(
-            grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x))
-        )
+        self.args[0].backward(grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x)))
 
 
 class Swish:  # Static Swish computation
@@ -247,12 +246,7 @@ class _MishTensor(Tensor):  # Static Mish tensor for backpropagation
 
         grad_x = grad * (
             xp.exp(x)
-            * (
-                4 * (x + 1)
-                + 4 * xp.exp(2 * x)
-                + xp.exp(3 * x)
-                + xp.exp(x) * (4 * x + 6)
-            )
+            * (4 * (x + 1) + 4 * xp.exp(2 * x) + xp.exp(3 * x) + xp.exp(x) * (4 * x + 6))
             / xp.power((2 * xp.exp(x) + xp.exp(2 * x) + 2), 2)
         )
 
@@ -290,9 +284,7 @@ class _TanhExpTensor(Tensor):  # Static TanhExp tensor for backpropagation
     def backward(self, grad=1):
         x = self.args[0].data
         xp = self.xp
-        grad_x = grad * (
-            xp.tanh(xp.exp(x)) - x * xp.exp(x) * (xp.power(xp.tanh(xp.exp(x)), 2) - 1)
-        )
+        grad_x = grad * (xp.tanh(xp.exp(x)) - x * xp.exp(x) * (xp.power(xp.tanh(xp.exp(x)), 2) - 1))
 
         self.args[0].backward(grad_x)
 
@@ -339,9 +331,7 @@ class ELU:  # Static ELU computation
         self.alpha = alpha
 
     def forward(self, x: Tensor):
-        f_x = x.xp.where(
-            x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data
-        ).astype(x.dtype)
+        f_x = x.xp.where(x.data <= 0, self.alpha * (x.xp.exp(x.data) - 1), x.data).astype(x.dtype)
 
         return _ELUTensor(f_x, [x, self.alpha], "elu", device=x.device)
 
@@ -355,11 +345,8 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
 
     def backward(self, grad=1):
         x, alpha, lmbda = self.args[0].data, self.args[1], self.args[2]
-        f_x = self.data
 
-        grad_x = grad * (
-            lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)).astype(grad.dtype)
-        )
+        grad_x = grad * (lmbda * self.xp.where(x > 0, 1, alpha * self.xp.exp(x)).astype(grad.dtype))
 
         self.args[0].backward(grad_x)
 
@@ -387,7 +374,6 @@ class _GELUTensor(Tensor):  # Static GELU tensor for backpropagation
     def backward(self, grad=1):
         x = self.args[0].data
         xp = self.xp
-        f_x = self.data
 
         # sech = lambda z: 2 / (np.exp(z) + np.exp(-z))
         sech = lambda z: 1 / xp.cosh(z)
@@ -410,12 +396,7 @@ class GELU:  # Static GELU computation
         f_x = (
             0.5
             * x.data
-            * (
-                1
-                + x.xp.tanh(
-                    x.xp.sqrt(2 / x.xp.pi) * (x.data + 0.044715 * x.xp.power(x.data, 3))
-                )
-            )
+            * (1 + x.xp.tanh(x.xp.sqrt(2 / x.xp.pi) * (x.data + 0.044715 * x.xp.power(x.data, 3))))
         )
 
         return _GELUTensor(f_x, [x], "gelu", device=x.device)

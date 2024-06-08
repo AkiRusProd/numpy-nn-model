@@ -1,10 +1,9 @@
-import neunet
-from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
-from neunet.nn.modules import Module
 import numpy as np
 
-
+import neunet
+from neunet.autograd import Tensor
+from neunet.nn.modules import Module
+from neunet.nn.parameter import Parameter
 
 # class LayerNorm(): #layer with dynamic backpropagation
 #     def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True):
@@ -92,24 +91,16 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
 
 
 class LayerNorm(Module):  # layer with static backpropagation
-    def __init__(
-        self, normalized_shape, eps=1e-05, elementwise_affine=True, device="cpu"
-    ):
+    def __init__(self, normalized_shape, eps=1e-05, elementwise_affine=True, device="cpu"):
         self.normalized_shape = (
-            (normalized_shape,)
-            if isinstance(normalized_shape, int)
-            else normalized_shape
+            (normalized_shape,) if isinstance(normalized_shape, int) else normalized_shape
         )
         self.eps = eps
         self.elementwise_affine = elementwise_affine
 
         if elementwise_affine:
-            self.weight = Parameter(
-                neunet.tensor(np.ones((normalized_shape)), dtype=np.float32)
-            )
-            self.bias = Parameter(
-                neunet.tensor(np.zeros((normalized_shape)), dtype=np.float32)
-            )
+            self.weight = Parameter(neunet.tensor(np.ones((normalized_shape)), dtype=np.float32))
+            self.bias = Parameter(neunet.tensor(np.zeros((normalized_shape)), dtype=np.float32))
         else:
             self.weight = None
             self.bias = None
@@ -117,8 +108,11 @@ class LayerNorm(Module):  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         axis = tuple(range(-len(self.normalized_shape), 0))
 
         mean = self.xp.mean(X.data, axis=axis, keepdims=True)

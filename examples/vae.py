@@ -1,17 +1,17 @@
-import sys, os
+import sys
 from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from tqdm import tqdm
-from neunet.optim import Adam
+
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import matplotlib.pyplot as plt
-
-from PIL import Image
 from data_loader import load_mnist
+from neunet.optim import Adam
 
 noisy_inputs = False
 
@@ -30,9 +30,7 @@ def add_noise(data):
 
 
 training_data, test_data, training_labels, test_labels = load_mnist()
-training_data = (
-    training_data / 255
-)  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
+training_data = training_data / 255  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 test_data = test_data / 255  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 latent_size = 2
@@ -142,9 +140,7 @@ for epoch in range(epochs):
 
         loss = vae.train_step(in_batch, out_batch, optimizer)
 
-        tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
-        )
+        tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}")
 
     generated = (
         vae.decode(
@@ -207,12 +203,8 @@ generated = (
     .numpy()
 )
 
-get_images_set(samples.reshape(-1, 28, 28) * 255).save(
-    "generated images/vae_in_samples.jpeg"
-)
-get_images_set(generated.reshape(-1, 28, 28) * 255).save(
-    "generated images/vae_out_samples.jpeg"
-)
+get_images_set(samples.reshape(-1, 28, 28) * 255).save("generated images/vae_in_samples.jpeg")
+get_images_set(generated.reshape(-1, 28, 28) * 255).save("generated images/vae_out_samples.jpeg")
 
 
 """Visualize latent space only with latent_dim = 2"""
@@ -234,9 +226,7 @@ def plot_latent_space_digits(n=30, figsize=15):
     for i, yi in enumerate(grid_y):
         for j, xi in enumerate(grid_x):
             z_sample = np.array([[xi, yi]])
-            x_decoded = (
-                vae.decode(nnet.tensor(z_sample, device=device)).to("cpu").detach().numpy()
-            )
+            x_decoded = vae.decode(nnet.tensor(z_sample, device=device)).to("cpu").detach().numpy()
             digit = x_decoded[0].reshape(digit_size, digit_size)
             figure[
                 i * digit_size : (i + 1) * digit_size,
@@ -255,7 +245,7 @@ def plot_latent_space_digits(n=30, figsize=15):
     plt.ylabel("z[1]")
     plt.imshow(figure, cmap="Greys_r")
 
-    plt.savefig(f"generated images/vae 2d latent space.jpeg")
+    plt.savefig("generated images/vae 2d latent space.jpeg")
     plt.show()
 
 
@@ -270,10 +260,7 @@ def plot_label_clusters(data, labels):
         return
     # display a 2D plot of the digit classes in the latent space
     z_mean = (
-        vae.encode(nnet.tensor(data, device=device).reshape(-1, 28 * 28))
-        .to("cpu")
-        .detach()
-        .numpy()
+        vae.encode(nnet.tensor(data, device=device).reshape(-1, 28 * 28)).to("cpu").detach().numpy()
     )
     plt.figure(figsize=(12, 10))
     plt.scatter(z_mean[:, 0], z_mean[:, 1], c=labels)
@@ -281,10 +268,8 @@ def plot_label_clusters(data, labels):
     plt.xlabel("z[0]")
     plt.ylabel("z[1]")
 
-    plt.savefig(f"generated images/vae 2d latent space labels.jpeg")
+    plt.savefig("generated images/vae 2d latent space labels.jpeg")
     plt.show()
 
 
-plot_label_clusters(
-    add_noise(training_data) if noisy_inputs else training_data, training_labels
-)
+plot_label_clusters(add_noise(training_data) if noisy_inputs else training_data, training_labels)

@@ -1,18 +1,17 @@
-import sys, os
+import sys
 from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
+
+import numpy as np
+from PIL import Image
 from tqdm import tqdm
-from neunet.optim import Adam
+
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import os
-
-from PIL import Image
 from data_loader import load_mnist
-
+from neunet.optim import Adam
 
 dataset, _, _, _ = load_mnist()
 input_dataset = dataset / 255  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
@@ -64,9 +63,7 @@ for epoch in range(epochs):
         input_batch = nnet.tensor(input_batch, requires_grad=False).reshape(-1, 28 * 28)
 
         target_batch = target_dataset[i : i + batch_size]
-        target_batch = nnet.tensor(target_batch, requires_grad=False).reshape(
-            -1, 28 * 28
-        )
+        target_batch = nnet.tensor(target_batch, requires_grad=False).reshape(-1, 28 * 28)
 
         optimizer.zero_grad()
         output = model(input_batch)
@@ -74,13 +71,13 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
 
-        tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
-        )
+        tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}")
 
-    generated = model(
-        nnet.tensor(input_dataset[:25], requires_grad=False).reshape(-1, 28 * 28)
-    ).detach().numpy()
+    generated = (
+        model(nnet.tensor(input_dataset[:25], requires_grad=False).reshape(-1, 28 * 28))
+        .detach()
+        .numpy()
+    )
     model.eval()
     for i in range(25):
         image = generated[i] * 255

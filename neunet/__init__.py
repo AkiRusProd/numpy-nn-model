@@ -1,7 +1,7 @@
-from neunet.autograd import Tensor
-from neunet import nn
 import numpy as np
 
+from neunet import nn as nn
+from neunet.autograd import Tensor
 
 int16 = np.int16
 int32 = np.int32
@@ -18,39 +18,25 @@ def tensor(data, requires_grad=False, dtype=float32, device="cpu"):
 
 
 def ones(*shape, dtype=None, requires_grad=True, device="cpu"):
-    shape = (
-        tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-    )
+    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
-    return Tensor(
-        np.ones(shape, dtype=dtype), requires_grad=requires_grad, device=device
-    )
+    return Tensor(np.ones(shape, dtype=dtype), requires_grad=requires_grad, device=device)
 
 
 def zeros(*shape, dtype=None, requires_grad=True, device="cpu"):
-    shape = (
-        tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-    )
+    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
-    return Tensor(
-        np.zeros(shape, dtype=dtype), requires_grad=requires_grad, device=device
-    )
+    return Tensor(np.zeros(shape, dtype=dtype), requires_grad=requires_grad, device=device)
 
 
 def rand(*shape, dtype=None, requires_grad=True, device="cpu"):
-    shape = (
-        tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-    )
+    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
-    return Tensor(
-        np.random.rand(*shape).astype(dtype), requires_grad=requires_grad, device=device
-    )
+    return Tensor(np.random.rand(*shape).astype(dtype), requires_grad=requires_grad, device=device)
 
 
 def randn(*shape, dtype=None, requires_grad=True, device="cpu"):
-    shape = (
-        tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-    )
+    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
     return Tensor(
         np.random.randn(*shape).astype(dtype),
@@ -70,15 +56,11 @@ def arange(start=0, end=None, step=1, dtype=None, requires_grad=True, device="cp
 
 
 def ones_like(tensor, dtype=None, requires_grad=True, device="cpu"):
-    return Tensor(
-        np.ones_like(tensor.data, dtype), requires_grad=requires_grad, device=device
-    )
+    return Tensor(np.ones_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
 
 
 def zeros_like(tensor, dtype=None, requires_grad=True, device="cpu"):
-    return Tensor(
-        np.zeros_like(tensor.data, dtype), requires_grad=requires_grad, device=device
-    )
+    return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
 
 
 def argmax(x, axis=None, keepdims=False, device="cpu"):
@@ -174,11 +156,7 @@ def min(x, axis=None, keepdims=False):
 
 
 def concatenate(*tensors, axis=0):
-    tensors = (
-        tensors[0]
-        if len(tensors) == 1 and isinstance(tensors[0], (list, tuple))
-        else tensors
-    )
+    tensors = tensors[0] if len(tensors) == 1 and isinstance(tensors[0], (list, tuple)) else tensors
     return Tensor.concatenate(*tensors, axis=axis)
 
 

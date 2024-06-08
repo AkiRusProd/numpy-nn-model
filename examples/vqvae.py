@@ -1,17 +1,17 @@
-import sys, os
+import sys
 from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 from tqdm import tqdm
-from neunet.optim import Adam
+
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import matplotlib.pyplot as plt
-
-from PIL import Image
 from data_loader import load_mnist
+from neunet.optim import Adam
 
 noisy_inputs = False
 
@@ -30,9 +30,7 @@ def add_noise(data):
 
 
 training_data, test_data, training_labels, test_labels = load_mnist()
-training_data = (
-    training_data / 255
-)  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
+training_data = training_data / 255  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 test_data = test_data / 255  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 num_embeddings = 100
@@ -149,13 +147,14 @@ for epoch in range(epochs):
 
         loss = vqvae.train_step(in_batch, out_batch, optimizer)
 
-        tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}"
-        )
+        tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}")
 
-    generated = vqvae.decode(
-        nnet.tensor(np.random.normal(0, 1, size=(samples_num, latent_size)))
-    ).detach().to("cpu").numpy()
+    generated = (
+        vqvae.decode(nnet.tensor(np.random.normal(0, 1, size=(samples_num, latent_size))))
+        .detach()
+        .to("cpu")
+        .numpy()
+    )
 
     # samples = training_data[np.random.randint(0, len(training_data), samples_num)]
     # if noisy_inputs:
@@ -201,12 +200,8 @@ if noisy_inputs:
     samples = add_noise(samples)
 generated = vqvae.reconstruct(nnet.tensor(samples).reshape(-1, 28 * 28)).detach().to("cpu").numpy()
 
-get_images_set(samples.reshape(-1, 28, 28) * 255).save(
-    "generated images/vqvae_in_samples.jpeg"
-)
-get_images_set(generated.reshape(-1, 28, 28) * 255).save(
-    "generated images/vqvae_out_samples.jpeg"
-)
+get_images_set(samples.reshape(-1, 28, 28) * 255).save("generated images/vqvae_in_samples.jpeg")
+get_images_set(generated.reshape(-1, 28, 28) * 255).save("generated images/vqvae_out_samples.jpeg")
 
 
 """Visualize latent space only with latent_dim = 2"""
@@ -247,7 +242,7 @@ def plot_latent_space_digits(n=30, figsize=15):
     plt.ylabel("z[1]")
     plt.imshow(figure, cmap="Greys_r")
 
-    plt.savefig(f"generated images/vqvae 2d latent space.jpeg")
+    plt.savefig("generated images/vqvae 2d latent space.jpeg")
     plt.show()
 
 
@@ -268,10 +263,8 @@ def plot_label_clusters(data, labels):
     plt.xlabel("z[0]")
     plt.ylabel("z[1]")
 
-    plt.savefig(f"generated images/vqvae 2d latent space labels.jpeg")
+    plt.savefig("generated images/vqvae 2d latent space labels.jpeg")
     plt.show()
 
 
-plot_label_clusters(
-    add_noise(training_data) if noisy_inputs else training_data, training_labels
-)
+plot_label_clusters(add_noise(training_data) if noisy_inputs else training_data, training_labels)

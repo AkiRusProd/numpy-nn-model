@@ -1,13 +1,13 @@
-import sys, os
+import sys
 from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
+from tqdm import tqdm
+
 import neunet as nnet
 import neunet.nn as nn
 import neunet.optim as optim
-from tqdm import tqdm
-
 
 # Example based on the https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html
 
@@ -72,7 +72,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 epochs = 50
 tqdm_range = tqdm(range(epochs))
-for epoch in tqdm_range:
+for _ in tqdm_range:
     total_loss = 0
     for context, target in ngrams:
         context_idxs = nnet.tensor([word_to_ix[w] for w in context], dtype=nnet.int16)
@@ -93,9 +93,7 @@ for epoch in tqdm_range:
 
     tqdm_range.set_description(f"CBOW loss: {total_loss:.7f}")
 
-print(
-    f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}'
-)
+print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')
 
 
 class SkipGramModeler(nn.Module):
@@ -125,7 +123,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 epochs = 50
 tqdm_range = tqdm(range(epochs))
-for epoch in tqdm_range:
+for _ in tqdm_range:
     total_loss = 0
     for context, target in ngrams:
         context_idx = nnet.tensor([word_to_ix[target]], dtype=nnet.int16)
@@ -145,6 +143,4 @@ for epoch in tqdm_range:
 
     tqdm_range.set_description(f"Skip-Gram loss: {total_loss:.7f}")
 
-print(
-    f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}'
-)
+print(f'Embedding of the word "beauty":\n{model.embeddings.weight[word_to_ix["beauty"]]}')

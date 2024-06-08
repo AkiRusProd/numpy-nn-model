@@ -4,15 +4,13 @@ from pathlib import Path
 sys.path[0] = str(Path(sys.path[0]).parent)
 
 
+import numpy as np
 from tqdm import tqdm
-from neunet.optim import Adam
+
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import os
-
 from data_loader import load_mnist
-
+from neunet.optim import Adam
 
 image_size = (1, 28, 28)
 
@@ -20,9 +18,7 @@ training_dataset, test_dataset, training_targets, test_targets = load_mnist()
 training_dataset = (
     training_dataset / 127.5 - 1
 )  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
-test_dataset = (
-    test_dataset / 127.5 - 1
-)  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
+test_dataset = test_dataset / 127.5 - 1  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 
 device = "cuda"
@@ -81,21 +77,15 @@ batch_size = 100
 epochs = 3
 
 for epoch in range(epochs):
-    tqdm_range = tqdm(
-        range(0, len(training_dataset), batch_size), desc="epoch " + str(epoch)
-    )
+    tqdm_range = tqdm(range(0, len(training_dataset), batch_size), desc="epoch " + str(epoch))
     for i in tqdm_range:
         batch = training_dataset[i : i + batch_size]
 
-        batch = batch.reshape(
-            batch.shape[0], image_size[0], image_size[1], image_size[2]
-        )
+        batch = batch.reshape(batch.shape[0], image_size[0], image_size[1], image_size[2])
 
         batch = nnet.tensor(batch, device=device)
 
-        labels = nnet.tensor(
-            one_hot_encode(training_targets[i : i + batch_size]), device=device
-        )
+        labels = nnet.tensor(one_hot_encode(training_targets[i : i + batch_size]), device=device)
 
         optimizer.zero_grad()
 
@@ -107,9 +97,7 @@ for epoch in range(epochs):
 
         optimizer.step()
 
-        tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
-        )
+        tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}")
 
 
 # evaluate
@@ -128,6 +116,4 @@ for i in tqdm(range(len(test_dataset)), desc="evaluating"):
     total += 1
     correct += predicted == test_targets[i]
 
-print(
-    "Accuracy of the network on the 10000 test images: %d %%" % (100 * correct / total)
-)
+print("Accuracy of the network on the 10000 test images: %d %%" % (100 * correct / total))

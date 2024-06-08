@@ -1,4 +1,3 @@
-from neunet.autograd import Tensor
 # import numpy as np
 
 
@@ -135,10 +134,7 @@ class Adadelta:
 
             self.m[i] = self.rho * self.m[i] + (1 - self.rho) * param.grad**2
             delta_x = (
-                -(
-                    param.xp.sqrt(self.v[i] + self.eps)
-                    / param.xp.sqrt(self.m[i] + self.eps)
-                )
+                -(param.xp.sqrt(self.v[i] + self.eps) / param.xp.sqrt(self.m[i] + self.eps))
                 * param.grad
             )
             self.v[i] = self.rho * self.v[i] + (1 - self.rho) * delta_x**2
@@ -168,9 +164,7 @@ class Adamax:
                 continue
 
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
-            self.v[i] = param.xp.maximum(
-                self.betas[1] * self.v[i], param.xp.abs(param.grad)
-            )
+            self.v[i] = param.xp.maximum(self.betas[1] * self.v[i], param.xp.abs(param.grad))
 
             m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
 
@@ -202,9 +196,9 @@ class NAdam:
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
             self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad**2
 
-            m_hat = self.m[i] / (1 - self.betas[0] ** self.t) + (
-                1 - self.betas[0]
-            ) * param.grad / (1 - self.betas[0] ** self.t)
+            m_hat = self.m[i] / (1 - self.betas[0] ** self.t) + (1 - self.betas[0]) * param.grad / (
+                1 - self.betas[0] ** self.t
+            )
             v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
 
             param.data -= self.lr * m_hat / (param.xp.sqrt(v_hat) + self.eps)

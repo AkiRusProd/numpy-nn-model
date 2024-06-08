@@ -1,6 +1,8 @@
-from neunet.autograd import Tensor
-import numpy as np
 import cupy as cp
+import numpy as np
+
+from neunet.autograd import Tensor
+
 # class Parameter(Tensor):
 #     def __new__(cls, data: Tensor = None, requires_grad = True):
 #         assert isinstance(data, Tensor), "Data must be a tensor"
@@ -13,7 +15,8 @@ import cupy as cp
 
 class Parameter(Tensor):
     def __init__(self, data: Tensor = None, requires_grad=True):
-        assert isinstance(data, Tensor), "Data must be a tensor"
+        if not isinstance(data, Tensor):
+            raise TypeError("Data must be a tensor")
 
         super().__init__(
             data=data.data,
@@ -23,7 +26,8 @@ class Parameter(Tensor):
         )
 
     def to(self, device):
-        assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
+        if device not in ["cpu", "cuda"]:
+            raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
             xp = np
         else:

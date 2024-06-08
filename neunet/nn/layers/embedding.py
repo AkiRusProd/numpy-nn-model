@@ -1,4 +1,5 @@
 import numpy as np
+
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
@@ -27,9 +28,7 @@ class Embedding(Module):
         # stdv = 1. / self.xp.sqrt(embedding_dim)
         # self.weight = Tensor(self.xp.random.uniform(-stdv, stdv, (num_embeddings, embedding_dim)), dtype=self.xp.float32)
         self.weight = Parameter(
-            neunet.tensor(
-                np.random.randn(num_embeddings, embedding_dim), dtype=np.float32
-            )
+            neunet.tensor(np.random.randn(num_embeddings, embedding_dim), dtype=np.float32)
         )  # Torch's initialization
         self.to(device)
 
@@ -40,8 +39,11 @@ class Embedding(Module):
         return O.reshape(*X.shape, self.num_embeddings)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         X_one_hot = self.one_hot(X if isinstance(X, self.xp.ndarray) else X.data)
         return _EmbeddingTensor(
             self.xp.dot(X_one_hot, self.weight.data),

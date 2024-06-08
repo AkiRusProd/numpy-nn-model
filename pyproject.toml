@@ -18,6 +18,37 @@ requests = "^2.32.3"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.7"
 
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["venv", "tests"]
+
+[tool.ruff.lint]
+ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "A001", "C901"]
+fixable = ["I", "B", "RUF", "F"]
+select = [
+    "I",     # Isort rules
+    "C90",   # Maccabe complexity
+    "ASYNC", # flake8-async
+    "S",     #  flake8-bandit
+    "BLE",   # flake8-blind-except
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "C4",    # flake8-comprehensions
+    "T20",   # flake8-print
+    # "RET",   # flake8-return
+    "SLF", # flake8-self
+    "RUF", # ruff
+    "ERA", # eradicate
+    "PTH", # flake8-use-pathlib
+    "FBT", # flake8-boolean-trap
+    "F",   # pyflakes
+]
+preview = true
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F403"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

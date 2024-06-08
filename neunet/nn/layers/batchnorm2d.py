@@ -1,9 +1,9 @@
-import neunet
-from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
-from neunet.nn.modules import Module
 import numpy as np
 
+import neunet
+from neunet.autograd import Tensor
+from neunet.nn.modules import Module
+from neunet.nn.parameter import Parameter
 
 
 class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
@@ -32,21 +32,17 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
         )  # self.xp.prod(self.xp.array(X.shape)[_axis])
         dmean = (
             self.xp.ones_like(X.data)
-            * self.xp.sum(
-                dX_hat * stddev_inv[..., None, None], axis=axis, keepdims=True
-            )
+            * self.xp.sum(dX_hat * stddev_inv[..., None, None], axis=axis, keepdims=True)
             * (-1)
             / batch_size
         )  # self.xp.prod(self.xp.array(X.shape)[_axis])
         grad_X = dX_hat * stddev_inv[..., None, None] + dvar + dmean
 
         if affine:
-            grad_weight = self.xp.sum(
-                grad * X_hat, axis=(0, 2, 3), keepdims=True
-            ).reshape(weight.data.shape)
-            grad_bias = self.xp.sum(grad, axis=(0, 2, 3), keepdims=True).reshape(
-                bias.data.shape
+            grad_weight = self.xp.sum(grad * X_hat, axis=(0, 2, 3), keepdims=True).reshape(
+                weight.data.shape
             )
+            grad_bias = self.xp.sum(grad, axis=(0, 2, 3), keepdims=True).reshape(bias.data.shape)
 
         X.backward(grad_X)
         if affine:
@@ -65,12 +61,8 @@ class BatchNorm2d(Module):  # layer with static backpropagation
         self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
 
         if affine:
-            self.weight = Parameter(
-                neunet.tensor(np.ones((1, num_features)), dtype=np.float32)
-            )
-            self.bias = Parameter(
-                neunet.tensor(np.zeros((1, num_features)), dtype=np.float32)
-            )
+            self.weight = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))
+            self.bias = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32))
         else:
             self.weight = None
             self.bias = None
@@ -79,18 +71,17 @@ class BatchNorm2d(Module):  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         if self.training:
             mean = self.xp.mean(X.data, axis=(0, 2, 3))
             var = self.xp.var(X.data, axis=(0, 2, 3))
 
-            self.running_mean = (
-                self.momentum * self.running_mean + (1 - self.momentum) * mean
-            )
-            self.running_var = (
-                self.momentum * self.running_var + (1 - self.momentum) * var
-            )
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
         else:
             mean = self.running_mean.data
             var = self.running_var.data

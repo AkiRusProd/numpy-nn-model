@@ -1,5 +1,6 @@
+from pathlib import Path
+
 import requests
-import numpy as np
 from tqdm import tqdm
 
 train_url = "https://pjreddie.com/media/files/mnist_train.csv"
@@ -9,15 +10,18 @@ mnist_data_path = "datasets/mnist/"
 
 
 def download_data(url, path):
-    resp = requests.get(url, stream=True)
+    resp = requests.get(url, stream=True, timeout=10)
     total = int(resp.headers.get("content-length", 0))
-    with open(path, "wb") as file, tqdm(
-        desc=f"downloading file to {path = }",
-        total=total,
-        unit="iB",
-        unit_scale=True,
-        unit_divisor=1024,
-    ) as bar:
+    with (
+        Path.open(path, "wb") as file,
+        tqdm(
+            desc=f"downloading file to {path = }",
+            total=total,
+            unit="iB",
+            unit_scale=True,
+            unit_divisor=1024,
+        ) as bar,
+    ):
         for data in resp.iter_content(chunk_size=1024):
             size = file.write(data)
             bar.update(size)

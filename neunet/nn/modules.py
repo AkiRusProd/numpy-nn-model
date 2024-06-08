@@ -1,6 +1,8 @@
-from neunet.autograd import Tensor
-import numpy as np
 import cupy as cp
+import numpy as np
+
+from neunet.autograd import Tensor
+
 
 class Module:
     def __init__(self):
@@ -17,7 +19,7 @@ class Module:
 
     def parameters(self):
         params = []
-        for name, item in self.__dict__.items():
+        for _, item in self.__dict__.items():
             if isinstance(item, Tensor):
                 if (
                     item.requires_grad
@@ -32,13 +34,13 @@ class Module:
 
     def eval(self):
         self.training = False
-        for name, item in self.__dict__.items():
+        for _, item in self.__dict__.items():
             if hasattr(item, "eval"):
                 item.eval()
 
     def train(self, mode=True):
         self.training = mode
-        for name, item in self.__dict__.items():
+        for _, item in self.__dict__.items():
             if hasattr(item, "train"):
                 item.train(mode)
 

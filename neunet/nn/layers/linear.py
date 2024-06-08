@@ -1,10 +1,9 @@
-import neunet
-from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
-from neunet.nn.modules import Module
 import numpy as np
 
-
+import neunet
+from neunet.autograd import Tensor
+from neunet.nn.modules import Module
+from neunet.nn.parameter import Parameter
 
 # Y = X matmul W.T + b
 
@@ -36,24 +35,23 @@ class Linear(Module):  # layer with static backpropagation
         )
 
         if bias == True:
-            self.bias = Parameter(
-                neunet.tensor(np.zeros((1, out_features)), dtype=np.float32)
-            )
+            self.bias = Parameter(neunet.tensor(np.zeros((1, out_features)), dtype=np.float32))
         else:
             self.bias = None
         self.to(device)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         self.X = X
         self.O = self.xp.matmul(self.X.data, self.weight.data.T)
         if self.bias is not None:
             self.O = self.O + self.bias.data
 
-        return _LinearTensor(
-            self.O, [self.X, self.weight, self.bias], "linear", device=self.device
-        )
+        return _LinearTensor(self.O, [self.X, self.weight, self.bias], "linear", device=self.device)
 
     def __call__(self, X):
         return self.forward(X)

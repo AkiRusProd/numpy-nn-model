@@ -1,20 +1,20 @@
-import numpy as np
-
 import sys
-import os
-import pickle as pkl
 from pathlib import Path
+
+import numpy as np
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
-from tqdm import tqdm
+from typing import Tuple
+
 from PIL import Image
-from typing import Type, Union, List, Tuple, Dict, Optional, Callable
-from data_loader import load_mnist
+from tqdm import tqdm
+
 import neunet as nnet
-from neunet.optim import Adam
 import neunet.nn as nn
+from data_loader import load_mnist
 from neunet import Tensor
+from neunet.optim import Adam
 
 # https://arxiv.org/abs/2006.11239
 # https://arxiv.org/abs/2102.09672
@@ -33,9 +33,7 @@ def linear_schedule(start, end, timesteps):
 
 
 class Diffusion:
-    def __init__(
-        self, timesteps: int, beta_start: float, beta_end: float, criterion, model=None
-    ):
+    def __init__(self, timesteps: int, beta_start: float, beta_end: float, criterion, model=None):
         self.model = model
 
         self.beta_start = beta_start
@@ -87,17 +85,12 @@ class Diffusion:
 
         Algorithm 1: Training; according to the paper
         """
-        timesteps_selection = np.random.randint(
-            1, self.timesteps, (x.shape[0],), dtype=np.int32
-        )
-        noise = nnet.tensor(
-            np.random.normal(size=x.shape), requires_grad=False, device=x.device
-        )
+        timesteps_selection = np.random.randint(1, self.timesteps, (x.shape[0],), dtype=np.int32)
+        noise = nnet.tensor(np.random.normal(size=x.shape), requires_grad=False, device=x.device)
 
         x_t = (
             self.sqrt_alphas_cumprod[timesteps_selection, None, None, None] * x
-            + self.sqrt_one_minus_alphas_cumprod[timesteps_selection, None, None, None]
-            * noise
+            + self.sqrt_one_minus_alphas_cumprod[timesteps_selection, None, None, None] * noise
         )
         # print(f"init forward: {x_t.shape}, {noise.shape}")
         x = self.model.forward(
@@ -123,8 +116,10 @@ class Diffusion:
         """
 
         if mask is not None:
-            assert orig_x is not None
-            assert orig_x.shape == mask.shape
+            if orig_x is None:
+                raise ValueError("orig_x must not be None")
+            if orig_x.shape != mask.shape:
+                raise ValueError("orig_x shape must be equal to mask shape")
 
         if x_t is None:
             if orig_x is None:
@@ -140,16 +135,12 @@ class Diffusion:
             total=self.timesteps,
         ):
             noise = (
-                nnet.tensor(
-                    np.random.normal(size=x_t.shape), requires_grad=False, device=device
-                )
+                nnet.tensor(np.random.normal(size=x_t.shape), requires_grad=False, device=device)
                 if t > 1
                 else 0
             )
             eps = (
-                self.model.forward(x_t, np.array([t]) / self.timesteps)
-                .reshape(x_t.shape)
-                .detach()
+                self.model.forward(x_t, np.array([t]) / self.timesteps).reshape(x_t.shape).detach()
             )
 
             x_t = (
@@ -194,8 +185,10 @@ class Diffusion:
         """
         # TODO: FIX LOOP with appropriate tensors types
         if mask is not None:
-            assert orig_x is not None
-            assert orig_x.shape == mask.shape
+            if orig_x is None:
+                raise ValueError("orig_x must not be None")
+            if orig_x.shape != mask.shape:
+                raise ValueError("orig_x shape must be equal to mask shape")
 
         if x_t is None:
             if orig_x is None:
@@ -210,9 +203,9 @@ class Diffusion:
             total=perform_steps,
         ):
             noise = np.random.normal(size=x_t.shape) if t > 1 else 0
-            eps = self.model.forward(
-                x_t, np.array([t]) / self.timesteps, training=False
-            ).reshape(x_t.shape)
+            eps = self.model.forward(x_t, np.array([t]) / self.timesteps, training=False).reshape(
+                x_t.shape
+            )
 
             x0_t = (x_t - eps * np.sqrt(1 - self.alphas_cumprod[t])) / np.sqrt(
                 self.alphas_cumprod[t]
@@ -281,14 +274,10 @@ class Diffusion:
         else:
             return Image.fromarray(images_array)
 
-    def train(
-        self, dataset, epochs, batch_size, image_path, image_size, save_every_epochs=1
-    ):
+    def train(self, dataset, epochs, batch_size, image_path, image_size, save_every_epochs=1):
         channels, H_size, W_size = image_size
 
-        data_batches = np.array_split(
-            dataset, np.arange(batch_size, len(dataset), batch_size)
-        )
+        data_batches = np.array_split(dataset, np.arange(batch_size, len(dataset), batch_size))
 
         loss_history = []
         for epoch in range(epochs):
@@ -299,9 +288,7 @@ class Diffusion:
                 batch = batch.reshape(-1, channels, H_size, W_size)
                 # print(batch.shape)
                 output, noise = self.forward(
-                    nnet.tensor(
-                        batch, requires_grad=True, device=device, dtype=nnet.float32
-                    )
+                    nnet.tensor(batch, requires_grad=True, device=device, dtype=nnet.float32)
                 )
                 loss = self.criterion(output, noise)
                 losses.append(loss.item())
@@ -309,9 +296,7 @@ class Diffusion:
                 loss.backward()
                 self.optimizer.step()
 
-                tqdm_range.set_description(
-                    f"loss: {losses[-1]:.7f} | epoch {epoch + 1}/{epochs}"
-                )
+                tqdm_range.set_description(f"loss: {losses[-1]:.7f} | epoch {epoch + 1}/{epochs}")
 
                 if batch_num == (len(data_batches) - 1):
                     epoch_loss = nnet.tensor(losses, device=device).mean().detach().cpu().numpy()
@@ -383,9 +368,7 @@ class ResBlock(nn.Module):
                 padding=(1, 1),
             )
 
-        self.conv2 = nn.Conv2d(
-            output_channels, output_channels, kernel_size=(3, 3), padding=(1, 1)
-        )
+        self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=(3, 3), padding=(1, 1))
         self.relu1 = nn.LeakyReLU(alpha=0.01)
         self.relu2 = nn.LeakyReLU(alpha=0.01)
         self.relu3 = nn.LeakyReLU(alpha=0.01)
@@ -426,9 +409,7 @@ class PositionalEncoding(nn.Module):
 
         pe = np.zeros((max_len, d_model))  # (max_len, d_model)
         position = np.arange(0, max_len)[:, np.newaxis]  # (max_len, 1)
-        div_term = np.exp(
-            np.arange(0, d_model, 2) * (-np.log(10000.0) / d_model)
-        )  # (d_model,)
+        div_term = np.exp(np.arange(0, d_model, 2) * (-np.log(10000.0) / d_model))  # (d_model,)
 
         pe[:, 0::2] = np.sin(position * div_term)
         pe[:, 1::2] = np.cos(position * div_term)
@@ -468,9 +449,7 @@ class SimpleUNet(nn.Module):
             self.input_conv = nn.ConvTranspose2d(
                 image_channels, down_channels[0], kernel_size=(5, 5)
             )
-            self.output_conv = nn.Conv2d(
-                up_channels[-1], noise_channels, kernel_size=(5, 5)
-            )
+            self.output_conv = nn.Conv2d(up_channels[-1], noise_channels, kernel_size=(5, 5))
         else:
             self.input_conv = nn.Conv2d(
                 image_channels, down_channels[0], kernel_size=(3, 3), padding=(1, 1)
@@ -481,18 +460,14 @@ class SimpleUNet(nn.Module):
 
         self.down_layers = nn.ModuleList(
             [
-                ResBlock(down_channels[i], down_channels[i + 1], time_emb_dim).to(
-                    device
-                )
+                ResBlock(down_channels[i], down_channels[i + 1], time_emb_dim).to(device)
                 for i in range(len(down_channels) - 1)
             ]
         )
 
         self.up_layers = nn.ModuleList(
             [
-                ResBlock(up_channels[i], up_channels[i + 1], time_emb_dim, up=True).to(
-                    device
-                )
+                ResBlock(up_channels[i], up_channels[i + 1], time_emb_dim, up=True).to(device)
                 for i in range(len(up_channels) - 1)
             ]
         )
@@ -547,15 +522,13 @@ diffusion = Diffusion(
 )
 
 training_data, test_data, training_labels, test_labels = load_mnist()
-training_data = (
-    training_data / 127.5 - 1
-)  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
+training_data = training_data / 127.5 - 1  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
 
 # diffusion.ddpm_denoise_sample(25, (1, 28, 28))
 diffusion.train(
     training_data,
     epochs=3,
     batch_size=16,
-    image_path=f"generated images",
+    image_path="generated images",
     image_size=(1, 28, 28),
 )

@@ -1,5 +1,6 @@
-import numpy as np
 import cupy as cp
+import numpy as np
+
 import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
@@ -29,7 +30,6 @@ class _GRUTensor(Tensor):
             unactivated_update_gates,
             unactivated_reset_gates,
             unactivated_cell_states,
-            input_size,
             hidden_size,
             timesteps,
             nonlinearity,
@@ -40,9 +40,7 @@ class _GRUTensor(Tensor):
         if len(X_data.shape) == 2:
             X_data = X_data[self.xp.newaxis, :, :]
 
-        if (
-            self.data.shape != hidden_states[:, 0:-1, :].shape
-        ):  # if return_sequences == "last"
+        if self.data.shape != hidden_states[:, 0:-1, :].shape:  # if return_sequences == "last"
             temp = self.xp.zeros_like((hidden_states))
             temp[:, [-2], :] = grad  # [-2] saves dims when slicing
             grad = temp
@@ -84,9 +82,7 @@ class _GRUTensor(Tensor):
             )
 
             grad_weight_r += self.xp.dot(X_data[:, t, :].T, reset_gates_delta)
-            grad_weight_hr += self.xp.dot(
-                hidden_states[:, t - 1, :].T, reset_gates_delta
-            )
+            grad_weight_hr += self.xp.dot(hidden_states[:, t - 1, :].T, reset_gates_delta)
             grad_bias_r += reset_gates_delta.sum(axis=0)
 
             update_gates_delta = (
@@ -95,9 +91,7 @@ class _GRUTensor(Tensor):
                 * recurrent_nonlinearity.derivative(unactivated_update_gates[:, t, :])
             )
             grad_weight_z += self.xp.dot(X_data[:, t, :].T, update_gates_delta)
-            grad_weight_hz += self.xp.dot(
-                hidden_states[:, t - 1, :].T, update_gates_delta
-            )
+            grad_weight_hz += self.xp.dot(hidden_states[:, t - 1, :].T, update_gates_delta)
             grad_bias_z += update_gates_delta.sum(axis=0)
 
             next_hidden_delta = (
@@ -208,15 +202,9 @@ class GRU(Module):
         )
 
         if bias:
-            self.bias_z = Parameter(
-                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            )
-            self.bias_r = Parameter(
-                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            )
-            self.bias_h = Parameter(
-                neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32)
-            )
+            self.bias_z = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_r = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
+            self.bias_h = Parameter(neunet.tensor(np.zeros(self.hidden_size), dtype=np.float32))
         else:
             self.bias_z = None
             self.bias_r = None
@@ -228,8 +216,11 @@ class GRU(Module):
         self.to(device)
 
     def forward(self, X, hprev=None, cprev=None):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         X_data = X.data
 
         if len(X_data.shape) == 2:
@@ -237,14 +228,10 @@ class GRU(Module):
 
         batch_size, timesteps, input_size = X_data.shape
 
-        update_gates = self.xp.zeros(
-            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
-        )
+        update_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_update_gates = self.xp.zeros_like(update_gates)
 
-        reset_gates = self.xp.zeros(
-            (batch_size, timesteps, self.hidden_size), dtype=X_data.dtype
-        )
+        reset_gates = self.xp.zeros((batch_size, timesteps, self.hidden_size), dtype=X_data.dtype)
         unactivated_reset_gates = self.xp.zeros_like(reset_gates)
 
         cell_states = self.xp.zeros(
@@ -260,15 +247,12 @@ class GRU(Module):
             self.hprev = hprev
             self.cprev = cprev
 
-        assert (
-            self.hprev is None or self.hprev.shape == hidden_states[:, -1, :].shape
-        ), "hprev shape must be equal to (batch_size, 1, hidden_size)"
-        assert (
-            self.cprev is None or self.cprev.shape == cell_states[:, -1, :].shape
-        ), "cprev shape must be equal to (batch_size, 1, hidden_size)"
-        assert (
-            self.input_size == input_size
-        ), "input_size must be equal to input shape[2]"
+        if self.hprev is not None and self.hprev.shape != hidden_states[:, -1, :].shape:
+            raise ValueError("hprev shape must be equal to (batch_size, 1, hidden_size)")
+        if self.cprev is not None and self.cprev.shape != cell_states[:, -1, :].shape:
+            raise ValueError("cprev shape must be equal to (batch_size, 1, hidden_size)")
+        if self.input_size != input_size:
+            raise ValueError("input_size must be equal to input shape[2]")
 
         if self.hprev is None:
             self.hprev = self.xp.zeros_like(hidden_states[:, 0, :])
@@ -315,9 +299,7 @@ class GRU(Module):
                 if self.bias_h is not None
                 else 0
             )
-            cell_states[:, t, :] = self.nonlinearity.function(
-                unactivated_cell_states[:, t, :]
-            )
+            cell_states[:, t, :] = self.nonlinearity.function(unactivated_cell_states[:, t, :])
 
             hidden_states[:, t, :] = (
                 update_gates[:, t, :] * hidden_states[:, t - 1, :]
@@ -349,7 +331,6 @@ class GRU(Module):
             unactivated_update_gates,
             unactivated_reset_gates,
             unactivated_cell_states,
-            self.input_size,
             self.hidden_size,
             timesteps,
             self.nonlinearity,

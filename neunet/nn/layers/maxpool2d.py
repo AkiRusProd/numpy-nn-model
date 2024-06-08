@@ -1,7 +1,8 @@
+import cupy as cp
+import numpy as np
+
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
-import numpy as np
-import cupy as cp
 
 
 class _MaxPool2dTensor(Tensor):
@@ -11,14 +12,11 @@ class _MaxPool2dTensor(Tensor):
     def backward(self, grad):
         (
             X,
-            kernel_size,
             stride,
             padding,
-            dilation,
             input_size,
             output_size,
             dilated_kernel_size,
-            kernel,
             windows,
             O_einsum,
         ) = self.args
@@ -45,8 +43,8 @@ class _MaxPool2dTensor(Tensor):
         windows = O_einsum.reshape(-1, dilated_kernel_size[0] * dilated_kernel_size[1])
 
         grad_col = self.xp.zeros_like(windows, dtype=grad.dtype)
-        grad_col[self.xp.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = (
-            grad.reshape(-1)
+        grad_col[self.xp.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = grad.reshape(
+            -1
         )
         grad_col = grad_col.reshape(
             batch_size,
@@ -83,9 +81,7 @@ class _MaxPool2dTensor(Tensor):
 class MaxPool2d(Module):
     def __init__(self, kernel_size, stride=None, padding=0, dilation=1):
         self.kernel_size = (
-            kernel_size
-            if isinstance(kernel_size, tuple)
-            else (kernel_size, kernel_size)
+            kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
         )
         self.stride = (
             stride
@@ -95,9 +91,7 @@ class MaxPool2d(Module):
             else self.kernel_size
         )
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
-        self.dilation = (
-            dilation if isinstance(dilation, tuple) else (dilation, dilation)
-        )
+        self.dilation = dilation if isinstance(dilation, tuple) else (dilation, dilation)
 
         self.input_size = None
 
@@ -106,22 +100,18 @@ class MaxPool2d(Module):
         self.input_height, self.input_width = self.input_size[2:]
 
         if self.padding == "valid":
-            self.padding == (0, 0, 0, 0)
+            self.padding = (0, 0, 0, 0)
         elif self.padding == "same" or self.padding == "real same":
             if self.padding == "same":
-                padding_up_down = (
-                    self.dilation[0] * (self.kernel_height - 1) - self.stride[0] + 1
-                )
-                padding_left_right = (
-                    self.dilation[1] * (self.kernel_width - 1) - self.stride[1] + 1
-                )
+                padding_up_down = self.dilation[0] * (self.kernel_height - 1) - self.stride[0] + 1
+                padding_left_right = self.dilation[1] * (self.kernel_width - 1) - self.stride[1] + 1
             elif self.padding == "real same":
-                padding_up_down = (self.stride[0] - 1) * (
-                    self.input_height - 1
-                ) + self.dilation[0] * (self.kernel_height - 1)
-                padding_left_right = (self.stride[1] - 1) * (
-                    self.input_width - 1
-                ) + self.dilation[1] * (self.kernel_width - 1)
+                padding_up_down = (self.stride[0] - 1) * (self.input_height - 1) + self.dilation[
+                    0
+                ] * (self.kernel_height - 1)
+                padding_left_right = (self.stride[1] - 1) * (self.input_width - 1) + self.dilation[
+                    1
+                ] * (self.kernel_width - 1)
 
             if padding_up_down % 2 == 0:
                 padding_up, padding_down = padding_up_down // 2, padding_up_down // 2
@@ -187,14 +177,16 @@ class MaxPool2d(Module):
         )
 
     def forward(self, X: Tensor):
-        assert isinstance(X, Tensor), "Input must be a tensor"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+
         self.input_size = X.shape
         self.input_dtype = X.dtype
         self.build()
 
         X_data = set_padding(X.data, self.padding, value=-np.inf)
 
-        batch_size, in_channels, in_height, in_width = X_data.shape
+        batch_size, in_channels, _, _ = X_data.shape
 
         batch_str, channel_str, kern_h_str, kern_w_str = X_data.strides
         windows = X.xp.lib.stride_tricks.as_strided(
@@ -217,9 +209,7 @@ class MaxPool2d(Module):
             ),
         )
 
-        O_einsum = X.xp.einsum(
-            "bihwkl,oikl->bihwkl", windows, self.kernel[None, None, ...]
-        )
+        O_einsum = X.xp.einsum("bihwkl,oikl->bihwkl", windows, self.kernel[None, None, ...])
         # O_args = np.where(O_einsum == np.nanmax(O_einsum, axis=(4, 5))[..., None, None], 1, 0)
         # O_argw = np.argwhere(O_einsum == np.nanmax(O_einsum, axis=(4, 5))[..., None, None])
         O = X.xp.nanmax(O_einsum, axis=(4, 5))  # np.amax(windows, axis=(4, 5))
@@ -239,14 +229,11 @@ class MaxPool2d(Module):
             O,
             [
                 X,
-                self.kernel_size,
                 self.stride,
                 self.padding,
-                self.dilation,
                 self.input_size,
                 self.output_size,
                 self.dilated_kernel_size,
-                self.kernel,
                 windows,
                 O_einsum,
             ],
@@ -274,10 +261,16 @@ def set_dilation_stride(array, stride, value=0):
 
     return strided_layer
 
+
 def set_padding(array, padding, value=0):
     # New shape: (_, _, H + P[0] + P[1], W + P[2] + P[3])
     xp = np if isinstance(array, np.ndarray) else cp
-    return xp.pad(array, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])), constant_values=value)
+    return xp.pad(
+        array,
+        ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])),
+        constant_values=value,
+    )
+
 
 def remove_padding(array, padding):
     # New shape: (_, _, H - P[0] - P[1], W - P[2] - P[3])

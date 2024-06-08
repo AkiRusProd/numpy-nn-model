@@ -1,7 +1,8 @@
+import numpy as np
+
+import neunet as nnet
 from neunet.autograd import Tensor
 from neunet.nn.activations import Softmax
-import neunet as nnet
-import numpy as np
 
 
 class MSELoss:
@@ -9,10 +10,10 @@ class MSELoss:
         pass
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be a tensor"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         return (y_pred.sub(y_true)).power(2).sum().div(np.prod(y_pred.data.shape))
 
@@ -26,19 +27,20 @@ class BCELoss:
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be tensors"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         loss = y_true.mul(y_pred.log()).add((1.0 - y_true).mul((1.0 - y_pred).log()))
 
         if self.weight is None:
             self.weight = y_pred.xp.ones((1))
 
-        assert (
-            (self.weight * y_pred.data).shape == y_pred.data.shape
-        ), "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
+        if (self.weight * y_pred.data).shape != y_pred.data.shape:
+            raise ValueError(
+                "Product shape of multiplication weight and y_pred must be equal to y_pred shape"
+            )
 
         loss = loss.mul(self.weight)
 
@@ -63,10 +65,10 @@ class CrossEntropyLoss:
         self.nll_loss = NLLLoss(weight, ignore_index, reduction)
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be tensors"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         y_pred = self.softmax(y_pred).log()
         return self.nll_loss(y_pred, y_true)
@@ -82,22 +84,18 @@ class NLLLoss:
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be tensors"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         if self.weight is None:
             self.weight = y_pred.xp.ones((y_pred.data.shape[1]))
 
-        assert self.weight.shape == (
-            y_pred.data.shape[1],
-        ), "Weight shape must be equal to number of classes"
-        assert y_true.dtype in (
-            np.int16,
-            np.int32,
-            np.int64,
-        ), "Target must be of int dtype"
+        if self.weight.shape != (y_pred.data.shape[1],):
+            raise ValueError("Weight shape must be equal to number of classes")
+        if y_true.dtype not in (np.int16, np.int32, np.int64):
+            raise TypeError("Target must be of int dtype")
 
         if y_pred.data.ndim == 2:
             y_pred = y_pred[..., None]
@@ -127,10 +125,10 @@ class L1Loss:
         self.reduction = reduction
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be tensors"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         loss = y_pred.sub(y_true).abs()
 
@@ -151,10 +149,10 @@ class KLDivLoss:
         self.log_target = log_target
 
     def forward(self, y_pred, y_true):
-        assert isinstance(y_pred, Tensor) and isinstance(
-            y_true, Tensor
-        ), "Input values must be tensors"
-        assert y_pred.device == y_true.device, "Tensors must be on the same device"
+        if not isinstance(y_pred, Tensor) or not isinstance(y_true, Tensor):
+            raise TypeError("Input values must be tensors")
+        if y_pred.device != y_true.device:
+            raise ValueError("Tensors must be on the same device")
 
         if not self.log_target:
             loss = y_true.mul(y_true.log().sub(y_pred))

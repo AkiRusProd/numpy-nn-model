@@ -1,20 +1,17 @@
-import sys, os
+import sys
 from pathlib import Path
 
 sys.path[0] = str(Path(sys.path[0]).parent)
 
 
+import numpy as np
+from PIL import Image
 from tqdm import tqdm
-from neunet.optim import Adam
+
 import neunet as nnet
 import neunet.nn as nn
-import numpy as np
-import cupy as cp
-import os
-
-from PIL import Image
 from data_loader import load_mnist
-
+from neunet.optim import Adam
 
 image_size = (1, 28, 28)
 x_num, y_num = 5, 5
@@ -140,9 +137,7 @@ for epoch in range(epochs):
     else:
         noise = const_noise
 
-    each_epoch_generated_samples.append(
-        generator(noise).detach().cpu().numpy().reshape(-1, 28, 28)
-    )
+    each_epoch_generated_samples.append(generator(noise).detach().cpu().numpy().reshape(-1, 28, 28))
 
     generator.eval()
     discriminator.eval()
@@ -189,7 +184,7 @@ def create_vectors_interpolation():
 
     noise_1 = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)))
 
-    for step in range(steps):
+    for _ in range(steps):
         noise_2 = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)))
 
         noise_interp = np.linspace(noise_1.numpy(), noise_2.numpy(), interval)

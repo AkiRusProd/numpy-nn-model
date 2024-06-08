@@ -1,9 +1,9 @@
-import neunet
-from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
-from neunet.nn.modules import Module
 import numpy as np
 
+import neunet
+from neunet.autograd import Tensor
+from neunet.nn.modules import Module
+from neunet.nn.parameter import Parameter
 
 
 class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
@@ -25,9 +25,7 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
             * (
                 batch_size * grad
                 - self.xp.sum(grad, axis=0)
-                - X_centered
-                * self.xp.power(stddev_inv, 2)
-                * self.xp.sum(grad * X_centered, axis=0)
+                - X_centered * self.xp.power(stddev_inv, 2) * self.xp.sum(grad * X_centered, axis=0)
             )
         )
 
@@ -52,12 +50,8 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
 
         if affine:
-            self.weight = Parameter(
-                neunet.tensor(np.ones((1, num_features)), dtype=np.float32)
-            )
-            self.bias = Parameter(
-                neunet.tensor(np.zeros((1, num_features)), dtype=np.float32)
-            )
+            self.weight = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))
+            self.bias = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32))
         else:
             self.weight = None
             self.bias = None
@@ -66,8 +60,11 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         self.to(device)
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         if self.training:
             mean = self.xp.mean(X.data, axis=0, keepdims=True)
             var = self.xp.var(X.data, axis=0, keepdims=True)

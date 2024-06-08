@@ -1,10 +1,10 @@
+import cupy as cp
+import numpy as np
+
 import neunet
 from neunet.autograd import Tensor
-from neunet.nn.parameter import Parameter
 from neunet.nn.modules import Module
-import numpy as np
-import cupy as cp
-
+from neunet.nn.parameter import Parameter
 
 
 class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
@@ -16,9 +16,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
             X,
             weight,
             bias,
-            in_channels,
             out_channels,
-            kernel_size,
             padding,
             stride,
             dilation,
@@ -29,8 +27,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
             windows,
         ) = self.args
 
-        batch_size, in_channels, in_height, in_width = X.shape
-        input_size = (in_height, in_width)
+        batch_size, _, _, _ = X.shape
 
         grad_pattern = self.xp.zeros(
             (
@@ -77,9 +74,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
         grad_bias = self.xp.sum(grad, axis=(0, 2, 3))
 
         grad_X = self.xp.einsum("bohwkl,oikl->bihw", grad_windows, weight_rot_180)
-        grad_X = self.prepare_grad(
-            grad_X, padding, stride, dilated_kernel_size, output_padding
-        )
+        grad_X = self.prepare_grad(grad_X, padding, stride, dilated_kernel_size, output_padding)
 
         weight.data = remove_stride(weight.data, dilation)
         grad_weight = remove_stride(grad_weight, dilation)
@@ -150,24 +145,18 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = (
-            kernel_size
-            if isinstance(kernel_size, tuple)
-            else (kernel_size, kernel_size)
+            kernel_size if isinstance(kernel_size, tuple) else (kernel_size, kernel_size)
         )
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
         self.stride = stride if isinstance(stride, tuple) else (stride, stride)
-        self.dilation = (
-            dilation if isinstance(dilation, tuple) else (dilation, dilation)
-        )
+        self.dilation = dilation if isinstance(dilation, tuple) else (dilation, dilation)
         self.output_padding = (
             output_padding
             if isinstance(output_padding, tuple)
             else (output_padding, output_padding)
         )
 
-        stdv = 1.0 / np.sqrt(
-            self.in_channels * self.kernel_size[0] * self.kernel_size[1]
-        )
+        stdv = 1.0 / np.sqrt(self.in_channels * self.kernel_size[0] * self.kernel_size[1])
 
         self.weight = Parameter(
             neunet.tensor(
@@ -185,9 +174,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
             )
         )
         if bias == True:
-            self.bias = Parameter(
-                neunet.tensor(np.zeros(self.out_channels), dtype=np.float32)
-            )
+            self.bias = Parameter(neunet.tensor(np.zeros(self.out_channels), dtype=np.float32))
         else:
             self.bias = None
 
@@ -199,7 +186,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
         self.input_height, self.input_width = self.input_size[2:]
 
         if self.padding == "valid":
-            self.padding == (0, 0, 0, 0)
+            self.padding = (0, 0, 0, 0)
         elif self.padding == "same" or self.padding == "real same":
             if self.padding == "same":
                 padding_up_down = (
@@ -298,8 +285,11 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
         )
 
     def forward(self, X):
-        assert isinstance(X, Tensor), "Input must be a tensor"
-        assert X.device == self.device, "Tensors must be on the same device"
+        if not isinstance(X, Tensor):
+            raise TypeError("Input must be a tensor")
+        if X.device != self.device:
+            raise ValueError("Tensors must be on the same device")
+
         self.input_size = X.shape
         self.build()
 
@@ -333,9 +323,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
                 X,
                 self.weight,
                 self.bias,
-                self.in_channels,
                 self.out_channels,
-                self.kernel_size,
                 self.padding,
                 self.stride,
                 self.dilation,
@@ -380,12 +368,8 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
         input_data[
             :,
             :,
-            self.dilated_kernel_size[0] - 1 : temp_out.shape[2]
-            + self.dilated_kernel_size[0]
-            - 1,
-            self.dilated_kernel_size[1] - 1 : temp_out.shape[3]
-            + self.dilated_kernel_size[1]
-            - 1,
+            self.dilated_kernel_size[0] - 1 : temp_out.shape[2] + self.dilated_kernel_size[0] - 1,
+            self.dilated_kernel_size[1] - 1 : temp_out.shape[3] + self.dilated_kernel_size[1] - 1,
         ] = temp_out
 
         input_data = remove_padding(
@@ -396,10 +380,16 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
     def __call__(self, X):
         return self.forward(X)
 
+
 def set_padding(array, padding):
     # New shape: (_, _, H + P[0] + P[1], W + P[2] + P[3])
     xp = np if isinstance(array, np.ndarray) else cp
-    return xp.pad(array, ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])), constant_values=0)
+    return xp.pad(
+        array,
+        ((0, 0), (0, 0), (padding[0], padding[1]), (padding[2], padding[3])),
+        constant_values=0,
+    )
+
 
 def remove_padding(array, padding):
     # New shape: (_, _, H - P[0] - P[1], W - P[2] - P[3])
@@ -409,6 +399,7 @@ def remove_padding(array, padding):
         padding[0] : array.shape[2] - padding[1],
         padding[2] : array.shape[3] - padding[3],
     ]
+
 
 def set_stride(array, stride):
     # New shape: (_, _, S[0] * H - (S[0] - 1), S[1] * W - (S[1] - 1)
@@ -426,6 +417,7 @@ def set_stride(array, stride):
     strided_array[:, :, :: stride[0], :: stride[1]] = array
 
     return strided_array
+
 
 def remove_stride(array, stride):
     # New shape: (_, _, (H + S[0] - 1) // S[0], (W + S[1] - 1) // S[1])
