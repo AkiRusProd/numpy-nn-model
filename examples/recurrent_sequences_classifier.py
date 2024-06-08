@@ -126,7 +126,7 @@ for epoch in tqdm_range:
         loss_ = loss_fn(y_pred, labels[i])
         loss_.backward()
         optimizer.step()
-        loss.append(loss_.data)
+        loss.append(loss_.item())
 
     tqdm_range.set_description(f"epoch: {epoch + 1}/{epochs}, loss: {loss[-1]:.7f}")
 
@@ -134,7 +134,7 @@ for epoch in tqdm_range:
 acc = 0
 for i in range(padded_document.shape[0]):
     y_pred = model.forward(nnet.tensor(padded_document[i], dtype=nnet.int32))
-    if y_pred.data.round() == labels[i]:
+    if y_pred.detach().cpu().numpy().round() == labels[i]:
         acc += 1
 
 print(f"Accuracy: {acc / padded_document.shape[0] * 100}%")

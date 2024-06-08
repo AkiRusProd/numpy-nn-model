@@ -5,7 +5,6 @@ from neunet.nn.modules import Module
 import numpy as np
 import cupy as cp
 
-# from numba import njit
 
 
 class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation

@@ -44,30 +44,30 @@ class Diffusion:
 
         self.betas = linear_schedule(beta_start, beta_end, timesteps)
         self.sqrt_betas = nnet.tensor(
-            np.sqrt(self.betas.data, dtype=np.float32),
+            np.sqrt(self.betas.cpu().numpy(), dtype=np.float32),
             requires_grad=False,
             device=device,
         )
 
         self.alphas = 1 - self.betas
         self.inv_sqrt_alphas = nnet.tensor(
-            1 / np.sqrt(self.alphas.data, dtype=np.float32),
+            1 / np.sqrt(self.alphas.cpu().numpy(), dtype=np.float32),
             requires_grad=False,
             device=device,
         )
 
         self.alphas_cumprod = nnet.tensor(
-            np.cumprod(self.alphas.data, axis=0, dtype=np.float32),
+            np.cumprod(self.alphas.cpu().numpy(), axis=0, dtype=np.float32),
             requires_grad=False,
             device=device,
         )
         self.sqrt_alphas_cumprod = nnet.tensor(
-            np.sqrt(self.alphas_cumprod.data, dtype=np.float32),
+            np.sqrt(self.alphas_cumprod.cpu().numpy(), dtype=np.float32),
             requires_grad=False,
             device=device,
         )
         self.sqrt_one_minus_alphas_cumprod = nnet.tensor(
-            np.sqrt(1 - self.alphas_cumprod.data, dtype=np.float32),
+            np.sqrt(1 - self.alphas_cumprod.cpu().numpy(), dtype=np.float32),
             requires_grad=False,
             device=device,
         )
@@ -172,9 +172,9 @@ class Diffusion:
                 x_t = orig_x_t * mask + x_t * (1 - mask)
 
             if t % states_step_size == 0:
-                x_ts.append(x_t.to("cpu").detach().data)
+                x_ts.append(x_t.cpu().detach().numpy())
 
-        return x_t.to("cpu").detach().data, x_ts
+        return x_t.to("cpu").detach().numpy(), x_ts
 
     def ddim_denoise_sample(
         self,
@@ -304,7 +304,7 @@ class Diffusion:
                     )
                 )
                 loss = self.criterion(output, noise)
-                losses.append(loss.data)
+                losses.append(loss.item())
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
@@ -314,7 +314,7 @@ class Diffusion:
                 )
 
                 if batch_num == (len(data_batches) - 1):
-                    epoch_loss = nnet.tensor(losses, device=device).mean().data
+                    epoch_loss = nnet.tensor(losses, device=device).mean().detach().cpu().numpy()
 
                     tqdm_range.set_description(
                         f"loss: {epoch_loss:.7f} | epoch {epoch + 1}/{epochs}"

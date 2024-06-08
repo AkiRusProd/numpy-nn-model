@@ -33,6 +33,14 @@ class Tensor:
             t, requires_grad=requires_grad, device=self.device, dtype=self.data.dtype
         )
 
+    def numpy(self):
+        if self.device != "cpu":
+            raise ValueError("Tensor must be on the CPU")
+        if self.requires_grad:
+            raise ValueError("Tensor must not require gradient")
+            
+        return self.data
+
     def to(self, device):
         assert device in ["cpu", "cuda"], "Device must be 'cpu' or 'cuda'"
         if device == "cpu":
@@ -49,6 +57,12 @@ class Tensor:
         return Tensor(
             data, requires_grad=self.requires_grad, dtype=self.data.dtype, device=device
         )
+
+    def cpu(self):
+        return self.to("cpu")
+
+    def cuda(self):
+        return self.to("cuda")
 
     def detach(self):
         return Tensor(

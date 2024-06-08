@@ -188,9 +188,9 @@ for epoch in range(epochs):
 
         loss.backward()
         optimizer.step()
-        losses.append(loss.data)
+        losses.append(loss.item())
         tqdm_range.set_description(
-            f"Epoch: {epoch + 1}/{epochs}, Loss: {loss.data:.7f}, Mean Loss: {np.mean(losses):.7f}"
+            f"Epoch: {epoch + 1}/{epochs}, Loss: {loss.item():.7f}, Mean Loss: {np.mean(losses):.7f}"
         )
 
 model.eval()

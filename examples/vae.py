@@ -136,14 +136,14 @@ for epoch in range(epochs):
 
         in_batch = nnet.tensor(batch, device=device).reshape(-1, 28 * 28)
         if noisy_inputs:
-            in_batch = nnet.tensor(add_noise(in_batch.data), device=device)
+            in_batch = nnet.tensor(add_noise(in_batch.cpu().numpy()), device=device)
 
         out_batch = nnet.tensor(batch, device=device).reshape(-1, 28 * 28)
 
         loss = vae.train_step(in_batch, out_batch, optimizer)
 
         tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}"
+            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
         )
 
     generated = (
@@ -155,7 +155,7 @@ for epoch in range(epochs):
         )
         .to("cpu")
         .detach()
-        .data
+        .numpy()
     )
 
     # samples = training_data[np.random.randint(0, len(training_data), samples_num)]
@@ -204,7 +204,7 @@ generated = (
     vae.reconstruct(nnet.tensor(samples, device=device).reshape(-1, 28 * 28))
     .to("cpu")
     .detach()
-    .data
+    .numpy()
 )
 
 get_images_set(samples.reshape(-1, 28, 28) * 255).save(
@@ -235,7 +235,7 @@ def plot_latent_space_digits(n=30, figsize=15):
         for j, xi in enumerate(grid_x):
             z_sample = np.array([[xi, yi]])
             x_decoded = (
-                vae.decode(nnet.tensor(z_sample, device=device)).to("cpu").detach().data
+                vae.decode(nnet.tensor(z_sample, device=device)).to("cpu").detach().numpy()
             )
             digit = x_decoded[0].reshape(digit_size, digit_size)
             figure[
@@ -273,7 +273,7 @@ def plot_label_clusters(data, labels):
         vae.encode(nnet.tensor(data, device=device).reshape(-1, 28 * 28))
         .to("cpu")
         .detach()
-        .data
+        .numpy()
     )
     plt.figure(figsize=(12, 10))
     plt.scatter(z_mean[:, 0], z_mean[:, 1], c=labels)

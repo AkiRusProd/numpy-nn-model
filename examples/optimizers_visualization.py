@@ -49,7 +49,7 @@ def gradient_descent(
         y = function(point[0], point[1])
         y.backward()
         optimizer.step()
-        points.append([point[0].data, point[1].data])
+        points.append([point[0].detach().numpy(), point[1].detach().numpy()])
     return np.array(points)
 
 

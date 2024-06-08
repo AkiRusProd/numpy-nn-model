@@ -55,6 +55,12 @@ class Module:
 
         return self
 
+    def cpu(self):
+        return self.to("cpu")
+
+    def cuda(self):
+        return self.to("cuda")
+
 
 class Sequential:
     def __init__(self, *modules: Module):

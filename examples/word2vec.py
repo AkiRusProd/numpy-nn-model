@@ -89,7 +89,7 @@ for epoch in tqdm_range:
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.data
+        total_loss += loss.item()
 
     tqdm_range.set_description(f"CBOW loss: {total_loss:.7f}")
 
@@ -141,7 +141,7 @@ for epoch in tqdm_range:
         loss.backward()
         optimizer.step()
 
-        total_loss += loss.data
+        total_loss += loss.item()
 
     tqdm_range.set_description(f"Skip-Gram loss: {total_loss:.7f}")
 

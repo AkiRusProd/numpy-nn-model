@@ -123,10 +123,10 @@ for epoch in range(epochs):
         fake_data_loss.backward()
         g_optimizer.step()
 
-        g_loss = -np.log(fake_data_prediction.data).mean()
+        g_loss = -np.log(fake_data_prediction.detach().cpu().numpy()).mean()
         d_loss = (
-            -np.log(real_data_prediction.data).mean()
-            - np.log(1 - fake_data_prediction.data).mean()
+            -np.log(real_data_prediction.detach().cpu().numpy()).mean()
+            - np.log(1 - fake_data_prediction.detach().cpu().numpy()).mean()
         )
         tqdm_range.set_description(
             f"epoch: {epoch + 1}/{epochs}, G loss: {g_loss:.7f}, D loss: {d_loss:.7f}"
@@ -141,9 +141,7 @@ for epoch in range(epochs):
         noise = const_noise
 
     each_epoch_generated_samples.append(
-        generator(noise).data.reshape(-1, 28, 28)
-        if device == "cpu"
-        else cp.asnumpy(generator(noise).data.reshape(-1, 28, 28))
+        generator(noise).detach().cpu().numpy().reshape(-1, 28, 28)
     )
 
     generator.eval()
@@ -194,7 +192,7 @@ def create_vectors_interpolation():
     for step in range(steps):
         noise_2 = nnet.tensor(np.random.normal(0, 1, (samples_num, noise_size)))
 
-        noise_interp = np.linspace(noise_1.data, noise_2.data, interval)
+        noise_interp = np.linspace(noise_1.numpy(), noise_2.numpy(), interval)
 
         noise_1 = noise_2
 
@@ -203,7 +201,8 @@ def create_vectors_interpolation():
                 generator(nnet.tensor(vectors, device=device))
                 .reshape(-1, 28, 28)
                 .to("cpu")
-                .data
+                .detach()
+                .numpy()
                 * 127.5
                 + 127.5
             )

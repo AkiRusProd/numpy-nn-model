@@ -108,7 +108,7 @@ for epoch in range(epochs):
         optimizer.step()
 
         tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}"
+            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
         )
 
 
@@ -123,7 +123,7 @@ for i in tqdm(range(len(test_dataset)), desc="evaluating"):
     img = img.reshape(1, image_size[0], image_size[1], image_size[2])
     img = nnet.tensor(img, requires_grad=False, device=device)
     outputs = classifier(img)
-    predicted = np.argmax(outputs.data)
+    predicted = np.argmax(outputs.detach().cpu().numpy())
 
     total += 1
     correct += predicted == test_targets[i]

@@ -75,12 +75,12 @@ for epoch in range(epochs):
         optimizer.step()
 
         tqdm_range.set_description(
-            f"epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}"
+            f"epoch: {epoch + 1}/{epochs}, loss: {loss.item():.7f}"
         )
 
     generated = model(
         nnet.tensor(input_dataset[:25], requires_grad=False).reshape(-1, 28 * 28)
-    ).data
+    ).detach().numpy()
     model.eval()
     for i in range(25):
         image = generated[i] * 255
