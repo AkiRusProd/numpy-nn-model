@@ -42,8 +42,8 @@ class Parameter(Tensor):
         return Parameter(
             Tensor(
                 data,
-                requires_grad=self.requires_grad,
                 dtype=self.data.dtype,
                 device=device,
-            )
+            ),
+            requires_grad=self.requires_grad
         )
