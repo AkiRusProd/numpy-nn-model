@@ -59,8 +59,8 @@ class BatchNorm2d(Module):  # layer with static backpropagation
         self.momentum = momentum
         self.affine = affine
 
-        self.running_mean = Tensor(np.zeros((1, num_features)), dtype=np.float32)
-        self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
+        self.running_mean = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32), requires_grad=False)
+        self.running_var = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32), requires_grad=False)
 
         if affine:
             self.weight: Union[Tensor, None] = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))
@@ -82,8 +82,8 @@ class BatchNorm2d(Module):  # layer with static backpropagation
             mean = self.xp.mean(X.data, axis=(0, 2, 3))
             var = self.xp.var(X.data, axis=(0, 2, 3))
 
-            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean
-            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
+            self.running_mean.data = self.momentum * self.running_mean.data + (1 - self.momentum) * mean
+            self.running_var.data = self.momentum * self.running_var.data + (1 - self.momentum) * var
         else:
             mean = self.running_mean.data
             var = self.running_var.data

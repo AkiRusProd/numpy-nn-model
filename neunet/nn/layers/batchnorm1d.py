@@ -48,8 +48,8 @@ class BatchNorm1d(Module):  # layer with static backpropagation
         self.momentum = momentum
         self.affine = affine
 
-        self.running_mean = Tensor(np.zeros((1, num_features)), dtype=np.float32)
-        self.running_var = Tensor(np.ones((1, num_features)), dtype=np.float32)
+        self.running_mean = Parameter(neunet.tensor(np.zeros((1, num_features)), dtype=np.float32), requires_grad=False)
+        self.running_var = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32), requires_grad=False)
 
         if affine:
             self.weight: Union[Tensor, None] = Parameter(neunet.tensor(np.ones((1, num_features)), dtype=np.float32))

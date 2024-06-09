@@ -1,3 +1,6 @@
+import pickle
+from pathlib import Path
+
 import numpy as np
 
 from neunet import nn as nn
@@ -9,6 +12,18 @@ int64 = np.int64
 float16 = np.float16
 float32 = np.float32
 float64 = np.float64
+
+
+def save(obj: object, f, pickle_protocol: int = 2):
+    path = Path(f)
+    with path.open("wb") as file:
+        pickle.dump(obj, file, protocol=pickle_protocol)
+
+def load(f):
+    
+    path = Path(f)
+    with path.open("rb") as file:
+        return pickle.load(file)
 
 # references to the original Tensor functions
 

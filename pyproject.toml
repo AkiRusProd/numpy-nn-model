@@ -27,7 +27,7 @@ target-version = "py311"
 exclude = ["venv", "tests"]
 
 [tool.ruff.lint]
-ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "FBT001", "A001", "C901"]
+ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "FBT001", "A001", "C901", "S403", "S301"]
 fixable = ["I", "B", "RUF", "F"]
 select = [
     "I",     # Isort rules
