@@ -3,7 +3,9 @@
 
 ## Some information and features:
 
-### Implemented Activation Functions:
+<details>
+<summary>Activation Functions</summary>
+
 1) Sigmoid
 2) Tanh
 3) Softmax
@@ -18,10 +20,14 @@
 12) SELU
 13) GELU
 
-
 *[See Activation Functions...](neunet/nn/activations.py)*
 
-### Implemented Optimizers:
+</details>
+
+
+<details>
+<summary>Optimizers</summary>
+
 1) SGD
 2) Momentum
 3) RMSProp
@@ -33,7 +39,12 @@
 
 *[See Optimizers...](neunet/optim.py)*
 
-### Implemented Loss Functions:
+</details>
+
+
+<details>
+<summary>Loss Functions</summary>
+
 1) MSELoss
 2) BCELoss
 3) CrossEntropyLoss
@@ -43,34 +54,46 @@
 
 *[See Loss Functions...](neunet/nn/losses.py)*
 
-### Implemented Layers:
+</details>
+
+
+<details>
+<summary>Modules</summary>
+
 1) Linear
 2) Dropout
 3) BatchNorm1d
 4) BatchNorm2d
 5) LayerNorm
-6) Conv2d
-7) ConvTranspose2d
-8) MaxPool2d
-9) AvgPool2d
-10) ZeroPad2d
-11) Flatten
-12) Embedding
-13) Bidirectional
-14) RNN
-15) LSTM
-16) GRU
+6) RMSNorm
+7) Conv2d
+8) ConvTranspose2d
+9) MaxPool2d
+10) AvgPool2d
+11) ZeroPad2d
+12) Flatten
+13) Embedding
+14) Bidirectional
+15) RNN
+16) LSTM
+17) GRU
 
-*[See Layers...](neunet/nn/layers)*
+*[See Modules...](neunet/nn/layers)*
+
+</details>
 
 
-### Implemented Tensor Operations:
+<details>
+<summary>Tensor Operations</summary>
 
 1) add, sub, mul, div, matmul, abs
 2) sum, mean, var, max, min, maximum, minimum, argmax, argmin   
 3) transpose, swapaxes, reshape, concatenate, flip, slicing
 4) power, exp, log, sqrt, sin, cos, tanh
 5) ones, zeros, ones_like, zeros_like, arange, rand, randn
+
+</details>
+
 
 ### Tensor Operations with autograd Example:
 ```python

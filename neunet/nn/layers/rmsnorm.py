@@ -12,7 +12,7 @@ class RMSNorm(Module):
     References: 
     https://dl.acm.org/doi/pdf/10.5555/3454287.3455397
     https://github.com/meta-llama/llama/blob/main/llama/model.py
-    https://catalyst-team.github.io/catalyst/v20.12/index.html
+    https://catalyst-team.github.io/catalyst/v20.12/_modules/catalyst/contrib/nn/modules/rms_norm.html
     """
     def __init__(self, dim: int, eps: float = 1e-6, device: str = "cpu", bias = False):
         super().__init__()
