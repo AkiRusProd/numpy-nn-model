@@ -77,27 +77,26 @@ class Module:
 
         return state_dict
 
-    # def load_state_dict(self, state_dict):
-    #     for name, param in state_dict.items():
-            
-    #         if "." in name:
-    #             module_name, param_name = name.split(".", 1)
-    #             if module_name in self.__dict__:
-    #                 module = getattr(self, module_name)
-
-    #                 module.load_state_dict({param_name: param})
-    #         else:
-    #             self.__dict__[name].data = param
-
     def load_state_dict(self, state_dict):
         for name, item in self.__dict__.items():
             if isinstance(item, Tensor) and item.__class__.__name__ == "Parameter":
                 if name in state_dict:
-                    item.data = state_dict[name]
+                    # item.data = state_dict[name]
+                    item.data = self._cast_data(state_dict[name], type(item.data))
             elif hasattr(item, "load_state_dict"):
                 # Create a sub-dictionary for the submodule
                 sub_dict = {k.split(".", 1)[1]: v for k, v in state_dict.items() if k.startswith(name + ".")}
                 item.load_state_dict(sub_dict)
+
+    def _cast_data(self, data, data_type):
+        if isinstance(data, data_type):
+            return data
+        elif isinstance(data, np.ndarray):
+            return cp.asarray(data)
+        elif isinstance(data, cp.ndarray):
+            return data.get()
+        else:
+            raise ValueError
 
 
 class Sequential(Module):
@@ -151,21 +150,12 @@ class Sequential(Module):
 
         return state_dict
 
-    # def load_state_dict(self, state_dict):
-    #     for name, param in state_dict.items():
-    #         if "." in name:
-    #             module_name, param_name = name.split(".", 1)
-    #             if int(module_name) < len(self.modules):
-    #                 module = self.modules[int(module_name)]
-    #                 module.load_state_dict({param_name: param})
-    #         else:
-    #             self.modules[int(name)].data = param
-
     def load_state_dict(self, state_dict):
         for i, module in enumerate(self.modules):
             if isinstance(module, Tensor) and module.__class__.__name__ == "Parameter":
                 if str(i) in state_dict:
-                    module.data = state_dict[str(i)]
+                    # module.data = state_dict[str(i)]
+                    module.data = self._cast_data(state_dict[str(i)], type(module.data))
             elif hasattr(module, "load_state_dict"):
                 # Create a sub-dictionary for the submodule
                 sub_dict = {k.split(".", 1)[1]: v for k, v in state_dict.items() if k.startswith(str(i) + ".")}
@@ -240,21 +230,12 @@ class ModuleList(Module):
 
         return state_dict
 
-    # def load_state_dict(self, state_dict):
-    #     for name, param in state_dict.items():
-    #         if "." in name:
-    #             module_name, param_name = name.split(".", 1)
-    #             if int(module_name) < len(self.modules):
-    #                 module = self.modules[int(module_name)]
-    #                 module.load_state_dict({param_name: param})
-    #         else:
-    #             self.modules[int(name)].data = param
-
     def load_state_dict(self, state_dict):
         for i, module in enumerate(self.modules):
             if isinstance(module, Tensor) and module.__class__.__name__ == "Parameter":
                 if str(i) in state_dict:
-                    module.data = state_dict[str(i)]
+                    # module.data = state_dict[str(i)]
+                    module.data = self._cast_data(state_dict[str(i)], type(module.data))
             elif hasattr(module, "load_state_dict"):
                 # Create a sub-dictionary for the submodule
                 sub_dict = {k.split(".", 1)[1]: v for k, v in state_dict.items() if k.startswith(str(i) + ".")}
