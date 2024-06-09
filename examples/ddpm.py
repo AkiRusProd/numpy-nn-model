@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import neunet as nnet
 import neunet.nn as nn
-from data_loader import load_mnist
+from data_loader import load_mnist, load_utkface  # noqa F401
 from neunet import Tensor
 from neunet.optim import Adam
 
@@ -274,7 +274,7 @@ class Diffusion:
         else:
             return Image.fromarray(images_array)
 
-    def train(self, dataset, epochs, batch_size, image_path, image_size, save_every_epochs=1):
+    def train(self, dataset, epochs, batch_size, image_path, image_size, save_path, save_every_epochs=1):
         channels, H_size, W_size = image_size
 
         data_batches = np.array_split(dataset, np.arange(batch_size, len(dataset), batch_size))
@@ -332,6 +332,11 @@ class Diffusion:
                     duration=50,
                     loop=0,
                 )
+
+                if not Path(save_path).exists():
+                    Path(save_path).mkdir(parents=True, exist_ok=True)
+
+                nnet.save(self.model.state_dict(), f"{save_path}/ddpm_{epoch + 1}.nt")
 
             loss_history.append(epoch_loss)
 
@@ -506,14 +511,18 @@ class SimpleUNet(nn.Module):
 
 
 device = "cuda"
+image_size = (3, 32, 32)
+# image_size = (1, 28, 28) # for mnist
 
+training_data = load_utkface(image_size=(3, 32, 32))
+# training_data, _, _, _ = load_mnist() # for mnist
 
 diffusion = Diffusion(
     model=SimpleUNet(
-        image_channels=1,
-        image_size=28,
-        down_channels=(32, 64, 128),
-        up_channels=(128, 64, 32),
+        image_channels=image_size[0],
+        image_size = image_size[2],
+        down_channels=(128, 256, 512, 1024), # (32, 64, 128) for mnist
+        up_channels=(1024, 512, 256, 128), # (128, 64, 32) for mnist
     ).to(device),
     timesteps=300,
     beta_start=0.0001,
@@ -521,14 +530,13 @@ diffusion = Diffusion(
     criterion=nn.MSELoss(),
 )
 
-training_data, test_data, training_labels, test_labels = load_mnist()
-training_data = training_data / 127.5 - 1  # normalization: / 255 => [0; 1]  #/ 127.5-1 => [-1; 1]
+# diffusion.model.load_state_dict(nnet.load("saved models/utkface_model/ddpm_3.nt")) # load saved model example if it exists
 
-# diffusion.ddpm_denoise_sample(25, (1, 28, 28))
 diffusion.train(
     training_data,
     epochs=3,
-    batch_size=16,
+    batch_size=5,
     image_path="generated images",
-    image_size=(1, 28, 28),
+    save_path = "saved models/utkface_model", # for "saved models/mnist_model" mnist
+    image_size=image_size,
 )

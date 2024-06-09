@@ -146,6 +146,18 @@ Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/proj
 #### More details about some of them:
 
 <details>
+<summary>Denoising Diffusion Probabilistic Model (DDPM)</summary>
+
+<p align="center">
+<img src="generated images/ddpm_mnist.gif" width=20% height=20%>
+<img src="generated images/ddpm_utkface.gif" width=20% height=20%>
+</p>
+
+Code:   
+*[Model Example](examples/ddpm.py)*
+</details>
+
+<details>
 <summary>Convolutional Classifier</summary>
 
 ```python

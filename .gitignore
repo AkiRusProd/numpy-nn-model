@@ -136,3 +136,5 @@ dmypy.json
 *.npy
 *.png
 *.jpeg
+*.zip
+*.nt
