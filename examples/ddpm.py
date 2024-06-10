@@ -127,7 +127,7 @@ class Diffusion:
             else:
                 x_t = np.random.normal(size=orig_x.shape)
 
-        x_t = nnet.tensor(x_t, requires_grad=False, device=device)
+        x_t = nnet.tensor(x_t, device=device)
         x_ts = []
         for t in tqdm(
             reversed(range(0, self.timesteps)),
@@ -135,7 +135,7 @@ class Diffusion:
             total=self.timesteps,
         ):
             noise = (
-                nnet.tensor(np.random.normal(size=x_t.shape), requires_grad=False, device=device)
+                nnet.tensor(np.random.normal(size=x_t.shape), device=device)
                 if t > 1
                 else 0
             )
@@ -152,7 +152,6 @@ class Diffusion:
             if mask is not None:
                 orig_x_noise = nnet.tensor(
                     np.random.normal(size=orig_x.shape),
-                    requires_grad=False,
                     device=device,
                 )
 
@@ -196,32 +195,40 @@ class Diffusion:
             else:
                 x_t = np.random.normal(size=orig_x.shape)
 
+        x_t = nnet.tensor(x_t, device=device)
         x_ts = []
         for t in tqdm(
             reversed(range(1, self.timesteps)[:perform_steps]),
             desc="ddim denoisinig samples",
             total=perform_steps,
         ):
-            noise = np.random.normal(size=x_t.shape) if t > 1 else 0
-            eps = self.model.forward(x_t, np.array([t]) / self.timesteps, training=False).reshape(
-                x_t.shape
+            noise = (
+                nnet.tensor(np.random.normal(size=x_t.shape), device=device)
+                if t > 1
+                else 0
             )
+            eps = self.model.forward(x_t, np.array([t]) / self.timesteps).reshape(
+                x_t.shape
+            ).detach()
 
-            x0_t = (x_t - eps * np.sqrt(1 - self.alphas_cumprod[t])) / np.sqrt(
+            x0_t = (x_t - eps * nnet.sqrt(1 - self.alphas_cumprod[t])) / nnet.sqrt(
                 self.alphas_cumprod[t]
             )
 
-            sigma = eta * np.sqrt(
+            sigma = eta * nnet.sqrt(
                 (1 - self.alphas_cumprod[t - 1])
                 / (1 - self.alphas_cumprod[t])
                 * (1 - self.alphas_cumprod[t] / self.alphas_cumprod[t - 1])
             )
-            c = np.sqrt((1 - self.alphas_cumprod[t - 1]) - sigma**2)
+            c = nnet.sqrt((1 - self.alphas_cumprod[t - 1]) - sigma**2)
 
-            x_t = np.sqrt(self.alphas_cumprod[t - 1]) * x0_t - c * eps + sigma * noise
+            x_t = nnet.sqrt(self.alphas_cumprod[t - 1]) * x0_t - c * eps + sigma * noise
 
             if mask is not None:
-                orig_x_noise = np.random.normal(size=orig_x.shape)
+                orig_x_noise = nnet.tensor(
+                    np.random.normal(size=orig_x.shape),
+                    device=device,
+                )
 
                 orig_x_t = (
                     self.sqrt_alphas_cumprod[t] * orig_x
@@ -230,9 +237,9 @@ class Diffusion:
                 x_t = orig_x_t * mask + x_t * (1 - mask)
 
             if t % states_step_size == 0:
-                x_ts.append(x_t)
+                x_ts.append(x_t.cpu().detach().numpy())
 
-        return x_t, x_ts
+        return x_t.to("cpu").detach().numpy(), x_ts
 
     def get_images_set(
         self,
