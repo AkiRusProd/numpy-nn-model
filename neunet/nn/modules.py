@@ -21,14 +21,17 @@ class Module:
 
     def parameters(self):
         params = []
+        seen_ids = set()
         for _, item in self.__dict__.items():
             if isinstance(item, Tensor):
+                item_id = id(item)
                 if (
                     item.requires_grad
                     and item.__class__.__name__ == "Parameter"
-                    and item not in params
+                    and item_id not in seen_ids
                 ):
                     params.append(item)
+                    seen_ids.add(item_id)
             if hasattr(item, "parameters"):
                 params.extend(item.parameters())
 

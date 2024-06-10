@@ -3,6 +3,7 @@ from typing import Any, Iterator, Union
 import cupy as cp
 import numpy as np
 
+# TODO: Add requires_grad condition to args
 
 class Tensor:
     def __init__(self, data: Any, args=None, op=None, requires_grad: bool=True, dtype = None, device: str="cpu"):
@@ -14,9 +15,9 @@ class Tensor:
             self.xp = cp
 
         if isinstance(data, Tensor):
-            self.data: Union[np.ndarray, cp.ndarray] = self.xp.array(data.data, dtype=dtype)
+            self.data: Union[np.ndarray, cp.ndarray] = self.xp.array(data.data, dtype=dtype if dtype else np.float32)
         else:
-            self.data = self.xp.array(data, dtype=dtype)
+            self.data = self.xp.array(data, dtype=dtype if dtype else np.float32)
 
         self.grad = None
         self.op = op
@@ -355,6 +356,145 @@ class Tensor:
             device=self.device,
         )
 
+    def where(self, condition: Union[Any, 'Tensor'], t: Union[Any, 'Tensor']) -> 'Tensor':
+        condition = self.tensor(condition)
+        t = self.tensor(t)
+
+        requires_grad = self.requires_grad or t.requires_grad
+        args = [self, condition, t] if requires_grad else None
+
+        return Tensor(
+            np.where(condition.data, self.data, t.data),
+            args,
+            "where",
+            requires_grad=requires_grad,
+            device=self.device,
+        )
+
+    def equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.equal(self.data, t.data),
+            None,
+            "equal",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def not_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.not_equal(self.data, t.data),
+            None,
+            "not_equal",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def greater(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.greater(self.data, t.data),
+            None,
+            "greater",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def greater_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.greater_equal(self.data, t.data),
+            None,
+            "greater_equal",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def less(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.less(self.data, t.data),
+            None,
+            "less",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def less_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.less_equal(self.data, t.data),
+            None,
+            "less_equal",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def logical_and(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.logical_and(self.data, t.data),
+            None,
+            "logical_and",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def logical_or(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        t = self.tensor(t)
+
+        return Tensor(
+            self.xp.logical_or(self.data, t.data),
+            None,
+            "logical_or",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def logical_not(self) -> 'Tensor':
+        return Tensor(
+            self.xp.logical_not(self.data),
+            None,
+            "logical_not",
+            requires_grad=False,
+            device=self.device,
+        )
+
+    def __eq__(self, t: Union[Any, 'Tensor']) -> 'Tensor': # type: ignore[override]
+        return self.equal(t)
+
+    def __ne__(self, t: Union[Any, 'Tensor']) -> 'Tensor': # type: ignore[override]
+        return self.not_equal(t)
+
+    def __gt__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.greater(t)
+
+    def __ge__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.greater_equal(t)
+
+    def __lt__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.less(t)
+
+    def __le__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.less_equal(t)
+
+    def __and__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.logical_and(t)
+
+    def __or__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
+        return self.logical_or(t)
+
+    def __invert__(self) -> 'Tensor':
+        return self.logical_not()
+
     def __neg__(self) -> 'Tensor':
         return Tensor(
             -self.data,
@@ -667,6 +807,10 @@ class Tensor:
 
         elif self.op == "flip":
             self.args[0].backward(self.xp.flip(grad, axis=self.args[1]))
+            
+        elif self.op == "where":
+                self.args[0].backward(grad * self.xp.where(self.args[1].data, grad, self.xp.zeros_like(grad)))
+                self.args[2].backward(grad * self.xp.where(self.args[1].data, self.xp.zeros_like(grad), grad))
 
         elif self.op == "neg":
             self.args[0].backward(-grad)
@@ -681,26 +825,3 @@ class Tensor:
 # BUGS:
 # grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)
 # softmax not equals grads with pytorch; place: div; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)????
-
-
-# def repeat_to_match_shape(self, g, shape, dtype, axis, keepdims): same
-# https://github.com/HIPS/autograd/blob/master/autograd/numpy/numpy_vjps.py
-#     """Returns the array g repeated along axis to fit vector space vs.
-#     Also returns the number of repetitions of the array."""
-#     if shape == ():
-#         return g, 1
-#     axis = list(axis) if isinstance(axis, tuple) else axis
-#     new_shape = self.xp.array(shape)
-#     new_shape[axis] = 1
-#     num_reps = self.xp.prod(self.xp.array(shape)[axis])
-#     # Can't use broadcast_to because of numpy bug: https://github.com/numpy/numpy/issues/9165
-#     # return aself.xp.broadcast_to(aself.xp.reshape(g, new_shape), shape), num_reps
-#     return self.xp.reshape(g, new_shape) + self.xp.zeros(shape, dtype=dtype), num_reps
-
-# elif self.op == "mean":
-# shape = self.args[0].data.shape
-# axis = self.args[1]
-# dtype = self.xp.result_type(self.args[0].data)
-# g_repeated, num_reps = self.repeat_to_match_shape(grad, shape, dtype, axis, None)
-# print(f"g_repeated {g_repeated}")
-# self.args[0].backward(g_repeated / num_reps)

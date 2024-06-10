@@ -193,3 +193,33 @@ def swapaxes(x, axis1, axis2):
 
 def flip(x, axis):
     return x.flip(axis=axis)
+
+def where(condition, x, y):
+    return x.where(condition, y)
+
+def equal(x, y):
+    return x.equal(y)
+
+def not_equal(x, y):
+    return x.not_equal(y)
+
+def greater(x, y):
+    return x.greater(y)
+
+def greater_equal(x, y):
+    return x.greater_equal(y)
+
+def less(x, y):
+    return x.less(y)
+
+def less_equal(x, y):
+    return x.less_equal(y)
+
+def logical_and(x, y):
+    return x.logical_and(y)
+
+def logical_or(x, y):
+    return x.logical_or(y)
+
+def logical_not(x):
+    return x.logical_not()
