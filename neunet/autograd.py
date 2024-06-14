@@ -356,7 +356,7 @@ class Tensor:
             device=self.device,
         )
 
-    def where(self, condition: Union[Any, 'Tensor'], t: Union[Any, 'Tensor']) -> 'Tensor':
+    def where(self, condition: 'Tensor', t: Union[Any, 'Tensor']) -> 'Tensor':
         condition = self.tensor(condition)
         t = self.tensor(t)
 
@@ -586,7 +586,14 @@ class Tensor:
             "getitem",
             requires_grad=self.requires_grad,
             device=self.device,
+            dtype=self.dtype
         )
+
+    def __setitem__(self, key, value: Union[Any, 'Tensor']):
+        if self.requires_grad:
+            raise RuntimeError("Cannot assign values to a tensor with requires_grad=True")
+        value = self.tensor(value)
+        self.data[key] = value.data
 
     def __array__(self, dtype: Any=None) -> np.ndarray:
         return self.data.astype(dtype, copy=False)
@@ -809,8 +816,8 @@ class Tensor:
             self.args[0].backward(self.xp.flip(grad, axis=self.args[1]))
             
         elif self.op == "where":
-                self.args[0].backward(grad * self.xp.where(self.args[1].data, grad, self.xp.zeros_like(grad)))
-                self.args[2].backward(grad * self.xp.where(self.args[1].data, self.xp.zeros_like(grad), grad))
+            self.args[0].backward(grad * self.xp.where(self.args[1].data, grad, self.xp.zeros_like(grad)))
+            self.args[2].backward(grad * self.xp.where(self.args[1].data, self.xp.zeros_like(grad), grad))
 
         elif self.op == "neg":
             self.args[0].backward(-grad)

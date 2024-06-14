@@ -23,7 +23,7 @@ class Dropout(Module):  # layer with static backpropagation
 
         if self.training:
             self.mask = (
-                X.xp.random.binomial(1, 1 - self.p, size=X.data.shape, dtype=X.data.dtype)
+                X.xp.random.binomial(1, 1 - self.p, size=X.data.shape).astype(X.data.dtype)
                 * self.scale
             )
         else:

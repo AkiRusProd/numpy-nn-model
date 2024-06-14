@@ -32,25 +32,25 @@ def tensor(data, requires_grad=False, dtype=float32, device="cpu"):
     return Tensor(data, requires_grad=requires_grad, dtype=dtype, device=device)
 
 
-def ones(*shape, dtype=None, requires_grad=True, device="cpu"):
+def ones(*shape, dtype=None, requires_grad=False, device="cpu"):
     shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
     return Tensor(np.ones(shape, dtype=dtype), requires_grad=requires_grad, device=device)
 
 
-def zeros(*shape, dtype=None, requires_grad=True, device="cpu"):
+def zeros(*shape, dtype=None, requires_grad=False, device="cpu"):
     shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
     return Tensor(np.zeros(shape, dtype=dtype), requires_grad=requires_grad, device=device)
 
 
-def rand(*shape, dtype=None, requires_grad=True, device="cpu"):
+def rand(*shape, dtype=None, requires_grad=False, device="cpu"):
     shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
     return Tensor(np.random.rand(*shape).astype(dtype), requires_grad=requires_grad, device=device)
 
 
-def randn(*shape, dtype=None, requires_grad=True, device="cpu"):
+def randn(*shape, dtype=None, requires_grad=False, device="cpu"):
     shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
     return Tensor(
@@ -60,7 +60,7 @@ def randn(*shape, dtype=None, requires_grad=True, device="cpu"):
     )
 
 
-def arange(start=0, end=None, step=1, dtype=None, requires_grad=True, device="cpu"):
+def arange(start=0, end=None, step=1, dtype=None, requires_grad=False, device="cpu"):
     if end is None:
         start, end = 0, start
     return Tensor(
@@ -70,11 +70,11 @@ def arange(start=0, end=None, step=1, dtype=None, requires_grad=True, device="cp
     )
 
 
-def ones_like(tensor, dtype=None, requires_grad=True, device="cpu"):
+def ones_like(tensor, dtype=None, requires_grad=False, device="cpu"):
     return Tensor(np.ones_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
 
 
-def zeros_like(tensor, dtype=None, requires_grad=True, device="cpu"):
+def zeros_like(tensor, dtype=None, requires_grad=False, device="cpu"):
     return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
 
 
@@ -195,6 +195,7 @@ def flip(x, axis):
     return x.flip(axis=axis)
 
 def where(condition, x, y):
+    x = tensor(x, device=condition.device) if not isinstance(x, Tensor) else x
     return x.where(condition, y)
 
 def equal(x, y):
