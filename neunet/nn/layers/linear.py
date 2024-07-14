@@ -14,13 +14,16 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
-        self.args[0].backward(self.xp.matmul(grad, self.args[1].data))
-        self.args[1].backward(
-            self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad).swapaxes(-1, -2)
+        self._backward = self.__backward
+
+    def __backward(self):
+        X, weight, bias = self.args
+        X._apply_grad(self.xp.matmul(self.grad, weight.data))
+        weight._apply_grad(
+            self.xp.matmul(X.data.swapaxes(-1, -2), self.grad).swapaxes(-1, -2)
         )
-        if self.args[2] is not None:
-            self.args[2].backward(self.xp.sum(grad, axis=0, keepdims=True))
+        if bias is not None:
+            bias._apply_grad(self.xp.sum(self.grad, axis=0, keepdims=True))
 
 
 class Linear(Module):  # layer with static backpropagation

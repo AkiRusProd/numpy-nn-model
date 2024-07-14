@@ -11,15 +11,18 @@ class ZeroPad2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+        self._backward = self.__backward
+
+    def __backward(self):
         X, padding = self.args
+        grad = self.grad
 
         if X.data.ndim == 3:
             unpadded_grad = remove_padding(grad.reshape(1, *grad.shape), padding)[0]
         else:
             unpadded_grad = remove_padding(grad, padding)
 
-        X.backward(unpadded_grad)
+        X._apply_grad(unpadded_grad)
 
 
 class ZeroPad2d(Module):

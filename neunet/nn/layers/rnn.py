@@ -13,7 +13,9 @@ class _RNNTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
+        self._backward = self.__backward
+
+    def __backward(self):
         (
             X,
             weight,
@@ -26,6 +28,7 @@ class _RNNTensor(Tensor):
             nonlinearity,
         ) = self.args
         X_data = X.data
+        grad = self.grad
 
         if len(X_data.shape) == 2:
             X_data = X_data[self.xp.newaxis, :, :]
@@ -55,12 +58,12 @@ class _RNNTensor(Tensor):
             grad_X[:, t, :] = self.xp.dot(grad_states, weight.data.T)
             next_grad_states = self.xp.dot(grad_states, weight_h.data.T)
 
-        X.backward(grad_X.reshape(X.shape))
+        X._apply_grad(grad_X.reshape(X.shape))
 
-        weight.backward(grad_weight)
-        weight_h.backward(grad_weight_h)
+        weight._apply_grad(grad_weight)
+        weight_h._apply_grad(grad_weight_h)
         if bias is not None:
-            bias.backward(grad_bias)
+            bias._apply_grad(grad_bias)
 
 
 class RNN(Module):

@@ -13,7 +13,9 @@ class _LSTMTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+        self._backward = self.__backward
+
+    def __backward(self):
         (
             X,
             weight_f,
@@ -44,6 +46,7 @@ class _LSTMTensor(Tensor):
             recurrent_nonlinearity,
         ) = self.args
         X_data = X.data
+        grad = self.grad
 
         if len(X_data.shape) == 2:
             X_data = X_data[self.xp.newaxis, :, :]
@@ -125,20 +128,20 @@ class _LSTMTensor(Tensor):
                 + self.xp.dot(output_gates_delta, weight_o.data.T)
             )
 
-        X.backward(grad_X)
-        weight_f.backward(grad_weight_f)
-        weight_i.backward(grad_weight_i)
-        weight_o.backward(grad_weight_o)
-        weight_c.backward(grad_weight_c)
-        weight_hf.backward(grad_weight_hf)
-        weight_hi.backward(grad_weight_hi)
-        weight_ho.backward(grad_weight_ho)
-        weight_hc.backward(grad_weight_hc)
+        X._apply_grad(grad_X)
+        weight_f._apply_grad(grad_weight_f)
+        weight_i._apply_grad(grad_weight_i)
+        weight_o._apply_grad(grad_weight_o)
+        weight_c._apply_grad(grad_weight_c)
+        weight_hf._apply_grad(grad_weight_hf)
+        weight_hi._apply_grad(grad_weight_hi)
+        weight_ho._apply_grad(grad_weight_ho)
+        weight_hc._apply_grad(grad_weight_hc)
         if all([bias_f, bias_i, bias_o, bias_c]):
-            bias_f.backward(grad_bias_f)
-            bias_i.backward(grad_bias_i)
-            bias_o.backward(grad_bias_o)
-            bias_c.backward(grad_bias_c)
+            bias_f._apply_grad(grad_bias_f)
+            bias_i._apply_grad(grad_bias_i)
+            bias_o._apply_grad(grad_bias_o)
+            bias_c._apply_grad(grad_bias_c)
 
 
 class LSTM(Module):

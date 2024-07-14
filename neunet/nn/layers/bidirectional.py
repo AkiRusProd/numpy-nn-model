@@ -11,8 +11,11 @@ class _BidirectionalTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+        self._backward = self.__backward
+
+    def __backward(self):
         D_O, R_O, merge_mode = self.args
+        grad = self.grad
 
         if merge_mode == "concat":
             direct_grad, reverse_grad = self.xp.split(grad, 2, axis=-1)
@@ -23,8 +26,8 @@ class _BidirectionalTensor(Tensor):
         elif merge_mode == "avg":
             direct_grad, reverse_grad = grad / 2, grad / 2
 
-        D_O.backward(direct_grad)
-        R_O.backward(reverse_grad)
+        D_O._apply_grad(direct_grad)
+        R_O._apply_grad(reverse_grad)
 
 
 class Bidirectional(Module):

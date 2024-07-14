@@ -6,8 +6,11 @@ class _DropoutTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
-        self.args[0].backward(grad * self.args[1])
+        self._backward = self.__backward
+
+    def __backward(self):
+        X, mask = self.args
+        X._apply_grad(self.grad * mask)
 
 
 class Dropout(Module):  # layer with static backpropagation

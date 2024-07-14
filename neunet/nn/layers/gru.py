@@ -13,7 +13,9 @@ class _GRUTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
+        self._backward = self.__backward
+
+    def __backward(self):
         (
             X,
             weight_z,
@@ -38,6 +40,7 @@ class _GRUTensor(Tensor):
             recurrent_nonlinearity,
         ) = self.args
         X_data = X.data
+        grad = self.grad
 
         if len(X_data.shape) == 2:
             X_data = X_data[self.xp.newaxis, :, :]
@@ -109,17 +112,17 @@ class _GRUTensor(Tensor):
                 + self.xp.dot(reset_gates_delta, weight_r.data.T)
             )
 
-        X.backward(grad_X)
-        weight_z.backward(grad_weight_z)
-        weight_r.backward(grad_weight_r)
-        weight_h.backward(grad_weight_h)
-        weight_hz.backward(grad_weight_hz)
-        weight_hr.backward(grad_weight_hr)
-        weight_hh.backward(grad_weight_hh)
+        X._apply_grad(grad_X)
+        weight_z._apply_grad(grad_weight_z)
+        weight_r._apply_grad(grad_weight_r)
+        weight_h._apply_grad(grad_weight_h)
+        weight_hz._apply_grad(grad_weight_hz)
+        weight_hr._apply_grad(grad_weight_hr)
+        weight_hh._apply_grad(grad_weight_hh)
         if all([bias_z, bias_r, bias_h]):
-            bias_z.backward(grad_bias_z)
-            bias_r.backward(grad_bias_r)
-            bias_h.backward(grad_bias_h)
+            bias_z._apply_grad(grad_bias_z)
+            bias_r._apply_grad(grad_bias_r)
+            bias_h._apply_grad(grad_bias_h)
 
 
 class GRU(Module):

@@ -11,7 +11,9 @@ class _AvgPool2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
+        self._backward = self.__backward
+
+    def __backward(self):
         (
             X,
             kernel_size,
@@ -20,6 +22,8 @@ class _AvgPool2dTensor(Tensor):
             input_size,
             output_size,
         ) = self.args
+
+        grad = self.grad
 
         batch_size, in_channels, in_height, in_width = input_size
 
@@ -43,7 +47,7 @@ class _AvgPool2dTensor(Tensor):
 
         grad_X = remove_padding(grad_X, padding)
 
-        X.backward(grad_X)
+        X._apply_grad(grad_X)
 
 
 class AvgPool2d(Module):

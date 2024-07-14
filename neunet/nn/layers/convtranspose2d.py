@@ -13,7 +13,9 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
+        self._backward = self.__backward
+
+    def __backward(self):
         (
             X,
             weight,
@@ -28,6 +30,8 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
             dilated_kernel_size,
             windows,
         ) = self.args
+
+        grad = self.grad
 
         batch_size, _, _, _ = X.shape
 
@@ -81,11 +85,11 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
         weight.data = remove_stride(weight.data, dilation)
         grad_weight = remove_stride(grad_weight, dilation)
 
-        X.backward(grad_X)
-        weight.backward(grad_weight)
+        X._apply_grad(grad_X)
+        weight._apply_grad(grad_weight)
 
         if bias is not None:
-            bias.backward(grad_bias)
+            bias._apply_grad(grad_bias)
 
     def prepare_grad(self, grad, padding, stride, dilated_kernel_size, output_padding):
         padded_grad = set_padding(

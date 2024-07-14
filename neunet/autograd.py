@@ -1,5 +1,5 @@
 from typing import Any, Iterator, Union
-
+import gc
 import cupy as cp
 import numpy as np
 
@@ -24,6 +24,7 @@ class Tensor:
         self.args = args
         self.requires_grad = requires_grad
         self.device = device
+        self._backward = lambda: None
 
     def tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
         if isinstance(t, Tensor):
@@ -77,13 +78,25 @@ class Tensor:
     def item(self) -> float:
         return self.data.item()
 
+    def contiguous(self) -> 'Tensor':
+        self.data[...] = self.xp.ascontiguousarray(self.data)
+        return self
+
+    def _apply_grad(self, grad):
+        grad = self._reverse_broadcast(grad)
+        if self.grad is None:
+            self.grad = grad
+        else:
+            self.grad = self.grad + grad  # += BUG FIX
+
+
     def add(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
-
-        return Tensor(
+        args = (self, t) if requires_grad else None
+        
+        out = Tensor(
             self.data + t.data,
             args,
             "add",
@@ -91,13 +104,23 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad)
+            if t.requires_grad:
+                t._apply_grad(out.grad)
+
+        out._backward = _backward
+
+        return out
+
     def sub(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.data - t.data,
             args,
             "sub",
@@ -105,13 +128,23 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad)
+            if t.requires_grad:
+                t._apply_grad(-out.grad)
+
+        out._backward = _backward
+
+        return out
+
     def mul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.data * t.data,
             args,
             "mul",
@@ -119,13 +152,23 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * t.data)
+            if t.requires_grad:
+                t._apply_grad(self.data * out.grad)
+
+        out._backward = _backward
+
+        return out
+
     def div(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.data / t.data,
             args,
             "div",
@@ -133,13 +176,23 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad / t.data)
+            if t.requires_grad:
+                t._apply_grad(-out.grad  * self.data / (t.data**2))
+
+        out._backward = _backward
+
+        return out
+
     def matmul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.xp.matmul(self.data, t.data),
             args,
             "matmul",
@@ -147,43 +200,125 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.data.ndim > 1 and t.data.ndim > 1:  # [matrix x matrix]
+                if self.requires_grad:
+                    self._apply_grad(self.xp.matmul(out.grad, t.data.swapaxes(-1, -2)))
+                if t.requires_grad:
+                    t._apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), out.grad))
+            elif self.data.ndim == 1 and t.data.ndim == 1:  # [vector x vector]
+                if self.requires_grad:
+                    self._apply_grad(out.grad * t.data)
+                if t.requires_grad:
+                    t._apply_grad(out.grad * self.data)
+            elif self.data.ndim == 1 and t.data.ndim > 1:  # [vector x matrix]
+                if self.requires_grad:
+                    self._apply_grad(self.xp.matmul(out.grad, t.data.swapaxes(-1, -2)))
+                if t.requires_grad:
+                    t._apply_grad(self.xp.outer(self.data, out.grad))
+            elif self.data.ndim > 1 and t.data.ndim == 1:  # [matrix x vector]
+                if self.requires_grad:
+                    self._apply_grad(self.xp.outer(out.grad, t.data))
+                if t.requires_grad:
+                    t._apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), out.grad))
+
+        out._backward = _backward
+
+        return out
+                
+
     def sum(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
-        return Tensor(
+        out = Tensor(
             self.data.sum(*args, **kwargs),
-            [self, axis],
+            [self],
             "sum",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+            if grad.ndim != self.data.ndim and axis is not None:
+                grad = self.xp.expand_dims(grad, axis)
+            self._apply_grad(self.xp.ones_like(self.data) * grad)
+
+        out._backward = _backward
+
+        return out
+
     def mean(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
-        return Tensor(
+        out = Tensor(
             self.data.mean(*args, **kwargs),
-            [self, axis],
+            [self],
             "mean",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+            if grad.ndim != self.data.ndim and axis is not None:
+                grad = self.xp.expand_dims(grad, axis)
+
+            _axis = list(axis) if isinstance(axis, tuple) else axis
+            self._apply_grad(
+                self.xp.ones_like(self.data)
+                * grad
+                / self.xp.prod(self.xp.array(self.data.shape)[_axis])
+            )
+
+        out._backward = _backward
+
+        return out
+
     def var(self, *args: Any, **kwargs: Any) -> 'Tensor':
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
-        return Tensor(
+        out = Tensor(
             self.data.var(*args, **kwargs),
-            [self, axis],
+            [self],
             "var",
             requires_grad=self.requires_grad,
             device=self.device,
         )  # ddof = 0;
 
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+
+            if grad.ndim != self.data.ndim and axis is not None:
+                grad = self.xp.expand_dims(grad, axis)
+
+            _axis = list(axis) if isinstance(axis, tuple) else axis
+            self._apply_grad(
+                self.xp.ones_like(self.data)
+                * grad
+                * 2
+                * (self.data - self.data.mean(axis=axis, keepdims=True))
+                / self.xp.prod(self.xp.array(self.data.shape)[_axis])
+            )
+
+        out._backward = _backward
+
+        return out
+
+
     def power(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.data**t.data,
             args,
             "power",
@@ -191,8 +326,19 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * t.data * self.data ** (t.data - 1))
+            if t.requires_grad:
+                t._apply_grad(out.grad * self.data ** t.data * self.xp.log(self.data))
+
+        out._backward = _backward
+
+        return out
+            
+
     def sqrt(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.sqrt(self.data),
             [self],
             "sqrt",
@@ -200,8 +346,16 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * 1 / (2 * self.xp.sqrt(self.data)))
+
+        out._backward = _backward
+
+        return out
+
     def log(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.log(self.data),
             [self],
             "log",
@@ -209,8 +363,16 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * 1 / self.data)
+
+        out._backward = _backward
+
+        return out
+
     def exp(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.exp(self.data),
             [self],
             "exp",
@@ -218,8 +380,16 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * self.xp.exp(self.data))
+
+        out._backward = _backward
+
+        return out
+
     def tanh(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.tanh(self.data),
             [self],
             "tanh",
@@ -227,8 +397,16 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * (1 - self.xp.tanh(self.data) ** 2))
+
+        out._backward = _backward
+
+        return out
+
     def sin(self):
-        return Tensor(
+        out = Tensor(
             self.xp.sin(self.data),
             [self],
             "sin",
@@ -236,8 +414,16 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * self.xp.cos(self.data))
+
+        out._backward = _backward
+
+        return out
+
     def cos(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.cos(self.data),
             [self],
             "cos",
@@ -245,13 +431,21 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * -self.xp.sin(self.data))
+
+        out._backward = _backward
+
+        return out
+
     def maximum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.xp.maximum(self.data, t.data),
             args,
             "maximum",
@@ -259,13 +453,23 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * (self.data >= t.data))
+            if t.requires_grad:
+                t._apply_grad(out.grad * (self.data <= t.data))
+
+        out._backward = _backward
+
+        return out
+
     def minimum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, t] if requires_grad else None
+        args = (self, t) if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             self.xp.minimum(self.data, t.data),
             args,
             "minimum",
@@ -273,37 +477,94 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * (self.data <= t.data))
+            if t.requires_grad:
+                t._apply_grad(out.grad * (self.data >= t.data))
+
+        out._backward = _backward
+
+        return out
+
     def max(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amax
-        return Tensor(
+        out = Tensor(
             self.data.max(axis=axis, keepdims=keepdims),
-            [self, axis, keepdims],
+            [self],
             "max",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+            if grad.ndim != self.data.ndim and axis is not None:
+                grad = self.xp.expand_dims(grad, axis)
+            self._apply_grad(grad * (self.data == self.data.max(axis=axis, keepdims=True)))
+
+        out._backward = _backward
+
+        return out
+            
+
     def min(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amin
-        return Tensor(
+        out = Tensor(
             self.data.min(axis=axis, keepdims=keepdims),
-            [self, axis, keepdims],
+            [self],
             "min",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if not self.requires_grad:
+                return
+
+            grad = out.grad
+            if grad.ndim != self.data.ndim and axis is not None:
+                grad = self.xp.expand_dims(grad, axis)
+            self._apply_grad(grad * (self.data == self.data.min(axis=axis, keepdims=True)))
+
+        out._backward = _backward
+
+        return out
+
     def concatenate(self, *tensors: 'Tensor', axis=0) -> 'Tensor':
         tensors = tuple(self.tensor(t) for t in tensors)
-        return Tensor(
+        args = (self, *tensors)
+        out = Tensor(
             self.xp.concatenate([self.data] + [t.data for t in tensors], axis=axis),
-            [self, *tensors, axis],
+            args,
             "concatenate",
             requires_grad=self.requires_grad or any(t.requires_grad for t in tensors),
             device=self.device,
         )
 
+        def _backward():
+            args_shapes = [arg.data.shape for arg in args]
+
+            grads = self.xp.split(
+                out.grad,
+                self.xp.cumsum(self.xp.array([arg_shape[axis] for arg_shape in args_shapes]))[
+                    :-1
+                ].tolist(),
+                axis=axis,
+            )
+
+            for i, arg in enumerate(args):
+                if arg.requires_grad:
+                    arg._apply_grad(grads[i])
+
+        out._backward = _backward
+
+        return out
+
     def reshape(self, *shape: Any) -> 'Tensor':
         shape = shape[0] if len(shape) == 1 else shape
-        return Tensor(
+        out = Tensor(
             self.data.reshape(shape),
             [self],
             "reshape",
@@ -311,12 +572,21 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad.reshape(self.data.shape))
+
+        out._backward = _backward
+
+        return out
+
+
     # def split(self, n, axis = 0):
     #     # return Tensor(self.xp.split(self.data, n, axis = axis), [self], "split", requires_grad=self.requires_grad)
     #     return [Tensor(t, [self], "split", requires_grad=self.requires_grad) for t in self.xp.split(self.data, n, axis = axis)]
 
     def abs(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.abs(self.data),
             [self],
             "abs",
@@ -324,37 +594,69 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * self.xp.sign(self.data))
+
+        out._backward = _backward
+
+        return out
+
     def transpose(self, *axes: Any) -> 'Tensor': 
         axes = axes[0] if len(axes) == 1 else axes
         if len(axes) == 0:
             axes = tuple(range(self.data.ndim)[::-1])
-        return Tensor(
+        out = Tensor(
             self.data.transpose(axes),
-            [self, axes],
+            [self],
             "transpose",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad.transpose(axes))
+
+        out._backward = _backward
+
+        return out
+
     def swapaxes(self, axis1: int, axis2: int) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.xp.swapaxes(self.data, axis1, axis2),
-            [self, axis1, axis2],
+            [self],
             "swapaxes",
             requires_grad=self.requires_grad,
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad.swapaxes(axis1, axis2))
+
+        out._backward = _backward
+
+        return out
+
     def flip(self, axis: Any) -> 'Tensor':
         if axis is None:
             axis = range(self.data.ndim)
-        return Tensor(
+        out = Tensor(
             self.xp.flip(self.data, axis),
-            [self, axis],
+            [self],
             "flip",
             requires_grad=self.requires_grad,
             device=self.device,
         )
+
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(self.xp.flip(out.grad, axis=axis))
+
+        out._backward = _backward
+
+        return out
 
     def where(self, condition: 'Tensor', t: Union[Any, 'Tensor']) -> 'Tensor':
         condition = self.tensor(condition)
@@ -363,13 +665,23 @@ class Tensor:
         requires_grad = self.requires_grad or t.requires_grad
         args = [self, condition, t] if requires_grad else None
 
-        return Tensor(
+        out = Tensor(
             np.where(condition.data, self.data, t.data),
             args,
             "where",
             requires_grad=requires_grad,
             device=self.device,
         )
+
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad * self.xp.where(condition.data, out.grad, self.xp.zeros_like(out.grad)))
+            if t.requires_grad:
+                t._apply_grad(out.grad * self.xp.where(condition.data, self.xp.zeros_like(out.grad), out.grad))
+
+        out._backward = _backward
+
+        return out
 
     def equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
         t = self.tensor(t)
@@ -496,7 +808,7 @@ class Tensor:
         return self.logical_not()
 
     def __neg__(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             -self.data,
             [self],
             "neg",
@@ -504,14 +816,30 @@ class Tensor:
             device=self.device,
         )
 
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(-out.grad)
+
+        out._backward = _backward
+
+        return out
+
     def __pos__(self) -> 'Tensor':
-        return Tensor(
+        out = Tensor(
             self.data,
             [self],
             "pos",
             requires_grad=self.requires_grad,
             device=self.device,
         )
+
+        def _backward():
+            if self.requires_grad:
+                self._apply_grad(out.grad)
+
+        out._backward = _backward
+
+        return out
 
     def __abs__(self) -> 'Tensor':
         return self.abs()
@@ -565,29 +893,52 @@ class Tensor:
         return t.power(self)
 
     # add unpacking of split tensors
-    def __iter__(self) -> Iterator['Tensor']:
-        return iter(
-            Tensor(
-                self.data[i],
-                [self, i],
-                "getitem",
-                requires_grad=self.requires_grad,
-                device=self.device,
-            )
-            for i in range(self.data.shape[0])
-        )
+    # def __iter__(self) -> Iterator['Tensor']:
+    #     out = iter(
+    #         Tensor(
+    #             self.data[i],
+    #             [self,],
+    #             "getitem",
+    #             requires_grad=self.requires_grad,
+    #             device=self.device,
+    #         )
+    #         for i in range(self.data.shape[0])
+    #     )
 
+    #     def _backward():
+    #         if self.requires_grad:
+    #             grad = self.xp.zeros_like(self.data)
+    #             grad[i] = out.grad
+
+    #             self._apply_grad(grad)
+
+    #     for i, o in enumerate(out):
+    #         o._backward = _backward
+
+    #     return out
     def __getitem__(
         self, index: Any
     ) -> 'Tensor':  # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad
-        return Tensor(
+        out = Tensor(
             self.data[index],
-            [self, index],
+            [self],
             "getitem",
             requires_grad=self.requires_grad,
             device=self.device,
             dtype=self.dtype
         )
+
+        def _backward():
+            if self.requires_grad:
+                grad = self.xp.zeros_like(self.data)
+                grad[index] = out.grad
+
+                self._apply_grad(grad)
+
+        out._backward = _backward
+
+        return out
+
 
     def __setitem__(self, key, value: Union[Any, 'Tensor']):
         if self.requires_grad:
@@ -618,22 +969,12 @@ class Tensor:
     def size(self) -> int:
         return self.data.size
 
-    def backward(
-        self, grad=None
-    ):  # grad=self.xp.array(1) # TODO: ASSERT GRAD SHAPE == DATA SHAPE, assert grad.device == self.device
-        if not self.requires_grad:
-            return
-
-        if grad is None:
-            grad = self.xp.ones_like(self.data, dtype=self.dtype)
-        else:
-            grad = self.xp.array(grad, dtype=self.dtype)
-
+    def _reverse_broadcast(self, grad):
         if (
             grad.size != self.data.size
             or grad.ndim != self.data.ndim
             or grad.shape != self.data.shape
-        ):  # reverse broadcast; TODO : MAYBE MOVE IT TO ANOTHER PLACE
+        ):
             if self.data.size == 1:
                 grad = grad.sum()
             elif self.data.ndim == grad.ndim:
@@ -656,177 +997,47 @@ class Tensor:
 
             grad = grad.reshape(self.data.shape)
 
+        return grad
+
+
+    def backward(
+        self, grad=None
+    ):  # grad=self.xp.array(1) # TODO: ASSERT GRAD SHAPE == DATA SHAPE, assert grad.device == self.device
+        if not self.requires_grad:
+            return
+
+        # TODO: think about this logic
+        if grad is None:
+            grad = self.xp.ones_like(self.data, dtype=self.dtype)
+        else:
+            grad = self.xp.array(grad, dtype=self.dtype)
+
+        grad = self._reverse_broadcast(grad)
+
         if self.grad is None:
             self.grad = grad
         else:
             self.grad = self.grad + grad  # += BUG FIX
 
-        if self.op == "add":
-            self.args[0].backward(grad)
-            self.args[1].backward(grad)
+        # Perform a topological sort to ensure gradients are calculated in the correct order
+        topo = []
+        visited_ids = set()
+        def build_topo(v):
+            if id(v) not in visited_ids:
+                visited_ids.add(id(v))
+                if v.args is not None:
+                    for child in v.args:
+                        if isinstance(child, Tensor):
+                            build_topo(child)
+                topo.append(v)
+        build_topo(self)
+        # Apply the backward function in reverse order
+        # print([el.op for el in topo])
+        for v in reversed(topo):
+            v._backward()
 
-        elif self.op == "sub":
-            self.args[0].backward(grad)
-            self.args[1].backward(-grad)
-
-        elif self.op == "mul":
-            self.args[0].backward(grad * self.args[1].data)
-            self.args[1].backward(self.args[0].data * grad)
-
-        elif self.op == "div":
-            self.args[0].backward(grad / self.args[1].data)
-            self.args[1].backward(-grad * self.args[0].data / self.args[1].data ** 2)
-
-        elif self.op == "matmul":
-            if self.args[0].data.ndim > 1 and self.args[1].data.ndim > 1:  # [matrix x matrix]
-                self.args[0].backward(self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
-                self.args[1].backward(self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad))
-
-            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim == 1:  # [vector x vector]
-                self.args[0].backward(grad * self.args[1].data)
-                self.args[1].backward(grad * self.args[0].data)
-
-            elif self.args[0].data.ndim == 1 and self.args[1].data.ndim > 1:  # [vector x matrix]
-                self.args[0].backward(self.xp.matmul(grad, self.args[1].data.swapaxes(-1, -2)))
-                self.args[1].backward(self.xp.outer(self.args[0].data, grad))
-
-            elif self.args[0].data.ndim > 1 and self.args[1].data.ndim == 1:  # [matrix x vector]
-                self.args[0].backward(self.xp.outer(grad, self.args[1].data))
-                self.args[1].backward(self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad))
-
-        elif self.op == "sum":
-            axis = self.args[1]
-            if grad.ndim != self.args[0].data.ndim and axis is not None:
-                grad = self.xp.expand_dims(grad, axis)
-            self.args[0].backward(self.xp.ones_like(self.args[0].data) * grad)
-
-        elif self.op == "mean":
-            axis = self.args[1]
-
-            if grad.ndim != self.args[0].data.ndim and axis is not None:
-                grad = self.xp.expand_dims(grad, axis)
-
-            _axis = list(axis) if isinstance(axis, tuple) else axis
-            self.args[0].backward(
-                self.xp.ones_like(self.args[0].data)
-                * grad
-                / self.xp.prod(self.xp.array(self.args[0].data.shape)[_axis])
-            )
-
-        elif self.op == "var":  # axis=None, ddof=0, keepdims=False add params instead args kwargs
-            axis = self.args[1]
-
-            if grad.ndim != self.args[0].data.ndim and axis is not None:
-                grad = self.xp.expand_dims(grad, axis)
-
-            _axis = list(axis) if isinstance(axis, tuple) else axis
-            self.args[0].backward(
-                self.xp.ones_like(self.args[0].data)
-                * grad
-                * 2
-                * (self.args[0].data - self.args[0].data.mean(axis=axis, keepdims=True))
-                / self.xp.prod(self.xp.array(self.args[0].data.shape)[_axis])
-            )
-
-        elif self.op == "power":
-            self.args[0].backward(
-                grad * self.args[1].data * self.args[0].data ** (self.args[1].data - 1)
-            )
-            self.args[1].backward(
-                grad * self.args[0].data ** self.args[1].data * self.xp.log(self.args[0].data)
-            )
-
-        elif self.op == "sqrt":
-            self.args[0].backward(grad * 1 / (2 * self.xp.sqrt(self.args[0].data)))
-
-        elif self.op == "log":
-            self.args[0].backward(grad * 1 / self.args[0].data)
-
-        elif self.op == "exp":
-            self.args[0].backward(grad * self.xp.exp(self.args[0].data))
-
-        elif self.op == "tanh":
-            self.args[0].backward(grad * (1 - self.xp.tanh(self.args[0].data) ** 2))
-
-        elif self.op == "sin":
-            self.args[0].backward(grad * self.xp.cos(self.args[0].data))
-
-        elif self.op == "cos":
-            self.args[0].backward(grad * -self.xp.sin(self.args[0].data))
-
-        elif self.op == "maximum":
-            self.args[0].backward(grad * (self.args[0].data >= self.args[1].data))
-            self.args[1].backward(grad * (self.args[0].data <= self.args[1].data))
-
-        elif self.op == "minimum":
-            self.args[0].backward(grad * (self.args[0].data <= self.args[1].data))
-            self.args[1].backward(grad * (self.args[0].data >= self.args[1].data))
-
-        elif self.op == "max":
-            axis, _ = self.args[1:]
-            if grad.ndim != self.args[0].data.ndim and axis is not None:
-                grad = self.xp.expand_dims(grad, axis)
-            self.args[0].backward(
-                grad * (self.args[0].data == self.args[0].data.max(axis=axis, keepdims=True))
-            )
-
-        elif self.op == "min":
-            axis, _ = self.args[1:]
-            if grad.ndim != self.args[0].data.ndim and axis is not None:
-                grad = self.xp.expand_dims(grad, axis)
-            self.args[0].backward(
-                grad * (self.args[0].data == self.args[0].data.min(axis=axis, keepdims=True))
-            )
-
-        elif self.op == "concatenate":
-            axis = self.args[-1]
-            args = self.args[:-1]
-            args_shapes = [arg.data.shape for arg in args]
-
-            grads = self.xp.split(
-                grad,
-                self.xp.cumsum(self.xp.array([arg_shape[axis] for arg_shape in args_shapes]))[
-                    :-1
-                ].tolist(),
-                axis=axis,
-            )
-
-            for i, arg in enumerate(args):
-                arg.backward(grads[i])
-
-        elif self.op == "reshape":
-            self.args[0].backward(grad.reshape(self.args[0].data.shape))
-
-        # elif self.op == "split":
-        #     self.args[0].backward(self.xp.concatenate(grad, axis = 0))
-
-        elif self.op == "getitem":
-            _grad = self.xp.zeros_like(self.args[0].data)
-            _grad[self.args[1]] = grad
-
-            self.args[0].backward(_grad)
-
-        elif self.op == "transpose":
-            self.args[0].backward(grad.transpose(self.args[1]))
-
-        elif self.op == "swapaxes":
-            self.args[0].backward(grad.swapaxes(self.args[1], self.args[2]))
-
-        elif self.op == "flip":
-            self.args[0].backward(self.xp.flip(grad, axis=self.args[1]))
-            
-        elif self.op == "where":
-            self.args[0].backward(grad * self.xp.where(self.args[1].data, grad, self.xp.zeros_like(grad)))
-            self.args[2].backward(grad * self.xp.where(self.args[1].data, self.xp.zeros_like(grad), grad))
-
-        elif self.op == "neg":
-            self.args[0].backward(-grad)
-
-        elif self.op == "pos":
-            self.args[0].backward(grad)
-
-        elif self.op == "abs":
-            self.args[0].backward(grad * self.xp.sign(self.args[0].data))
+        # BUG: Memory leaks; Temporary fix; TODO: investigate
+        gc.collect()
 
 
 # BUGS:
