@@ -12,36 +12,33 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
+            X_hat = X_centered * stddev_inv
+            batch_size = X.data.shape[0]
 
-    def __backward(self):
-        X, weight, bias, X_centered, stddev_inv, affine = self.args
-        grad = self.grad
+            weight_data = weight.data if affine else 1
 
-        X_hat = X_centered * stddev_inv
-        batch_size = X.data.shape[0]
-
-        weight_data = weight.data if affine else 1
-
-        grad_X = (
-            (1 / batch_size)
-            * weight_data
-            * stddev_inv
-            * (
-                batch_size * grad
-                - self.xp.sum(grad, axis=0)
-                - X_centered * self.xp.power(stddev_inv, 2) * self.xp.sum(grad * X_centered, axis=0)
+            grad_X = (
+                (1 / batch_size)
+                * weight_data
+                * stddev_inv
+                * (
+                    batch_size * grad
+                    - X.xp.sum(grad, axis=0)
+                    - X_centered * X.xp.power(stddev_inv, 2) * X.xp.sum(grad * X_centered, axis=0)
+                )
             )
-        )
 
-        if affine:
-            grad_weight = self.xp.sum(grad * X_hat, axis=0, keepdims=True)
-            grad_bias = self.xp.sum(grad, axis=0, keepdims=True)
+            if affine:
+                grad_weight = X.xp.sum(grad * X_hat, axis=0, keepdims=True)
+                grad_bias = X.xp.sum(grad, axis=0, keepdims=True)
 
-        X._apply_grad(grad_X)
-        if affine:
-            weight._apply_grad(grad_weight)
-            bias._apply_grad(grad_bias)
+            X._apply_grad(grad_X)
+            if affine:
+                weight._apply_grad(grad_weight)
+                bias._apply_grad(grad_bias)
+
+        self._backward = _backward
 
 
 class BatchNorm1d(Module):  # layer with static backpropagation

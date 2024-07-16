@@ -29,9 +29,7 @@ class Adam:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = (
-                None if param.grad is None else param.xp.zeros_like(param.grad)
-            )  # ??? 0 or None
+            param.grad = None
 
 
 class SGD:
@@ -48,10 +46,7 @@ class SGD:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = (
-                None if param.grad is None else param.xp.zeros_like(param.grad)
-            )  # ??? 0 or None
-
+            param.grad = None
 
 class Momentum:
     def __init__(self, params, lr=0.01, momentum: float=0.9):
@@ -93,7 +88,7 @@ class RMSprop:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
+            param.grad = None
 
 
 class Adagrad:
@@ -114,7 +109,7 @@ class Adagrad:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
+            param.grad = None
 
 
 class Adadelta:
@@ -142,7 +137,7 @@ class Adadelta:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
+            param.grad = None
 
 
 class Adamax:
@@ -172,7 +167,7 @@ class Adamax:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
+            param.grad = None
 
 
 class NAdam:
@@ -205,4 +200,4 @@ class NAdam:
 
     def zero_grad(self):
         for param in self.params:
-            param.grad = None if param.grad is None else param.xp.zeros_like(param.grad)
+            param.grad = None

@@ -10,17 +10,14 @@ class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(X: np.ndarray, weight: Tensor, grad):
+            axis = list(range(len(X.shape)))
+            axis[-1], axis[-2] = axis[-2], axis[-1]
 
-    def __backward(self):
-        X, weight = self.args
-        grad = self.grad
+            weight_grad = weight.xp.matmul(X.transpose(*axis), grad)
+            weight._apply_grad(weight_grad)
 
-        axis = list(range(len(X.shape)))
-        axis[-1], axis[-2] = axis[-2], axis[-1]
-
-        weight_grad = self.xp.matmul(X.transpose(*axis), grad)
-        weight._apply_grad(weight_grad)
+        self._backward = _backward
 
 
 class Embedding(Module):

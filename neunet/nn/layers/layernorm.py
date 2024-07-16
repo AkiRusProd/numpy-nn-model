@@ -45,53 +45,51 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, axis, elementwise_affine, grad):
+            # _axis = list(axis) if isinstance(axis, tuple) else axis
+            X_hat = X_centered * stddev_inv
 
-    def __backward(self):
-        X, weight, bias, X_centered, stddev_inv, axis, elementwise_affine = self.args
-        grad = self.grad
-        # _axis = list(axis) if isinstance(axis, tuple) else axis
-        X_hat = X_centered * stddev_inv
+            weight_data = weight.data if elementwise_affine else 1
+            weight_size = weight.size if elementwise_affine else 1
 
-        weight_data = weight.data if elementwise_affine else 1
-        weight_size = weight.size if elementwise_affine else 1
+            dX_hat = weight_data * grad
+            dstddev_inv = (
+                -0.5
+                * X.xp.power(stddev_inv, 3)
+                * X.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
+            )
+            dvar = (
+                X.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / weight_size
+            )  # X.xp.prod(X.xp.array(X.shape)[_axis])
+            dmean = (
+                X.xp.ones_like(X.data)
+                * X.xp.sum(dX_hat * stddev_inv, axis=axis, keepdims=True)
+                * (-1)
+                / weight_size
+            )  # X.xp.prod(X.xp.array(X.shape)[_axis])
+            grad_X = dX_hat * stddev_inv + dvar + dmean
 
-        dX_hat = weight_data * grad
-        dstddev_inv = (
-            -0.5
-            * self.xp.power(stddev_inv, 3)
-            * self.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
-        )
-        dvar = (
-            self.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / weight_size
-        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
-        dmean = (
-            self.xp.ones_like(X.data)
-            * self.xp.sum(dX_hat * stddev_inv, axis=axis, keepdims=True)
-            * (-1)
-            / weight_size
-        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
-        grad_X = dX_hat * stddev_inv + dvar + dmean
+            # grad_X = (1 / weight_size) * weight_data * stddev_inv * (
+            #     weight_size * grad
+            #     - X.xp.sum(grad, axis = axis, keepdims = True)
+            #     - X_centered * X.xp.power(stddev_inv, 2) * X.xp.sum(grad * X_centered, axis = axis, keepdims = True)
+            #     )
 
-        # grad_X = (1 / weight_size) * weight_data * stddev_inv * (
-        #     weight_size * grad
-        #     - self.xp.sum(grad, axis = axis, keepdims = True)
-        #     - X_centered * self.xp.power(stddev_inv, 2) * self.xp.sum(grad * X_centered, axis = axis, keepdims = True)
-        #     )
+            # dX_hat = weight_data * grad
+            # dvar = X.xp.sum(dX_hat * X_centered, axis = axis, keepdims = True) * (-0.5) * X.xp.power(stddev_inv, 3) * 2 * X_centered / weight_size
+            # dmean = (X.xp.sum(dX_hat * (-stddev_inv), axis = axis, keepdims = True) + dvar * X.xp.mean(-2.0 * X_centered, axis = axis, keepdims = True)) * X.xp.ones_like(X.data) / weight_size
+            # grad_X = dX_hat * stddev_inv + dvar + dmean
 
-        # dX_hat = weight_data * grad
-        # dvar = self.xp.sum(dX_hat * X_centered, axis = axis, keepdims = True) * (-0.5) * self.xp.power(stddev_inv, 3) * 2 * X_centered / weight_size
-        # dmean = (self.xp.sum(dX_hat * (-stddev_inv), axis = axis, keepdims = True) + dvar * self.xp.mean(-2.0 * X_centered, axis = axis, keepdims = True)) * self.xp.ones_like(X.data) / weight_size
-        # grad_X = dX_hat * stddev_inv + dvar + dmean
+            if elementwise_affine:
+                grad_weight = X.xp.sum(grad * X_hat, axis=0)
+                grad_bias = X.xp.sum(grad, axis=0)
 
-        if elementwise_affine:
-            grad_weight = self.xp.sum(grad * X_hat, axis=0)
-            grad_bias = self.xp.sum(grad, axis=0)
+            X._apply_grad(grad_X)
+            if elementwise_affine:
+                weight._apply_grad(grad_weight)
+                bias._apply_grad(grad_bias)
 
-        X._apply_grad(grad_X)
-        if elementwise_affine:
-            weight._apply_grad(grad_weight)
-            bias._apply_grad(grad_bias)
+        self._backward = _backward
 
 
 class LayerNorm(Module):  # layer with static backpropagation

@@ -12,47 +12,44 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
+            batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
-    def __backward(self):
-        X, weight, bias, X_centered, stddev_inv, affine = self.args
-        grad = self.grad
+            axis = (0, 2, 3)
+            # _axis = list(axis) if isinstance(axis, tuple) else axis
+            X_hat = X_centered * stddev_inv[..., None, None]
 
-        batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
+            weight_data = weight.data[..., None, None] if affine else 1
 
-        axis = (0, 2, 3)
-        # _axis = list(axis) if isinstance(axis, tuple) else axis
-        X_hat = X_centered * stddev_inv[..., None, None]
-
-        weight_data = weight.data[..., None, None] if affine else 1
-
-        dX_hat = weight_data * grad
-        dstddev_inv = (
-            -0.5
-            * self.xp.power(stddev_inv[..., None, None], 3)
-            * self.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
-        )
-        dvar = (
-            self.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / batch_size
-        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
-        dmean = (
-            self.xp.ones_like(X.data)
-            * self.xp.sum(dX_hat * stddev_inv[..., None, None], axis=axis, keepdims=True)
-            * (-1)
-            / batch_size
-        )  # self.xp.prod(self.xp.array(X.shape)[_axis])
-        grad_X = dX_hat * stddev_inv[..., None, None] + dvar + dmean
-
-        if affine:
-            grad_weight = self.xp.sum(grad * X_hat, axis=(0, 2, 3), keepdims=True).reshape(
-                weight.data.shape
+            dX_hat = weight_data * grad
+            dstddev_inv = (
+                -0.5
+                * X.xp.power(stddev_inv[..., None, None], 3)
+                * X.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
             )
-            grad_bias = self.xp.sum(grad, axis=(0, 2, 3), keepdims=True).reshape(bias.data.shape)
+            dvar = (
+                X.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / batch_size
+            )  # X.xp.prod(X.xp.array(X.shape)[_axis])
+            dmean = (
+                X.xp.ones_like(X.data)
+                * X.xp.sum(dX_hat * stddev_inv[..., None, None], axis=axis, keepdims=True)
+                * (-1)
+                / batch_size
+            )  # X.xp.prod(X.xp.array(X.shape)[_axis])
+            grad_X = dX_hat * stddev_inv[..., None, None] + dvar + dmean
 
-        X._apply_grad(grad_X)
-        if affine:
-            weight._apply_grad(grad_weight)
-            bias._apply_grad(grad_bias)
+            if affine:
+                grad_weight = X.xp.sum(grad * X_hat, axis=(0, 2, 3), keepdims=True).reshape(
+                    weight.data.shape
+                )
+                grad_bias = X.xp.sum(grad, axis=(0, 2, 3), keepdims=True).reshape(bias.data.shape)
+
+            X._apply_grad(grad_X)
+            if affine:
+                weight._apply_grad(grad_weight)
+                bias._apply_grad(grad_bias)
+
+        self._backward = _backward
 
 
 class BatchNorm2d(Module):  # layer with static backpropagation

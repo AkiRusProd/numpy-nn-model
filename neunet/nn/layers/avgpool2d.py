@@ -11,44 +11,41 @@ class _AvgPool2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(
+                X: Tensor,
+                kernel_size,
+                stride,
+                padding,
+                input_size,
+                output_size,
+                grad
+            ):
 
-    def __backward(self):
-        (
-            X,
-            kernel_size,
-            stride,
-            padding,
-            input_size,
-            output_size,
-        ) = self.args
+            batch_size, in_channels, in_height, in_width = input_size
 
-        grad = self.grad
+            grad_X = X.xp.zeros(
+                (
+                    batch_size,
+                    in_channels,
+                    in_height + 2 * padding[0],
+                    in_width + 2 * padding[1],
+                ),
+                dtype=grad.dtype,
+            )
+            for i in range(output_size[0]):
+                for j in range(output_size[1]):
+                    grad_X[
+                        :,
+                        :,
+                        i * stride[0] : i * stride[0] + kernel_size[0],
+                        j * stride[1] : j * stride[1] + kernel_size[1],
+                    ] += grad[:, :, i, j, None, None] / (kernel_size[0] * kernel_size[1])
 
-        batch_size, in_channels, in_height, in_width = input_size
+            grad_X = remove_padding(grad_X, padding)
 
-        grad_X = self.xp.zeros(
-            (
-                batch_size,
-                in_channels,
-                in_height + 2 * padding[0],
-                in_width + 2 * padding[1],
-            ),
-            dtype=grad.dtype,
-        )
-        for i in range(output_size[0]):
-            for j in range(output_size[1]):
-                grad_X[
-                    :,
-                    :,
-                    i * stride[0] : i * stride[0] + kernel_size[0],
-                    j * stride[1] : j * stride[1] + kernel_size[1],
-                ] += grad[:, :, i, j, None, None] / (kernel_size[0] * kernel_size[1])
+            X._apply_grad(grad_X)
 
-        grad_X = remove_padding(grad_X, padding)
-
-        X._apply_grad(grad_X)
-
+        self._backward = _backward
 
 class AvgPool2d(Module):
     def __init__(self, kernel_size: Union[int, tuple[int, int]], stride: Optional[Union[int, tuple[int, int]]] = None, padding: Union[int, tuple[int, int]] = 0):
