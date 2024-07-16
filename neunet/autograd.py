@@ -1012,25 +1012,35 @@ class Tensor:
 
         self._apply_grad(grad)
         # Perform a topological sort to ensure gradients are calculated in the correct order
-        tape = []
-        visited_ids = set()
-        def build_topo(v):
-            if id(v) not in visited_ids:
-                visited_ids.add(id(v))
-                if v.args is None:
-                    return
-                for child in v.args:
-                    if not isinstance(child, Tensor):
-                        continue
-                    if child.requires_grad is False:
-                        continue
+        def toposort(v):
+            tape = []
+            visited_ids = set()
+            stack = [v]
 
-                    build_topo(child)
-                tape.append(v)
-        build_topo(self)
+            while stack:
+                node: Tensor = stack.pop()
+                node_id = id(node)
+                
+                if node_id in visited_ids:
+                    continue
+                
+                visited_ids.add(node_id)
+                
+                if node.args is not None:
+                    for child in node.args:
+                        if not isinstance(child, Tensor):
+                            continue
+                        if child.requires_grad is False:
+                            continue
+                        stack.append(child)
+                
+                    tape.append(node)
+
+            return tape
+        
         # Apply the backward function in reverse order
-        # print([el.op for el in topo])
-        for v in reversed(tape):
+        # print([el.op for el in tape])
+        for v in toposort(self):
             v._backward(*v.args, grad=v.grad) #if v.args else None
         # BUG: Memory leaks; Temporary fix; TODO: investigate
         # gc.collect()
