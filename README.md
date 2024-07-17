@@ -9,16 +9,17 @@
 1) Sigmoid
 2) Tanh
 3) Softmax
-4) Softplus
-5) Softsign
-6) Swish
-7) Mish
-8) TanhExp
-9) ReLU
-10) LeakyReLU
-11) ELU
-12) SELU
-13) GELU
+4) LogSoftmax
+5) Softplus
+6) Softsign
+7) Swish
+8) Mish
+9) TanhExp
+10) ReLU
+11) LeakyReLU
+12) ELU
+13) SELU
+14) GELU
 
 *[See Activation Functions...](neunet/nn/activations.py)*
 

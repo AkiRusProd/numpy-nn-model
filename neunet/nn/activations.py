@@ -500,20 +500,3 @@ class LogSoftmax(Module):
 
     def __call__(self, x):
         return self.forward(x)
-
-
-activations = {
-    "sigmoid": Sigmoid(),
-    "tanh": Tanh(),
-    "softmax": Softmax(),
-    "softplus": Softplus(),
-    "softsign": Softsign(),
-    "swish": Swish(),
-    "mish": Mish(),
-    "tanh_exp": TanhExp(),
-    "relu": ReLU(),
-    "leaky_relu": LeakyReLU(),
-    "elu": ELU(),
-    "selu": SELU(),
-    "gelu": GELU(),
-}
