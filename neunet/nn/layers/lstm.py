@@ -13,136 +13,134 @@ class _LSTMTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        self._backward = self.__backward
+        def _backward(
+                X: Tensor,
+                weight_f: Tensor,
+                weight_i: Tensor,
+                weight_o: Tensor,
+                weight_c: Tensor,
+                weight_hf: Tensor,
+                weight_hi: Tensor,
+                weight_ho: Tensor,
+                weight_hc: Tensor,
+                bias_f: Tensor,
+                bias_i: Tensor,
+                bias_o: Tensor,
+                bias_c: Tensor,
+                forget_gates,
+                input_gates,
+                output_gates,
+                cell_gates,
+                cell_states,
+                hidden_states,
+                unactivated_forget_gates,
+                unactivated_input_gates,
+                unactivated_output_gates,
+                unactivated_cell_gates,
+                hidden_size,
+                timesteps,
+                nonlinearity,
+                recurrent_nonlinearity,
+                grad
+            ):
+            X_data = X.data
 
-    def __backward(self):
-        (
-            X,
-            weight_f,
-            weight_i,
-            weight_o,
-            weight_c,
-            weight_hf,
-            weight_hi,
-            weight_ho,
-            weight_hc,
-            bias_f,
-            bias_i,
-            bias_o,
-            bias_c,
-            forget_gates,
-            input_gates,
-            output_gates,
-            cell_gates,
-            cell_states,
-            hidden_states,
-            unactivated_forget_gates,
-            unactivated_input_gates,
-            unactivated_output_gates,
-            unactivated_cell_gates,
-            hidden_size,
-            timesteps,
-            nonlinearity,
-            recurrent_nonlinearity,
-        ) = self.args
-        X_data = X.data
-        grad = self.grad
+            if len(X_data.shape) == 2:
+                X_data = X_data[X.xp.newaxis, :, :]
 
-        if len(X_data.shape) == 2:
-            X_data = X_data[self.xp.newaxis, :, :]
+            if self.data.shape != hidden_states[:, 0:-1, :].shape:  # if return_sequences == "last" # NOTE: self is here (potential memory leak)
+                temp = X.xp.zeros_like((hidden_states))
+                temp[:, [-2], :] = grad  # [-2] saves dims when slicing
+                grad = temp
 
-        if self.data.shape != hidden_states[:, 0:-1, :].shape:  # if return_sequences == "last"
-            temp = self.xp.zeros_like((hidden_states))
-            temp[:, [-2], :] = grad  # [-2] saves dims when slicing
-            grad = temp
+            next_hidden_delta = X.xp.zeros((hidden_size), dtype=grad.dtype)
+            next_cell_delta = X.xp.zeros((hidden_size), dtype=grad.dtype)
 
-        next_hidden_delta = self.xp.zeros((hidden_size), dtype=grad.dtype)
-        next_cell_delta = self.xp.zeros((hidden_size), dtype=grad.dtype)
+            grad_weight_f = X.xp.zeros_like(weight_f.data)
+            grad_weight_i = X.xp.zeros_like(weight_i.data)
+            grad_weight_o = X.xp.zeros_like(weight_o.data)
+            grad_weight_c = X.xp.zeros_like(weight_c.data)
 
-        grad_weight_f = self.xp.zeros_like(weight_f.data)
-        grad_weight_i = self.xp.zeros_like(weight_i.data)
-        grad_weight_o = self.xp.zeros_like(weight_o.data)
-        grad_weight_c = self.xp.zeros_like(weight_c.data)
+            grad_weight_hf = X.xp.zeros_like(weight_hf.data)
+            grad_weight_hi = X.xp.zeros_like(weight_hi.data)
+            grad_weight_ho = X.xp.zeros_like(weight_ho.data)
+            grad_weight_hc = X.xp.zeros_like(weight_hf.data)
 
-        grad_weight_hf = self.xp.zeros_like(weight_hf.data)
-        grad_weight_hi = self.xp.zeros_like(weight_hi.data)
-        grad_weight_ho = self.xp.zeros_like(weight_ho.data)
-        grad_weight_hc = self.xp.zeros_like(weight_hf.data)
+            grad_bias_f = X.xp.zeros(hidden_size, dtype=grad.dtype)
+            grad_bias_i = X.xp.zeros(hidden_size, dtype=grad.dtype)
+            grad_bias_o = X.xp.zeros(hidden_size, dtype=grad.dtype)
+            grad_bias_c = X.xp.zeros(hidden_size, dtype=grad.dtype)
 
-        grad_bias_f = self.xp.zeros(hidden_size, dtype=grad.dtype)
-        grad_bias_i = self.xp.zeros(hidden_size, dtype=grad.dtype)
-        grad_bias_o = self.xp.zeros(hidden_size, dtype=grad.dtype)
-        grad_bias_c = self.xp.zeros(hidden_size, dtype=grad.dtype)
+            grad_X = X.xp.zeros_like(X_data)
 
-        grad_X = self.xp.zeros_like(X_data)
+            for t in reversed(range(timesteps)):
+                hidden_delta = grad[:, t, :] + next_hidden_delta
+                cell_delta = (
+                    hidden_delta * output_gates[:, t, :] * nonlinearity.derivative(cell_states[:, t, :])
+                    + next_cell_delta
+                )
 
-        for t in reversed(range(timesteps)):
-            hidden_delta = grad[:, t, :] + next_hidden_delta
-            cell_delta = (
-                hidden_delta * output_gates[:, t, :] * nonlinearity.derivative(cell_states[:, t, :])
-                + next_cell_delta
-            )
+                output_gates_delta = (
+                    hidden_delta
+                    * nonlinearity.function(cell_states[:, t, :])
+                    * recurrent_nonlinearity.derivative(unactivated_output_gates[:, t, :])
+                )
+                grad_weight_o += X.xp.dot(X_data[:, t, :].T, output_gates_delta)
+                grad_weight_ho += X.xp.dot(hidden_states[:, t - 1, :].T, output_gates_delta)
+                grad_bias_o += output_gates_delta.sum(axis=0)
 
-            output_gates_delta = (
-                hidden_delta
-                * nonlinearity.function(cell_states[:, t, :])
-                * recurrent_nonlinearity.derivative(unactivated_output_gates[:, t, :])
-            )
-            grad_weight_o += self.xp.dot(X_data[:, t, :].T, output_gates_delta)
-            grad_weight_ho += self.xp.dot(hidden_states[:, t - 1, :].T, output_gates_delta)
-            grad_bias_o += output_gates_delta.sum(axis=0)
+                forget_gates_delta = (
+                    cell_delta * cell_states[:, t - 1, :]
+                ) * recurrent_nonlinearity.derivative(unactivated_forget_gates[:, t, :])
+                grad_weight_f += X.xp.dot(X_data[:, t, :].T, forget_gates_delta)
+                grad_weight_hf += X.xp.dot(hidden_states[:, t - 1, :].T, forget_gates_delta)
+                grad_bias_f += forget_gates_delta.sum(axis=0)
 
-            forget_gates_delta = (
-                cell_delta * cell_states[:, t - 1, :]
-            ) * recurrent_nonlinearity.derivative(unactivated_forget_gates[:, t, :])
-            grad_weight_f += self.xp.dot(X_data[:, t, :].T, forget_gates_delta)
-            grad_weight_hf += self.xp.dot(hidden_states[:, t - 1, :].T, forget_gates_delta)
-            grad_bias_f += forget_gates_delta.sum(axis=0)
+                input_gates_delta = (
+                    cell_delta * cell_gates[:, t, :]
+                ) * recurrent_nonlinearity.derivative(unactivated_input_gates[:, t, :])
+                grad_weight_i += X.xp.dot(X_data[:, t, :].T, input_gates_delta)
+                grad_weight_hi += X.xp.dot(hidden_states[:, t - 1, :].T, input_gates_delta)
+                grad_bias_i += input_gates_delta.sum(axis=0)
 
-            input_gates_delta = (
-                cell_delta * cell_gates[:, t, :]
-            ) * recurrent_nonlinearity.derivative(unactivated_input_gates[:, t, :])
-            grad_weight_i += self.xp.dot(X_data[:, t, :].T, input_gates_delta)
-            grad_weight_hi += self.xp.dot(hidden_states[:, t - 1, :].T, input_gates_delta)
-            grad_bias_i += input_gates_delta.sum(axis=0)
+                cell_gates_delta = (cell_delta * input_gates[:, t, :]) * nonlinearity.derivative(
+                    unactivated_cell_gates[:, t, :]
+                )
+                grad_weight_c += X.xp.dot(X_data[:, t, :].T, cell_gates_delta)
+                grad_weight_hc += X.xp.dot(hidden_states[:, t - 1, :].T, cell_gates_delta)
+                grad_bias_c += cell_gates_delta.sum(axis=0)
 
-            cell_gates_delta = (cell_delta * input_gates[:, t, :]) * nonlinearity.derivative(
-                unactivated_cell_gates[:, t, :]
-            )
-            grad_weight_c += self.xp.dot(X_data[:, t, :].T, cell_gates_delta)
-            grad_weight_hc += self.xp.dot(hidden_states[:, t - 1, :].T, cell_gates_delta)
-            grad_bias_c += cell_gates_delta.sum(axis=0)
+                next_hidden_delta = (
+                    X.xp.dot(cell_gates_delta, weight_hc.data.T)
+                    + X.xp.dot(input_gates_delta, weight_hi.data.T)
+                    + X.xp.dot(forget_gates_delta, weight_hf.data.T)
+                    + X.xp.dot(output_gates_delta, weight_ho.data.T)
+                )
+                next_cell_delta = cell_delta * forget_gates[:, t, :]
 
-            next_hidden_delta = (
-                self.xp.dot(cell_gates_delta, weight_hc.data.T)
-                + self.xp.dot(input_gates_delta, weight_hi.data.T)
-                + self.xp.dot(forget_gates_delta, weight_hf.data.T)
-                + self.xp.dot(output_gates_delta, weight_ho.data.T)
-            )
-            next_cell_delta = cell_delta * forget_gates[:, t, :]
+                grad_X[:, t, :] = (
+                    X.xp.dot(cell_gates_delta, weight_c.data.T)
+                    + X.xp.dot(input_gates_delta, weight_i.data.T)
+                    + X.xp.dot(forget_gates_delta, weight_f.data.T)
+                    + X.xp.dot(output_gates_delta, weight_o.data.T)
+                )
 
-            grad_X[:, t, :] = (
-                self.xp.dot(cell_gates_delta, weight_c.data.T)
-                + self.xp.dot(input_gates_delta, weight_i.data.T)
-                + self.xp.dot(forget_gates_delta, weight_f.data.T)
-                + self.xp.dot(output_gates_delta, weight_o.data.T)
-            )
+            X._apply_grad(grad_X)
+            weight_f._apply_grad(grad_weight_f)
+            weight_i._apply_grad(grad_weight_i)
+            weight_o._apply_grad(grad_weight_o)
+            weight_c._apply_grad(grad_weight_c)
+            weight_hf._apply_grad(grad_weight_hf)
+            weight_hi._apply_grad(grad_weight_hi)
+            weight_ho._apply_grad(grad_weight_ho)
+            weight_hc._apply_grad(grad_weight_hc)
+            if all([bias_f, bias_i, bias_o, bias_c]):
+                bias_f._apply_grad(grad_bias_f)
+                bias_i._apply_grad(grad_bias_i)
+                bias_o._apply_grad(grad_bias_o)
+                bias_c._apply_grad(grad_bias_c)
 
-        X._apply_grad(grad_X)
-        weight_f._apply_grad(grad_weight_f)
-        weight_i._apply_grad(grad_weight_i)
-        weight_o._apply_grad(grad_weight_o)
-        weight_c._apply_grad(grad_weight_c)
-        weight_hf._apply_grad(grad_weight_hf)
-        weight_hi._apply_grad(grad_weight_hi)
-        weight_ho._apply_grad(grad_weight_ho)
-        weight_hc._apply_grad(grad_weight_hc)
-        if all([bias_f, bias_i, bias_o, bias_c]):
-            bias_f._apply_grad(grad_bias_f)
-            bias_i._apply_grad(grad_bias_i)
-            bias_o._apply_grad(grad_bias_o)
-            bias_c._apply_grad(grad_bias_c)
-
+        self._backward = _backward
 
 class LSTM(Module):
     """
