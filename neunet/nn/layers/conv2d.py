@@ -13,7 +13,7 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 weight: Tensor,
                 bias: Tensor,
@@ -114,7 +114,7 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
             if bias is not None:
                 bias._apply_grad(grad_bias)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class Conv2d(Module):  # layer with static backpropagation
     """

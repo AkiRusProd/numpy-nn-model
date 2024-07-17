@@ -45,7 +45,7 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, axis, elementwise_affine, grad):
+        def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, axis, elementwise_affine, grad):
             # _axis = list(axis) if isinstance(axis, tuple) else axis
             X_hat = X_centered * stddev_inv
 
@@ -89,7 +89,7 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
                 weight._apply_grad(grad_weight)
                 bias._apply_grad(grad_bias)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class LayerNorm(Module):  # layer with static backpropagation

@@ -13,7 +13,7 @@ class _RNNTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 weight: Tensor,
                 weight_h: Tensor,
@@ -63,7 +63,7 @@ class _RNNTensor(Tensor):
                 bias._apply_grad(grad_bias)
 
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class RNN(Module):
     """

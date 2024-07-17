@@ -1,9 +1,9 @@
-from typing import Any, Iterator, Union
-import gc
+from typing import Any, Union
+
 import cupy as cp
 import numpy as np
 
-# TODO: Add requires_grad condition to args
+
 
 class Tensor:
     def __init__(self, data: Any, args=None, op=None, requires_grad: bool=True, dtype = None, device: str="cpu"):
@@ -24,9 +24,9 @@ class Tensor:
         self.args = args
         self.requires_grad = requires_grad
         self.device = device
-        self._backward = lambda: None
+        self.grad_fn = lambda: None
 
-    def tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
+    def ensure_tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
         if isinstance(t, Tensor):
             if t.device != self.device:
                 raise ValueError("Tensors must be on the same device")
@@ -94,7 +94,7 @@ class Tensor:
 
 
     def add(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -107,18 +107,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad)
             if t.requires_grad:
                 t._apply_grad(grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def sub(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -131,18 +131,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad)
             if t.requires_grad:
                 t._apply_grad(-grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def mul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -155,18 +155,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * t.data)
             if t.requires_grad:
                 t._apply_grad(self.data * grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def div(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -179,18 +179,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad / t.data)
             if t.requires_grad:
                 t._apply_grad(-grad  * self.data / (t.data**2))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def matmul(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -203,7 +203,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.data.ndim > 1 and t.data.ndim > 1:  # [matrix x matrix]
                 if self.requires_grad:
                     self._apply_grad(self.xp.matmul(grad, t.data.swapaxes(-1, -2)))
@@ -225,7 +225,7 @@ class Tensor:
                 if t.requires_grad:
                     t._apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), grad))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
                 
@@ -240,7 +240,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
             if not self.requires_grad:
                 return
 
@@ -248,7 +248,7 @@ class Tensor:
                 grad = self.xp.expand_dims(grad, axis)
             self._apply_grad(self.xp.ones_like(self.data) * grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -262,7 +262,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
             if not self.requires_grad:
                 return
 
@@ -276,7 +276,7 @@ class Tensor:
                 / self.xp.prod(self.xp.array(self.data.shape)[_axis])
             )
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -290,7 +290,7 @@ class Tensor:
             device=self.device,
         )  # ddof = 0;
 
-        def _backward(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
             if not self.requires_grad:
                 return
 
@@ -306,13 +306,13 @@ class Tensor:
                 / self.xp.prod(self.xp.array(self.data.shape)[_axis])
             )
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
 
     def power(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -325,13 +325,13 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * t.data * self.data ** (t.data - 1))
             if t.requires_grad:
                 t._apply_grad(grad * self.data ** t.data * self.xp.log(self.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
             
@@ -345,11 +345,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * 1 / (2 * self.xp.sqrt(self.data)))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -362,11 +362,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * 1 / self.data)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -379,11 +379,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * self.xp.exp(self.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -396,11 +396,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * (1 - self.xp.tanh(self.data) ** 2))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -413,11 +413,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * self.xp.cos(self.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -430,16 +430,16 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * -self.xp.sin(self.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def maximum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -452,18 +452,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * (self.data >= t.data))
             if t.requires_grad:
                 t._apply_grad(grad * (self.data <= t.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def minimum(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = (self, t) if requires_grad else None
@@ -476,13 +476,13 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * (self.data <= t.data))
             if t.requires_grad:
                 t._apply_grad(grad * (self.data >= t.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -495,7 +495,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
             if not self.requires_grad:
                 return
 
@@ -503,7 +503,7 @@ class Tensor:
                 grad = self.xp.expand_dims(grad, axis)
             self._apply_grad(grad * (self.data == self.data.max(axis=axis, keepdims=True)))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
             
@@ -517,7 +517,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis, grad: Union[np.ndarray, cp.ndarray]):
             if not self.requires_grad:
                 return
 
@@ -525,12 +525,12 @@ class Tensor:
                 grad = self.xp.expand_dims(grad, axis)
             self._apply_grad(grad * (self.data == self.data.min(axis=axis, keepdims=True)))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def concatenate(self, *tensors: 'Tensor', axis=0) -> 'Tensor':
-        tensors = tuple(self.tensor(t) for t in tensors)
+        tensors = tuple(self.ensure_tensor(t) for t in tensors)
         args = (self, *tensors, axis)
         out = Tensor(
             self.xp.concatenate([self.data] + [t.data for t in tensors], axis=axis),
@@ -540,7 +540,7 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(*args, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(*args, grad: Union[np.ndarray, cp.ndarray]):
             args_shapes: list[Tensor] = [arg.data.shape for arg in args[:-1]]
             axis = args[-1]
 
@@ -556,7 +556,7 @@ class Tensor:
                 if arg.requires_grad:
                     arg._apply_grad(grads[i])
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -570,11 +570,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad.reshape(self.data.shape))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -592,11 +592,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * self.xp.sign(self.data))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -612,11 +612,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axes: Any, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axes: Any, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad.transpose(axes))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -629,11 +629,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis1: int, axis2: int, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis1: int, axis2: int, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad.swapaxes(axis1, axis2))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -648,17 +648,17 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', axis: Any, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', axis: Any, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(self.xp.flip(grad, axis=axis))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def where(self, condition: 'Tensor', t: Union[Any, 'Tensor']) -> 'Tensor':
-        condition = self.tensor(condition)
-        t = self.tensor(t)
+        condition = self.ensure_tensor(condition)
+        t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
         args = [self, condition, t] if requires_grad else None
@@ -671,18 +671,18 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', condition: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', condition: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad * self.xp.where(condition.data, grad, self.xp.zeros_like(grad)))
             if t.requires_grad:
                 t._apply_grad(grad * self.xp.where(condition.data, self.xp.zeros_like(grad), grad))
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
     def equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.equal(self.data, t.data),
@@ -693,7 +693,7 @@ class Tensor:
         )
 
     def not_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.not_equal(self.data, t.data),
@@ -704,7 +704,7 @@ class Tensor:
         )
 
     def greater(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.greater(self.data, t.data),
@@ -715,7 +715,7 @@ class Tensor:
         )
 
     def greater_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.greater_equal(self.data, t.data),
@@ -726,7 +726,7 @@ class Tensor:
         )
 
     def less(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.less(self.data, t.data),
@@ -737,7 +737,7 @@ class Tensor:
         )
 
     def less_equal(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.less_equal(self.data, t.data),
@@ -748,7 +748,7 @@ class Tensor:
         )
 
     def logical_and(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.logical_and(self.data, t.data),
@@ -759,7 +759,7 @@ class Tensor:
         )
 
     def logical_or(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
 
         return Tensor(
             self.xp.logical_or(self.data, t.data),
@@ -814,11 +814,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(-grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -831,11 +831,11 @@ class Tensor:
             device=self.device,
         )
 
-        def _backward(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 self._apply_grad(grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -867,27 +867,27 @@ class Tensor:
     #     return f"Tensor({self.data}, requires_grad={self.requires_grad})"
 
     def __radd__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.add(self)
 
     def __rsub__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.sub(self)
 
     def __rmul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.mul(self)
 
     def __rtruediv__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.div(self)
 
     def __rmatmul__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.matmul(self)
 
     def __rpow__(self, t: Union[Any, 'Tensor']) -> 'Tensor':
-        t = self.tensor(t)
+        t = self.ensure_tensor(t)
         return t.power(self)
 
     # add unpacking of split tensors
@@ -903,7 +903,7 @@ class Tensor:
     #         for i in range(self.data.shape[0])
     #     )
 
-    #     def _backward():
+    #     def grad_fn():
     #         if self.requires_grad:
     #             grad = self.xp.zeros_like(self.data)
     #             grad[i] = out.grad
@@ -911,7 +911,7 @@ class Tensor:
     #             self._apply_grad(grad)
 
     #     for i, o in enumerate(out):
-    #         o._backward = _backward
+    #         o.grad_fn = grad_fn
 
     #     return out
     def __getitem__(
@@ -926,14 +926,14 @@ class Tensor:
             dtype=self.dtype
         )
 
-        def _backward(self: 'Tensor', index, grad: Union[np.ndarray, cp.ndarray]):
+        def grad_fn(self: 'Tensor', index, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
                 _grad = self.xp.zeros_like(self.data)
                 _grad[index] = grad
 
                 self._apply_grad(_grad)
 
-        out._backward = _backward
+        out.grad_fn = grad_fn
 
         return out
 
@@ -941,7 +941,7 @@ class Tensor:
     def __setitem__(self, key, value: Union[Any, 'Tensor']):
         if self.requires_grad:
             raise RuntimeError("Cannot assign values to a tensor with requires_grad=True")
-        value = self.tensor(value)
+        value = self.ensure_tensor(value)
         self.data[key] = value.data
 
     def __array__(self, dtype: Any=None) -> np.ndarray:
@@ -1039,12 +1039,8 @@ class Tensor:
             return tape
         
         # Apply the backward function in reverse order
-        # print([el.op for el in tape])
         for v in toposort(self):
-            v._backward(*v.args, grad=v.grad) #if v.args else None
-        # BUG: Memory leaks; Temporary fix; TODO: investigate
-        # gc.collect()
-
+            v.grad_fn(*v.args, grad=v.grad)
 
 # BUGS:
 # grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)

@@ -13,7 +13,7 @@ class _GRUTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 weight_z: Tensor,
                 weight_r: Tensor,
@@ -121,7 +121,7 @@ class _GRUTensor(Tensor):
                 bias_r._apply_grad(grad_bias_r)
                 bias_h._apply_grad(grad_bias_h)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class GRU(Module):

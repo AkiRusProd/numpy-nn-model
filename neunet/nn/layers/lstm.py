@@ -13,7 +13,7 @@ class _LSTMTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 weight_f: Tensor,
                 weight_i: Tensor,
@@ -140,7 +140,7 @@ class _LSTMTensor(Tensor):
                 bias_o._apply_grad(grad_bias_o)
                 bias_c._apply_grad(grad_bias_c)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class LSTM(Module):
     """

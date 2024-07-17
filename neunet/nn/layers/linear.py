@@ -14,7 +14,7 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(X: Tensor, weight: Tensor, bias: Union[Tensor, None], grad):
+        def grad_fn(X: Tensor, weight: Tensor, bias: Union[Tensor, None], grad):
             # X, weight, bias = self.args
             X._apply_grad(X.xp.matmul(grad, weight.data))
             weight._apply_grad(
@@ -23,7 +23,7 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
             if bias is not None:
                 bias._apply_grad(X.xp.sum(grad, axis=0, keepdims=True))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Linear(Module):  # layer with static backpropagation

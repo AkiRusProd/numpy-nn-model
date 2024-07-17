@@ -11,7 +11,7 @@ class _MaxPool2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 stride,
                 padding,
@@ -79,7 +79,7 @@ class _MaxPool2dTensor(Tensor):
 
             X._apply_grad(grad_X)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class MaxPool2d(Module):

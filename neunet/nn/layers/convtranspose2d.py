@@ -33,7 +33,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
 
             return unstrided_grad
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 weight: Tensor,
                 bias: Tensor,
@@ -107,7 +107,7 @@ class _ConvTranspose2dTensor(Tensor):  # tensor for static backpropagation
             if bias is not None:
                 bias._apply_grad(grad_bias)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 

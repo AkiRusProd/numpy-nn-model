@@ -11,7 +11,7 @@ class _AvgPool2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(
+        def grad_fn(
                 X: Tensor,
                 kernel_size,
                 stride,
@@ -45,7 +45,7 @@ class _AvgPool2dTensor(Tensor):
 
             X._apply_grad(grad_X)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class AvgPool2d(Module):
     def __init__(self, kernel_size: Union[int, tuple[int, int]], stride: Optional[Union[int, tuple[int, int]]] = None, padding: Union[int, tuple[int, int]] = 0):

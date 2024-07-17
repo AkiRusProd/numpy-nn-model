@@ -12,7 +12,7 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
+        def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
             batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
             axis = (0, 2, 3)
@@ -49,7 +49,7 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
                 weight._apply_grad(grad_weight)
                 bias._apply_grad(grad_bias)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class BatchNorm2d(Module):  # layer with static backpropagation

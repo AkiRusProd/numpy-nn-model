@@ -6,10 +6,10 @@ class _DropoutTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(X: Tensor, mask, grad):
+        def grad_fn(X: Tensor, mask, grad):
             X._apply_grad(grad * mask)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 

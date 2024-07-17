@@ -8,10 +8,10 @@ class _SigmoidTensor(Tensor):  # Static sigmoid tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(x: Tensor, f_x, grad):
+        def grad_fn(x: Tensor, f_x, grad):
             x._apply_grad(grad * f_x * (1 - f_x))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Sigmoid(Module):  # Static sigmoid computation
@@ -42,10 +42,10 @@ class _ReLUTensor(Tensor):  # Static ReLU tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, grad):
+        def grad_fn(t: Tensor, f_x, grad):
             t._apply_grad(grad * (f_x > 0))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class ReLU(Module):  # Static ReLU computation
@@ -75,12 +75,12 @@ class _LeakyReLUTensor(Tensor):  # Static LeakyReLU tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, alpha, grad):
+        def grad_fn(t: Tensor, f_x, alpha, grad):
             t._apply_grad(
                 grad * t.xp.where(f_x <= 0, alpha, 1).astype(grad.dtype)
             )
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class LeakyReLU(Module):  # Static LeakyReLU computation
     def __init__(self, alpha=0.01):
@@ -109,10 +109,10 @@ class _TanhTensor(Tensor):  # Static Tanh tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, grad):
+        def grad_fn(t: Tensor, f_x, grad):
             t._apply_grad(grad * (1 - f_x ** 2))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Tanh(Module):  # Static Tanh computation
@@ -142,11 +142,11 @@ class _SoftplusTensor(Tensor):  # Static Softplus tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, grad):
+        def grad_fn(t: Tensor, grad):
             x = t.data
             t._apply_grad(grad * (1 / (1 + t.xp.exp(-x))))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Softplus(Module):  # Static Softplus computation
@@ -176,11 +176,11 @@ class _SoftsignTensor(Tensor):  # Static Softsign tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, grad):
+        def grad_fn(t: Tensor, grad):
             x = t.data
             t._apply_grad(grad * (1 / (1 + t.xp.abs(x)) ** 2))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Softsign(Module):  # Static Softsign computation
@@ -210,13 +210,13 @@ class _SwishTensorTensor(Tensor):  # Static Swish tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, beta, grad):
+        def grad_fn(t: Tensor, f_x, beta, grad):
             x = t.data
             sigmoid = lambda x: 1 / (1 + t.xp.exp(-x))
 
             t._apply_grad(grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x)))
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Swish(Module):  # Static Swish computation
@@ -252,7 +252,7 @@ class _MishTensor(Tensor):  # Static Mish tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, grad):
+        def grad_fn(t: Tensor, grad):
             xp = t.xp
             x = t.data
 
@@ -264,7 +264,7 @@ class _MishTensor(Tensor):  # Static Mish tensor for backpropagation
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class Mish(Module):  # Static Mish computation
@@ -295,7 +295,7 @@ class _TanhExpTensor(Tensor):  # Static TanhExp tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, grad):
+        def grad_fn(t: Tensor, grad):
             xp = t.xp
             x = t.data
 
@@ -303,7 +303,7 @@ class _TanhExpTensor(Tensor):  # Static TanhExp tensor for backpropagation
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 class TanhExp(Module):  # Static TanhExp computation
     def __init__(self):
@@ -333,13 +333,13 @@ class _ELUTensor(Tensor):  # Static ELU tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, alpha, grad):
+        def grad_fn(t: Tensor, f_x, alpha, grad):
             x = t.data
             grad_x = grad * (t.xp.where(x <= 0, alpha + f_x, 1).astype(grad.dtype))
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class ELU(Module):  # Static ELU computation
@@ -359,13 +359,13 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, alpha, lmbda, grad):
+        def grad_fn(t: Tensor, alpha, lmbda, grad):
             x = t.data
             grad_x = grad * (lmbda * t.xp.where(x > 0, 1, alpha * t.xp.exp(x)).astype(grad.dtype))
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class SELU(Module):  # Static SELU computation
@@ -388,7 +388,7 @@ class _GELUTensor(Tensor):  # Static GELU tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, grad):
+        def grad_fn(t: Tensor, grad):
             xp = t.xp
             x = t.data
             # sech = lambda z: 2 / (np.exp(z) + np.exp(-z))
@@ -403,7 +403,7 @@ class _GELUTensor(Tensor):  # Static GELU tensor for backpropagation
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class GELU(Module):  # Static GELU computation
@@ -439,9 +439,9 @@ class Softmax(Module):  # Dynamic Softmax computation
 #     def __init__(self, data, args, op, device):
 #         super().__init__(data, args, op, device=device)
 
-        # self._backward = self.__backward
+        # self.grad_fn = self._grad_fn
 
-#     def __backward(self):
+#     def _grad_fn(self):
 #         x = self.args[0].data
 #         # f_x = self.args[1]
 #         f_x = self.data
@@ -478,7 +478,7 @@ class _LogSoftmax(Tensor):  # Static LogSoftmax tensor for backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def _backward(t: Tensor, f_x, axis, grad):
+        def grad_fn(t: Tensor, f_x, axis, grad):
             x = t.data
             batch_size = x.shape[0]
             softmax = f_x
@@ -489,7 +489,7 @@ class _LogSoftmax(Tensor):  # Static LogSoftmax tensor for backpropagation
 
             t._apply_grad(grad_x)
 
-        self._backward = _backward
+        self.grad_fn = grad_fn
 
 
 class LogSoftmax(Module):  
