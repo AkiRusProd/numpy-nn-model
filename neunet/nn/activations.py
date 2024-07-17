@@ -427,7 +427,7 @@ class Softmax(Module):  # Dynamic Softmax computation
     def __init__(self, axis=1):
         self.axis = axis
 
-    def forward(self, x):
+    def forward(self, x: Tensor):
         e_x = x.sub(x.max(axis=self.axis, keepdims=True)).exp()
         return e_x.div(e_x.sum(axis=self.axis, keepdims=True))
 
@@ -479,13 +479,9 @@ class _LogSoftmax(Tensor):  # Static LogSoftmax tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(t: Tensor, f_x, axis, grad):
-            x = t.data
-            batch_size = x.shape[0]
-            softmax = f_x
+            softmax = t.xp.exp(f_x) # e^(loge_softmax) = softmax
 
             grad_x = grad - softmax * grad.sum(axis = axis, keepdims=True)
-
-            grad_x = grad_x / batch_size
 
             t._apply_grad(grad_x)
 
