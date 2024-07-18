@@ -1000,7 +1000,7 @@ class Tensor:
 
     def backward(
         self, grad=None
-    ):  # grad=self.xp.array(1) # TODO: ASSERT GRAD SHAPE == DATA SHAPE, assert grad.device == self.device
+    ):
         if not self.requires_grad:
             return
 
@@ -1012,36 +1012,28 @@ class Tensor:
 
         self._apply_grad(grad)
         # Perform a topological sort to ensure gradients are calculated in the correct order
-        def toposort(v):
-            tape = []
-            visited_ids = set()
-            stack = [v]
+        tape = []
+        visited_ids = set()
 
-            while stack:
-                node: Tensor = stack.pop()
-                node_id = id(node)
-                
-                if node_id in visited_ids:
-                    continue
-                
-                visited_ids.add(node_id)
-                
-                if node.args is not None:
-                    for child in node.args:
-                        if not isinstance(child, Tensor):
-                            continue
-                        if child.requires_grad is False:
-                            continue
-                        stack.append(child)
-                
-                    tape.append(node)
+        def toposort(v, tape: list, visited_ids: set):
+            # Topological Sort Using DFS
+            if id(v) not in visited_ids:
+                visited_ids.add(id(v))
+                if v.args is None:
+                    return
+                for child in v.args:
+                    if not isinstance(child, Tensor):
+                        continue
+                    if child.requires_grad is False:
+                        continue
+
+                    toposort(child, tape, visited_ids)
+                tape.append(v)
 
             return tape
-        
+
+        tape = toposort(self, tape, visited_ids)
         # Apply the backward function in reverse order
-        for v in toposort(self):
+        for v in reversed(tape):
             v.grad_fn(*v.args, grad=v.grad)
 
-# BUGS:
-# grad X - mean not correct with pytorch; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)
-# softmax not equals grads with pytorch; place: div; maybe NOT BUG becase small numbers manipulation (Numerical stability issues)????

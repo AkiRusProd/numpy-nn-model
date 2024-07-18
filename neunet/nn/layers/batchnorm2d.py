@@ -13,6 +13,8 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
+            # https://math.stackexchange.com/questions/2359981/batch-normalization-equation-derivation
+            # https://arxiv.org/pdf/1502.03167
             batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
             axis = (0, 2, 3)

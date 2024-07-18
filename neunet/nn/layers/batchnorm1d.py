@@ -13,6 +13,8 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
+            # The method of calculating the derivative is similar to BatchNorm.
+            # https://chrisyeh96.github.io/2017/08/28/deriving-batchnorm-backprop.html
             X_hat = X_centered * stddev_inv
             batch_size = X.data.shape[0]
 
