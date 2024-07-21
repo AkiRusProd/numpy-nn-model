@@ -10,14 +10,14 @@ class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
-        X, weight = self.args
+        def grad_fn(X: np.ndarray, weight: Tensor, grad):
+            axis = list(range(len(X.shape)))
+            axis[-1], axis[-2] = axis[-2], axis[-1]
 
-        axis = list(range(len(X.shape)))
-        axis[-1], axis[-2] = axis[-2], axis[-1]
+            weight_grad = weight.xp.matmul(X.transpose(*axis), grad)
+            weight._apply_grad(weight_grad)
 
-        weight_grad = self.xp.matmul(X.transpose(*axis), grad)
-        weight.backward(weight_grad)
+        self.grad_fn = grad_fn
 
 
 class Embedding(Module):
@@ -51,6 +51,23 @@ class Embedding(Module):
             "Embedding",
             device=self.device,
         )
+
+    def __call__(self, X):
+        return self.forward(X)
+
+
+class Embedding(Module): # layer with dynamic backpropagation
+    def __init__(self, num_embeddings: int, embedding_dim: int, device: str="cpu"):
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+
+        self.weight = Parameter(
+            neunet.tensor(np.random.randn(num_embeddings, embedding_dim), dtype=np.float32)
+        ) 
+        self.to(device)
+
+    def forward(self, X: Tensor) -> Tensor:
+        return self.weight[X.data.astype(np.int32)]
 
     def __call__(self, X):
         return self.forward(X)

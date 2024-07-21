@@ -13,55 +13,57 @@ class _RNNTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
-        (
-            X,
-            weight,
-            weight_h,
-            bias,
-            states,
-            unactivated_states,
-            hidden_size,
-            timesteps,
-            nonlinearity,
-        ) = self.args
-        X_data = X.data
+        def grad_fn(
+                X: Tensor,
+                weight: Tensor,
+                weight_h: Tensor,
+                bias: Tensor,
+                states,
+                unactivated_states,
+                hidden_size,
+                timesteps,
+                nonlinearity,
+                grad
+            ):
+            X_data = X.data
 
-        if len(X_data.shape) == 2:
-            X_data = X_data[self.xp.newaxis, :, :]
+            if len(X_data.shape) == 2:
+                X_data = X_data[X.xp.newaxis, :, :]
 
-        if self.data.shape != states[:, 0:-1, :].shape:  # if return_sequences == "last"
-            temp = self.xp.zeros_like((states))
-            temp[:, [-2], :] = grad  # [-2] saves dims when slicing
-            grad = temp
+            if self.data.shape != states[:, 0:-1, :].shape:  # if return_sequences == "last" # NOTE: self is here (potential memory leak)
+                temp = X.xp.zeros_like((states))
+                temp[:, [-2], :] = grad  # [-2] saves dims when slicing
+                grad = temp
 
-        next_grad_states = self.xp.zeros((hidden_size), dtype=grad.dtype)
+            next_grad_states = X.xp.zeros((hidden_size), dtype=grad.dtype)
 
-        grad_weight = self.xp.zeros_like(weight.data)
-        grad_weight_h = self.xp.zeros_like(weight_h.data)
-        grad_bias = self.xp.zeros(hidden_size, dtype=grad.dtype)
+            grad_weight = X.xp.zeros_like(weight.data)
+            grad_weight_h = X.xp.zeros_like(weight_h.data)
+            grad_bias = X.xp.zeros(hidden_size, dtype=grad.dtype)
 
-        grad_X = self.xp.zeros_like(X_data)
+            grad_X = X.xp.zeros_like(X_data)
 
-        for t in reversed(range(timesteps)):
-            grad_states = (next_grad_states + grad[:, t, :]) * nonlinearity.derivative(
-                unactivated_states[:, t, :]
-            )
+            for t in reversed(range(timesteps)):
+                grad_states = (next_grad_states + grad[:, t, :]) * nonlinearity.derivative(
+                    unactivated_states[:, t, :]
+                )
 
-            grad_weight += self.xp.dot(X_data[:, t, :].T, grad_states)
-            grad_weight_h += self.xp.dot(states[:, t - 1, :].T, grad_states)
-            grad_bias += self.xp.sum(grad_states, axis=0)
+                grad_weight += X.xp.dot(X_data[:, t, :].T, grad_states)
+                grad_weight_h += X.xp.dot(states[:, t - 1, :].T, grad_states)
+                grad_bias += X.xp.sum(grad_states, axis=0)
 
-            grad_X[:, t, :] = self.xp.dot(grad_states, weight.data.T)
-            next_grad_states = self.xp.dot(grad_states, weight_h.data.T)
+                grad_X[:, t, :] = X.xp.dot(grad_states, weight.data.T)
+                next_grad_states = X.xp.dot(grad_states, weight_h.data.T)
 
-        X.backward(grad_X.reshape(X.shape))
+            X._apply_grad(grad_X.reshape(X.shape))
 
-        weight.backward(grad_weight)
-        weight_h.backward(grad_weight_h)
-        if bias is not None:
-            bias.backward(grad_bias)
+            weight._apply_grad(grad_weight)
+            weight_h._apply_grad(grad_weight_h)
+            if bias is not None:
+                bias._apply_grad(grad_bias)
 
+
+        self.grad_fn = grad_fn
 
 class RNN(Module):
     """

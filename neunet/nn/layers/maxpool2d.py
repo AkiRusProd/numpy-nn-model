@@ -11,73 +11,75 @@ class _MaxPool2dTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
-        (
-            X,
-            stride,
-            padding,
-            input_size,
-            output_size,
-            dilated_kernel_size,
-            windows,
-            O_einsum,
-        ) = self.args
+        def grad_fn(
+                X: Tensor,
+                stride,
+                padding,
+                input_size,
+                output_size,
+                dilated_kernel_size,
+                windows,
+                O_einsum,
+                grad
+            ):
 
-        # grad_X = np.where(O_args == 1, grad[..., None, None], 0)
-        batch_size, in_channels, in_height, in_width = input_size
-        # X_data = set_padding(X.data, padding, value=-np.inf)
+            # grad_X = np.where(O_args == 1, grad[..., None, None], 0)
+            batch_size, in_channels, in_height, in_width = input_size
+            # X_data = set_padding(X.data, padding, value=-np.inf)
 
-        # TODO: vectorize this
-        # grad_X = np.zeros_like(X_data)
-        # #https://towardsdatascience.com/forward-and-backward-propagation-of-pooling-layers-in-convolutional-neural-networks-11e36d169bec
-        # for n in range(batch_size):
-        #     for c in range(in_channels):
-        #         for i in range(output_size[0]):
-        #             for j in range(output_size[1]):
-        #                 # get the index in the region i,j where the value is the maximum
-        #                 i_t, j_t = np.where(np.nanmax(X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]] * kernel[None, None, ...]) == X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]])
-        #                 i_t, j_t = i_t[0], j_t[0] # ignore the other maximum values indices
+            # TODO: vectorize this
+            # grad_X = np.zeros_like(X_data)
+            # #https://towardsdatascience.com/forward-and-backward-propagation-of-pooling-layers-in-convolutional-neural-networks-11e36d169bec
+            # for n in range(batch_size):
+            #     for c in range(in_channels):
+            #         for i in range(output_size[0]):
+            #             for j in range(output_size[1]):
+            #                 # get the index in the region i,j where the value is the maximum
+            #                 i_t, j_t = np.where(np.nanmax(X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]] * kernel[None, None, ...]) == X_data[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]])
+            #                 i_t, j_t = i_t[0], j_t[0] # ignore the other maximum values indices
 
-        #                 # only the position of the maximum element in the region i,j gets the incoming gradient, the other gradients are zero
-        #                 grad_X[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]][i_t, j_t] += grad[n, c, i, j]
+            #                 # only the position of the maximum element in the region i,j gets the incoming gradient, the other gradients are zero
+            #                 grad_X[n, c, i * stride[0] : i * stride[0] + dilated_kernel_size[0], j * stride[1] : j * stride[1] + dilated_kernel_size[1]][i_t, j_t] += grad[n, c, i, j]
 
-        grad = grad.reshape(-1, 1)
-        windows = O_einsum.reshape(-1, dilated_kernel_size[0] * dilated_kernel_size[1])
+            grad = grad.reshape(-1, 1)
+            windows = O_einsum.reshape(-1, dilated_kernel_size[0] * dilated_kernel_size[1])
 
-        grad_col = self.xp.zeros_like(windows, dtype=grad.dtype)
-        grad_col[self.xp.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = grad.reshape(
-            -1
-        )
-        grad_col = grad_col.reshape(
-            batch_size,
-            in_channels,
-            output_size[0],
-            output_size[1],
-            dilated_kernel_size[0],
-            dilated_kernel_size[0],
-        )
-
-        grad_X = self.xp.zeros(
-            (
+            grad_col = X.xp.zeros_like(windows, dtype=grad.dtype)
+            grad_col[X.xp.arange(grad_col.shape[0]), np.nanargmax(windows, axis=1)] = grad.reshape(
+                -1
+            )
+            grad_col = grad_col.reshape(
                 batch_size,
                 in_channels,
-                in_height + 2 * padding[0],
-                in_width + 2 * padding[1],
-            ),
-            dtype=grad.dtype,
-        )
-        for i in range(output_size[0]):
-            for j in range(output_size[1]):
-                grad_X[
-                    :,
-                    :,
-                    i * stride[0] : i * stride[0] + dilated_kernel_size[0],
-                    j * stride[1] : j * stride[1] + dilated_kernel_size[1],
-                ] += grad_col[:, :, i, j, :, :]
+                output_size[0],
+                output_size[1],
+                dilated_kernel_size[0],
+                dilated_kernel_size[0],
+            )
 
-        grad_X = remove_padding(grad_X, padding)
+            grad_X = X.xp.zeros(
+                (
+                    batch_size,
+                    in_channels,
+                    in_height + 2 * padding[0],
+                    in_width + 2 * padding[1],
+                ),
+                dtype=grad.dtype,
+            )
+            for i in range(output_size[0]):
+                for j in range(output_size[1]):
+                    grad_X[
+                        :,
+                        :,
+                        i * stride[0] : i * stride[0] + dilated_kernel_size[0],
+                        j * stride[1] : j * stride[1] + dilated_kernel_size[1],
+                    ] += grad_col[:, :, i, j, :, :]
 
-        X.backward(grad_X)
+            grad_X = remove_padding(grad_X, padding)
+
+            X._apply_grad(grad_X)
+
+        self.grad_fn = grad_fn
 
 
 class MaxPool2d(Module):

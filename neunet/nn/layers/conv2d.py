@@ -13,107 +13,108 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad):
-        (
-            X,
-            weight,
-            bias,
-            out_channels,
-            padding,
-            stride,
-            dilation,
-            prepared_input_size,
-            stride_compared_input_size,
-            conv_size,
-            dilated_kernel_size,
-            windows,
-        ) = self.args
-
-        batch_size, _, in_height, in_width = X.shape
-        input_size = (in_height, in_width)
-
-        grad_pattern = self.xp.zeros(
-            (
-                batch_size,
+        def grad_fn(
+                X: Tensor,
+                weight: Tensor,
+                bias: Tensor,
                 out_channels,
-                stride[0] * conv_size[0] - (stride[0] - 1) + 2 * (dilated_kernel_size[0] - 1),
-                stride[1] * conv_size[1] - (stride[1] - 1) + 2 * (dilated_kernel_size[1] - 1),
-            ),
-            dtype=grad.dtype,
-        )
+                padding,
+                stride,
+                dilation,
+                prepared_input_size,
+                stride_compared_input_size,
+                conv_size,
+                dilated_kernel_size,
+                windows,
+                grad
+            ):
 
-        temp_grad = self.xp.zeros(
-            (
-                batch_size,
-                out_channels,
-                stride[0] * conv_size[0] - (stride[0] - 1),
-                stride[1] * conv_size[1] - (stride[1] - 1),
-            ),
-            dtype=grad.dtype,
-        )
+            batch_size, _, in_height, in_width = X.shape
+            input_size = (in_height, in_width)
 
-        temp_grad[:, :, :: stride[0], :: stride[1]] = grad
+            grad_pattern = X.xp.zeros(
+                (
+                    batch_size,
+                    out_channels,
+                    stride[0] * conv_size[0] - (stride[0] - 1) + 2 * (dilated_kernel_size[0] - 1),
+                    stride[1] * conv_size[1] - (stride[1] - 1) + 2 * (dilated_kernel_size[1] - 1),
+                ),
+                dtype=grad.dtype,
+            )
 
-        grad_pattern[
-            :,
-            :,
-            dilated_kernel_size[0] - 1 : stride[0] * conv_size[0]
-            - (stride[0] - 1)
-            + dilated_kernel_size[0]
-            - 1,
-            dilated_kernel_size[1] - 1 : stride[1] * conv_size[1]
-            - (stride[1] - 1)
-            + dilated_kernel_size[1]
-            - 1,
-        ] = temp_grad
+            temp_grad = X.xp.zeros(
+                (
+                    batch_size,
+                    out_channels,
+                    stride[0] * conv_size[0] - (stride[0] - 1),
+                    stride[1] * conv_size[1] - (stride[1] - 1),
+                ),
+                dtype=grad.dtype,
+            )
 
-        batch_str, channel_str, kern_h_str, kern_w_str = grad_pattern.strides
-        grad_windows = self.xp.lib.stride_tricks.as_strided(
-            grad_pattern,
-            (
-                batch_size,
-                out_channels,
-                prepared_input_size[0],
-                prepared_input_size[1],
-                dilated_kernel_size[0],
-                dilated_kernel_size[1],
-            ),
-            (
-                batch_str,
-                channel_str,
-                1 * kern_h_str,
-                1 * kern_w_str,
-                kern_h_str,
-                kern_w_str,
-            ),
-        )
+            temp_grad[:, :, :: stride[0], :: stride[1]] = grad
 
-        weight_rot_180 = self.xp.rot90(weight.data, 2, axes=(2, 3))
+            grad_pattern[
+                :,
+                :,
+                dilated_kernel_size[0] - 1 : stride[0] * conv_size[0]
+                - (stride[0] - 1)
+                + dilated_kernel_size[0]
+                - 1,
+                dilated_kernel_size[1] - 1 : stride[1] * conv_size[1]
+                - (stride[1] - 1)
+                + dilated_kernel_size[1]
+                - 1,
+            ] = temp_grad
 
-        grad_weight = self.xp.einsum("bihwkl,bohw->oikl", windows, grad)
-        grad_bias = self.xp.sum(grad, axis=(0, 2, 3))
+            batch_str, channel_str, kern_h_str, kern_w_str = grad_pattern.strides
+            grad_windows = X.xp.lib.stride_tricks.as_strided(
+                grad_pattern,
+                (
+                    batch_size,
+                    out_channels,
+                    prepared_input_size[0],
+                    prepared_input_size[1],
+                    dilated_kernel_size[0],
+                    dilated_kernel_size[1],
+                ),
+                (
+                    batch_str,
+                    channel_str,
+                    1 * kern_h_str,
+                    1 * kern_w_str,
+                    kern_h_str,
+                    kern_w_str,
+                ),
+            )
 
-        grad_X = self.xp.einsum("bohwkl,oikl->bihw", grad_windows, weight_rot_180)
-        grad_X = set_padding(
-            grad_X,
-            (
-                0,
-                input_size[0] - stride_compared_input_size[0],
-                0,
-                input_size[1] - stride_compared_input_size[1],
-            ),
-        )
-        grad_X = remove_padding(grad_X, padding)
+            weight_rot_180 = X.xp.rot90(weight.data, 2, axes=(2, 3))
 
-        weight.data = remove_stride(weight.data, dilation)
-        grad_weight = remove_stride(grad_weight, dilation)
+            grad_weight = X.xp.einsum("bihwkl,bohw->oikl", windows, grad)
+            grad_bias = X.xp.sum(grad, axis=(0, 2, 3))
 
-        X.backward(grad_X)
-        weight.backward(grad_weight)
+            grad_X = X.xp.einsum("bohwkl,oikl->bihw", grad_windows, weight_rot_180)
+            grad_X = set_padding(
+                grad_X,
+                (
+                    0,
+                    input_size[0] - stride_compared_input_size[0],
+                    0,
+                    input_size[1] - stride_compared_input_size[1],
+                ),
+            )
+            grad_X = remove_padding(grad_X, padding)
 
-        if bias is not None:
-            bias.backward(grad_bias)
+            weight.data = remove_stride(weight.data, dilation)
+            grad_weight = remove_stride(grad_weight, dilation)
 
+            X._apply_grad(grad_X)
+            weight._apply_grad(grad_weight)
+
+            if bias is not None:
+                bias._apply_grad(grad_bias)
+
+        self.grad_fn = grad_fn
 
 class Conv2d(Module):  # layer with static backpropagation
     """

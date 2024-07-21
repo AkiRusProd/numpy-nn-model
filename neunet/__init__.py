@@ -83,6 +83,7 @@ def argmax(x, axis=None, keepdims=False, device="cpu"):
         np.argmax(x.data, axis=axis, keepdims=keepdims),
         requires_grad=False,
         device=device,
+        dtype=int32
     )
 
 
@@ -91,6 +92,7 @@ def argmin(x, axis=None, keepdims=False, device="cpu"):
         np.argmin(x.data, axis=axis, keepdims=keepdims),
         requires_grad=False,
         device=device,
+        dtype = int32
     )
 
 

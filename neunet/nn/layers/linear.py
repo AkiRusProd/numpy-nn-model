@@ -14,13 +14,16 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-    def backward(self, grad=1):
-        self.args[0].backward(self.xp.matmul(grad, self.args[1].data))
-        self.args[1].backward(
-            self.xp.matmul(self.args[0].data.swapaxes(-1, -2), grad).swapaxes(-1, -2)
-        )
-        if self.args[2] is not None:
-            self.args[2].backward(self.xp.sum(grad, axis=0, keepdims=True))
+        def grad_fn(X: Tensor, weight: Tensor, bias: Union[Tensor, None], grad):
+            # X, weight, bias = self.args
+            X._apply_grad(X.xp.matmul(grad, weight.data))
+            weight._apply_grad(
+                X.xp.matmul(X.data.swapaxes(-1, -2), grad).swapaxes(-1, -2)
+            )
+            if bias is not None:
+                bias._apply_grad(X.xp.sum(grad, axis=0, keepdims=True))
+
+        self.grad_fn = grad_fn
 
 
 class Linear(Module):  # layer with static backpropagation
@@ -37,7 +40,7 @@ class Linear(Module):  # layer with static backpropagation
         )
 
         if bias == True:
-            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros((1, out_features)), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.random.uniform(-stdv, stdv, (1, out_features)), dtype=np.float32))
         else:
             self.bias = None
         self.to(device)
