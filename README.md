@@ -365,7 +365,7 @@ Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt a
 #### Attention plots of the first sentence:
 
 <p align="center">
-<img src="generated images/attention plots.png" width=100% height=100%>
+<img src="generated images/attention plots.jpg" width=100% height=100%>
 </p>
 
 
