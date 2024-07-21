@@ -40,7 +40,7 @@ class Linear(Module):  # layer with static backpropagation
         )
 
         if bias == True:
-            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.zeros((1, out_features)), dtype=np.float32))
+            self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.random.uniform(-stdv, stdv, (1, out_features)), dtype=np.float32))
         else:
             self.bias = None
         self.to(device)

@@ -1,10 +1,13 @@
+import os
+import tarfile
 import zipfile
 from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
 
-from mnist_data_downloader import download_data
+from mnist_data_downloader import download_mnist_data
+from multi30k_data_downloader import download_multi30k_data
 
 
 def prepare_mnist_data(data):
@@ -24,39 +27,39 @@ def load_mnist(path="datasets/mnist/"):
         train_url = "https://pjreddie.com/media/files/mnist_train.csv"
         test_url = "https://pjreddie.com/media/files/mnist_test.csv"
 
-        download_data(train_url, path + "mnist_train.csv")
-        download_data(test_url, path + "mnist_test.csv")
+        download_mnist_data(train_url, path + "mnist_train.csv")
+        download_mnist_data(test_url, path + "mnist_test.csv")
 
-    training_data = Path(path).joinpath("mnist_train.csv").open("r").readlines()
+    train_data = Path(path).joinpath("mnist_train.csv").open("r").readlines()
     test_data = Path(path).joinpath("mnist_test.csv").open("r").readlines()
 
 
     if not (Path(path) / "mnist_train.npy").exists() or not (Path(path) / "mnist_test.npy").exists():
-        training_inputs, training_targets = prepare_mnist_data(training_data)
-        training_inputs = np.asfarray(training_inputs)
+        train_inputs, train_targets = prepare_mnist_data(train_data)
+        train_inputs = np.asfarray(train_inputs)
 
         test_inputs, test_targets = prepare_mnist_data(test_data)
         test_inputs = np.asfarray(test_inputs)
 
-        np.save(path + "mnist_train.npy", training_inputs)
+        np.save(path + "mnist_train.npy", train_inputs)
         np.save(path + "mnist_test.npy", test_inputs)
 
-        np.save(path + "mnist_train_targets.npy", training_targets)
+        np.save(path + "mnist_train_targets.npy", train_targets)
         np.save(path + "mnist_test_targets.npy", test_targets)
     else:
-        training_inputs = np.load(path + "mnist_train.npy")
+        train_inputs = np.load(path + "mnist_train.npy")
         test_inputs = np.load(path + "mnist_test.npy")
 
-        training_targets = np.load(path + "mnist_train_targets.npy")
+        train_targets = np.load(path + "mnist_train_targets.npy")
         test_targets = np.load(path + "mnist_test_targets.npy")
 
-    training_dataset = training_inputs
+    train_dataset = train_inputs
     test_dataset = test_inputs
 
-    return training_dataset, test_dataset, training_targets, test_targets
+    return train_dataset, test_dataset, train_targets, test_targets
 
 
-import os
+
 
 
 def prepare_utkface_data(path, image_size = (3, 32, 32)):
@@ -69,16 +72,16 @@ def prepare_utkface_data(path, image_size = (3, 32, 32)):
     images = os.listdir(path)
     random.shuffle(images)
     
-    training_inputs = []
+    train_inputs = []
     for image in tqdm(images, desc = 'preparing data'):
         image = Image.open(path + "/" + image)
         image = image.resize((image_size[1], image_size[2]))
         image = np.asarray(image)
         image = image.transpose(2, 0, 1)
         image = image / 127.5 - 1
-        training_inputs.append(image)
+        train_inputs.append(image)
 
-    return np.array(training_inputs)
+    return np.array(train_inputs)
 
 
 def load_utkface(path="datasets/utkface/", image_size=(3, 32, 32)):
@@ -92,9 +95,70 @@ def load_utkface(path="datasets/utkface/", image_size=(3, 32, 32)):
 
     save_path = path / 'UTKFace.npy'
     if not save_path.exists():
-        training_inputs = prepare_utkface_data(path / 'UTKFace', image_size)
-        np.save(save_path, training_inputs)
+        train_inputs = prepare_utkface_data(path / 'UTKFace', image_size)
+        np.save(save_path, train_inputs)
     else:
-        training_inputs = np.load(save_path)
+        train_inputs = np.load(save_path)
 
-    return training_inputs
+    return train_inputs
+
+
+
+def load_multi30k(path="datasets/multi30k/"):
+    #References: https://pytorch.org/text/stable/_modules/torchtext/datasets/multi30k.html
+    urls = {
+        "train": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/training.tar.gz",
+        "valid": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/validation.tar.gz",
+        "test": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/mmt16_task1_test.tar.gz",
+    }
+
+    filenames = ["mmt16_task1_test.tar.gz", "training.tar.gz", "validation.tar.gz"]
+
+    path = Path(path)
+    if not path.exists():
+        path.mkdir(parents=True)
+
+        download_multi30k_data(urls.values(), path, filenames)
+
+        for filename in filenames:
+            tar = tarfile.open(Path(path) / filename)
+            tar.extractall(path)
+            tar.close()
+
+            print(f'Extracted {filename}')
+
+
+    ret = []
+    filenames = ["train", "val", "test"]
+
+    for filename in filenames:
+
+        examples = []
+
+        en_path = os.path.join(path, filename + '.en')
+        de_path = os.path.join(path, filename + '.de')
+
+        en_file = [l.strip() for l in open(en_path, 'r', encoding='utf-8')]
+        de_file = [l.strip() for l in open(de_path, 'r', encoding='utf-8')]
+
+        assert len(en_file) == len(de_file)
+
+        for i in range(len(en_file)):
+            if en_file[i] == '' or de_file[i] == '':
+                continue
+            en_seq, de_seq = en_file[i], de_file[i]
+
+            examples.append({'en': en_seq, 'de': de_seq})
+    
+        ret.append(examples)
+
+    train_dataset, valid_dataset, test_dataset = ret
+    return train_dataset, valid_dataset, test_dataset
+
+
+
+
+
+
+
+   

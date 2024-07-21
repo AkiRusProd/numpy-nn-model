@@ -54,3 +54,20 @@ class Embedding(Module):
 
     def __call__(self, X):
         return self.forward(X)
+
+
+class Embedding(Module): # layer with dynamic backpropagation
+    def __init__(self, num_embeddings: int, embedding_dim: int, device: str="cpu"):
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+
+        self.weight = Parameter(
+            neunet.tensor(np.random.randn(num_embeddings, embedding_dim), dtype=np.float32)
+        ) 
+        self.to(device)
+
+    def forward(self, X: Tensor) -> Tensor:
+        return self.weight[X.data.astype(np.int32)]
+
+    def __call__(self, X):
+        return self.forward(X)

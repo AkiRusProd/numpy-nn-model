@@ -138,3 +138,6 @@ dmypy.json
 *.jpeg
 *.zip
 *.nt
+
+datasets/
+saved models/

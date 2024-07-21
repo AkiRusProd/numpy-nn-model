@@ -1,5 +1,5 @@
 # numpy-nn-model
-Сustom CPU/GPU torch style machine learning framework with automatic differentiation for creating neural networks, implemented on numpy with cupy.
+Сustom CPU/GPU torch style machine learning framework with tape-based automatic differentiation for creating neural networks, implemented on numpy with cupy.
 
 ## Some information and features:
 
@@ -801,8 +801,6 @@ Native implementation Example | Neural network Example
 
 
 ### TODO:
-- [ ] Fix bugs (if found), clean up and refactor the code
-- [ ] Add more Tensor operations
-- [ ] Add more layers, activations, optimizers, loss functions, etc
-- [ ] Add more examples
-- [x] Add CuPy support
+- [x] Add Seq2Seq Transformer example
+- [ ] Add GPT Transformer example
+- [ ] Add lr schedulers

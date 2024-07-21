@@ -347,7 +347,8 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * 1 / (2 * self.xp.sqrt(self.data)))
+                # self._apply_grad(grad * 1 / (2 * self.xp.sqrt(self.data)))
+                self._apply_grad(grad * 0.5 * self.data**-0.5)
 
         out.grad_fn = grad_fn
 
@@ -567,6 +568,7 @@ class Tensor:
             [self],
             "reshape",
             requires_grad=self.requires_grad,
+            dtype=self.dtype,
             device=self.device,
         )
 
@@ -673,9 +675,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', condition: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * self.xp.where(condition.data, grad, self.xp.zeros_like(grad)))
+                self._apply_grad(self.xp.where(condition.data, grad, self.xp.zeros_like(grad)))
             if t.requires_grad:
-                t._apply_grad(grad * self.xp.where(condition.data, self.xp.zeros_like(grad), grad))
+                t._apply_grad(self.xp.where(condition.data, self.xp.zeros_like(grad), grad))
 
         out.grad_fn = grad_fn
 
@@ -968,29 +970,14 @@ class Tensor:
         return self.data.size
 
     def _reverse_broadcast(self, grad):
-        if (
-            grad.size != self.data.size
-            or grad.ndim != self.data.ndim
-            or grad.shape != self.data.shape
-        ):
-            if self.data.size == 1:
-                grad = grad.sum()
-            elif self.data.ndim == grad.ndim:
-                grad = grad.sum(
-                    axis=tuple(
-                        self.xp.where(self.xp.array(self.data.shape) != self.xp.array(grad.shape))[
-                            0
-                        ].tolist()
-                    ),
-                    keepdims=True,
-                )
+        if grad.shape != self.data.shape:
+
+            if self.data.ndim == grad.ndim:
+                axis=tuple(np.where(np.array(self.data.shape) != np.array(grad.shape))[0])
+                grad = grad.sum(axis,keepdims=True)
             else:
                 data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
-                axis = tuple(
-                    self.xp.where(self.xp.array(data_shape) != self.xp.array(grad.shape))[
-                        0
-                    ].tolist()
-                )
+                axis = tuple(np.where(np.array(data_shape) != np.array(grad.shape))[0])
                 grad = grad.sum(axis=axis)
 
             grad = grad.reshape(self.data.shape)
