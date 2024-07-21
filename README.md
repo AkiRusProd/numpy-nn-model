@@ -138,9 +138,10 @@ Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/proj
 5. *[Generative Adversarial Network](examples/gan.py)*     
 6. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
 7. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
-8. *[Variational Autoencoder](examples/vae.py)*    
-9. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
-10. *[Word2Vec](examples/word2vec.py)*
+8. *[Seq2Seq Transformer](examples/seq2seq.py)*
+9. *[Variational Autoencoder](examples/vae.py)*    
+10. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
+11. *[Word2Vec](examples/word2vec.py)*
 
 
 
@@ -329,6 +330,44 @@ for epoch in range(epochs):
 Code:   
 *[Model Example](examples/recurrent_digits_classifier.py)*
 </details>
+
+<details>
+<summary>Seq2Seq Transformer</summary>
+
+#### Examples of translated sentences of validation set:  
+
+>Example №1  
+*Input sentence: These four people are standing outdoors, with 3 dogs.  
+Decoded sentence: Vier Personen stehen im Freien mit drei Hunden.  
+Target sentence: Diese vier Personen stehen mit 3 Hunden im Freien.*  
+
+>Example №2  
+*Input sentence: A man in a martial arts uniform in midair.  
+Decoded sentence: Ein Mann in Uniform befindet sich in der Luft.  
+Target sentence: Ein Mann in einem Karateanzug in der Luft.*  
+
+>Example №3  
+*Input sentence: A long-haired, male musician is playing on a piano.  
+Decoded sentence: Ein langhaariger Mann spielt Klavier auf einem Klavier.   
+Target sentence: Ein Musiker mit langen Haaren spielt Keyboard.*  
+
+>Example №4  
+*Input sentence: A child is laying on a beige rug laughing.  
+Decoded sentence: Ein Kind liegt auf einem beigen Teppich.  
+Target sentence: Ein Kind liegt auf einem beigefarbenen Teppich und lacht.*  
+
+>Example №5  
+*Input sentence: A dark-haired bearded man in glasses and a Hawaiian shirt is sitting on the grass.     
+Decoded sentence: Ein bärtiger Mann mit Brille und einem dunkelhaarigen Mann sitzt im Gras.  
+Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt auf dem Gras.*  
+</details>
+
+#### Attention plots of the first sentence:
+
+<p align="center">
+<img src="generated images/attention plots.png" width=100% height=100%>
+</p>
+
 
 <details>
 <summary>Variational Autoencoder (VAE)</summary>
@@ -802,5 +841,5 @@ Native implementation Example | Neural network Example
 
 ### TODO:
 - [x] Add Seq2Seq Transformer example
-- [ ] Add GPT Transformer example
+- [ ] Add GPT example
 - [ ] Add lr schedulers

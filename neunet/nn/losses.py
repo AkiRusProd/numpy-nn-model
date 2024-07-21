@@ -107,7 +107,7 @@ class NLLLoss(Module):
 
         # TODO: if neg value in y_true != ignore_index, raise error, fix, negative ids in weight
 
-        ignore_mask = (y_true.data != self.ignore_index).astype(y_pred.dtype)
+        ignore_mask = y_true.data != self.ignore_index
 
         idx = np.indices(y_true.data.shape, sparse=True)
         criterion = (idx[0], y_true.data, *idx[1:])
