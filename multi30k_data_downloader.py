@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 def download_multi30k_data(urls, path, filenames):
     for _, (url, filename) in enumerate(zip(urls, filenames, strict=False)):
-        resp = requests.get(url, stream=True, verify=False)
+        resp = requests.get(url, stream=True, verify=False, timeout=10)
         total = int(resp.headers.get('content-length', 0))
         with open(Path(path) / filename, 'wb') as file, tqdm(
                 desc = f'downloading {filename = } to {path = }',

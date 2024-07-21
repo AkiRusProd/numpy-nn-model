@@ -1,16 +1,17 @@
-import numpy as np
 import math
-import neunet
-import neunet.nn as nn
-import matplotlib.pyplot as plt
-from neunet.optim import Adam
-from neunet import Tensor
-from tqdm import tqdm
 from pathlib import Path
-from data_loader import load_multi30k
+
+import matplotlib.pyplot as plt
+import numpy as np
 from tokenizers import ByteLevelBPETokenizer
 from tokenizers.processors import TemplateProcessing
+from tqdm import tqdm
 
+import neunet
+import neunet.nn as nn
+from data_loader import load_multi30k
+from neunet import Tensor
+from neunet.optim import Adam
 
 """
 Seq2Seq Transformer for language translation from English to German
@@ -242,10 +243,10 @@ class Seq2SeqTransformer(nn.Module):
 
 BATCH_SIZE = 32
 
-PAD_TOKEN = '<pad>'
-SOS_TOKEN = '<sos>'
-EOS_TOKEN = '<eos>'
-UNK_TOKEN = '<unk>'
+PAD_TOKEN = '<pad>' # noqa: S105
+SOS_TOKEN = '<sos>' # noqa: S105
+EOS_TOKEN = '<eos>' # noqa: S105
+UNK_TOKEN = '<unk>' # noqa: S105
 
 DATASET_PATH = Path("./datasets/multi30k/")
 SAVE_PATH = Path("./saved models/seq2seq/")
@@ -460,7 +461,7 @@ def train(train_data: np.ndarray, val_data: np.ndarray, epochs: int, save_every_
                     
                     neunet.save(model.state_dict(), f"{save_path}/seq2seq_{epoch + 1}.nt")
                 else:
-                    print(f'Current validation loss is higher than previous. Not saved.')
+                    print('Current validation loss is higher than previous. Not saved.')
                     break
             
     return train_loss_history, val_loss_history
