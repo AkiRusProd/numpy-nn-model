@@ -360,13 +360,14 @@ Target sentence: Ein Kind liegt auf einem beigefarbenen Teppich und lacht.*
 *Input sentence: A dark-haired bearded man in glasses and a Hawaiian shirt is sitting on the grass.     
 Decoded sentence: Ein bärtiger Mann mit Brille und einem dunkelhaarigen Mann sitzt im Gras.  
 Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt auf dem Gras.*  
-</details>
 
 #### Attention plots of the first sentence:
 
 <p align="center">
 <img src="generated images/attention plots.jpg" width=100% height=100%>
 </p>
+
+</details>
 
 
 <details>
