@@ -2,7 +2,7 @@ import numpy as np
 
 import neunet as nnet
 from neunet.autograd import Tensor
-from neunet.nn.activations import Softmax
+from neunet.nn.activations import LogSoftmax
 from neunet.nn.modules import Module
 
 
@@ -62,7 +62,8 @@ class CrossEntropyLoss(Module):
         self.ignore_index = ignore_index
         self.reduction = reduction
 
-        self.softmax = Softmax(axis=1)
+        # self.softmax = Softmax(axis=1)
+        self.log_softmax = LogSoftmax(axis=1)
         self.nll_loss = NLLLoss(weight, ignore_index, reduction)
 
     def forward(self, y_pred: Tensor, y_true: Tensor) -> Tensor:
@@ -71,7 +72,8 @@ class CrossEntropyLoss(Module):
         if y_pred.device != y_true.device:
             raise ValueError("Tensors must be on the same device")
 
-        y_pred = self.softmax(y_pred).log()
+        # y_pred = self.softmax(y_pred).log()
+        y_pred = self.log_softmax(y_pred)
         return self.nll_loss(y_pred, y_true)
 
     def __call__(self, y_pred, y_true):
@@ -91,7 +93,7 @@ class NLLLoss(Module):
             raise ValueError("Tensors must be on the same device")
 
         if self.weight is None:
-            self.weight = y_pred.xp.ones((y_pred.data.shape[1]))
+            self.weight = y_pred.xp.ones((y_pred.data.shape[1]), dtype=y_pred.dtype)
 
         if self.weight.shape != (y_pred.data.shape[1],):
             raise ValueError("Weight shape must be equal to number of classes")
@@ -103,10 +105,13 @@ class NLLLoss(Module):
         if y_true.data.ndim == 1:
             y_true = y_true[..., None]
 
-        ignore_mask = y_true.data != self.ignore_index
+        # TODO: if neg value in y_true != ignore_index, raise error, fix, negative ids in weight
+
+        ignore_mask = (y_true.data != self.ignore_index).astype(y_pred.dtype)
 
         idx = np.indices(y_true.data.shape, sparse=True)
         criterion = (idx[0], y_true.data, *idx[1:])
+        # criterion = (self.xp.arange(y_true.data.shape[0]), y_true.data.flatten())
         loss = -y_pred[criterion] * self.weight[y_true.data] * ignore_mask
 
         if self.reduction == "mean":
