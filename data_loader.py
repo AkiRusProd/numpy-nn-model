@@ -104,61 +104,6 @@ def load_utkface(path="datasets/utkface/", image_size=(3, 32, 32)):
 
 
 
-def load_multi30k(path="datasets/multi30k/"):
-    #References: https://pytorch.org/text/stable/_modules/torchtext/datasets/multi30k.html
-    urls = {
-        "train": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/training.tar.gz",
-        "valid": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/validation.tar.gz",
-        "test": r"https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/mmt16_task1_test.tar.gz",
-    }
-
-    filenames = ["mmt16_task1_test.tar.gz", "training.tar.gz", "validation.tar.gz"]
-
-    path = Path(path)
-    if not path.exists():
-        path.mkdir(parents=True)
-
-        download_multi30k_data(urls.values(), path, filenames)
-
-        for filename in filenames:
-            tar = tarfile.open(Path(path) / filename)
-            tar.extractall(path)
-            tar.close()
-
-            print(f'Extracted {filename}')
-
-
-    ret = []
-    filenames = ["train", "val", "test"]
-
-    for filename in filenames:
-
-        examples = []
-
-        en_path = os.path.join(path, filename + '.en')
-        de_path = os.path.join(path, filename + '.de')
-
-        en_file = [l.strip() for l in open(en_path, 'r', encoding='utf-8')]
-        de_file = [l.strip() for l in open(de_path, 'r', encoding='utf-8')]
-
-        assert len(en_file) == len(de_file)
-
-        for i in range(len(en_file)):
-            if en_file[i] == '' or de_file[i] == '':
-                continue
-            en_seq, de_seq = en_file[i], de_file[i]
-
-            examples.append({'en': en_seq, 'de': de_seq})
-    
-        ret.append(examples)
-
-    train_dataset, valid_dataset, test_dataset = ret
-    return train_dataset, valid_dataset, test_dataset
-
-
-
-
-
 
 
    

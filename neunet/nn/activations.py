@@ -423,55 +423,41 @@ class GELU(Module):  # Static GELU computation
         return self.forward(x)
 
 
-class Softmax(Module):  # Dynamic Softmax computation
-    def __init__(self, axis=1):
-        self.axis = axis
-
-    def forward(self, x: Tensor):
-        e_x = x.sub(x.max(axis=self.axis, keepdims=True)).exp()
-        return e_x.div(e_x.sum(axis=self.axis, keepdims=True))
-
-    def __call__(self, x):
-        return self.forward(x)
-
-
-# class _SoftmaxTensor(Tensor):  # Static Softmax tensor for backpropagation
-#     def __init__(self, data, args, op, device):
-#         super().__init__(data, args, op, device=device)
-
-        # self.grad_fn = self._grad_fn
-
-#     def _grad_fn(self):
-#         x = self.args[0].data
-#         # f_x = self.args[1]
-#         f_x = self.data
-
-#         xp = self.xp
-
-#         #https://e2eml.school/softmax.html
-#         #https://suzyahyah.github.io/calculus/machine%20learning/2018/04/04/Jacobian-and-Backpropagation.html
-#         #https://sgugger.github.io/a-simple-neural-net-in-numpy.html
-
-#         batch_size = x.shape[0]
-#         softmax = f_x
-#         J = softmax[..., xp.newaxis] * xp.tile(xp.identity(softmax.shape[-1], dtype = x.dtype), (softmax.shape[0], *tuple(xp.ones(softmax.ndim, dtype = xp.int8).tolist()))) - (softmax[..., xp.newaxis, :].transpose(*tuple(xp.arange(0, softmax.ndim - 1, 1, dtype=xp.int8).tolist()), -1, -2) @ softmax[..., xp.newaxis, :]) #np.matmul(softmax[:, :, None], softmax[:, None, :])
-#         grad_x =  grad[..., xp.newaxis, :] @ J
-        
-#         grad_x = grad_x.reshape(x.shape) / batch_size
-#         self.args[0]._apply_grad(grad_x)
-
-# class Softmax(Module):  # Static Softmax computation
+# class Softmax(Module):  # Dynamic Softmax computation
 #     def __init__(self, axis=1):
 #         self.axis = axis
 
 #     def forward(self, x: Tensor):
-#         e_x = x.xp.exp(x.data - x.xp.max(x.data, axis = self.axis, keepdims=True))
-        
-#         f_x =  e_x / x.xp.sum(e_x, axis = self.axis, keepdims=True)
-#         return _SoftmaxTensor(f_x, [x], "softmax", device=x.device)
+#         e_x = x.sub(x.max(axis=self.axis, keepdims=True)).exp()
+#         return e_x.div(e_x.sum(axis=self.axis, keepdims=True))
 
 #     def __call__(self, x):
 #         return self.forward(x)
+
+
+class _SoftmaxTensor(Tensor):  # Static Softmax tensor for backpropagation
+    def __init__(self, data, args, op, device):
+        super().__init__(data, args, op, device=device)
+
+        def grad_fn(t: Tensor, f_x, axis, grad):
+            grad_x=(grad - (grad * f_x).sum(axis, keepdims=True)) * f_x
+
+            t._apply_grad(grad_x)
+
+        self.grad_fn = grad_fn
+
+class Softmax(Module):  # Static Softmax computation
+    def __init__(self, axis=1):
+        self.axis = axis
+
+    def forward(self, x: Tensor):
+        e_x = x.xp.exp(x.data - x.xp.max(x.data, axis = self.axis, keepdims=True))
+        
+        f_x =  e_x / x.xp.sum(e_x, axis = self.axis, keepdims=True)
+        return _SoftmaxTensor(f_x, [x, f_x, self.axis], "softmax", device=x.device)
+
+    def __call__(self, x):
+        return self.forward(x)
 
 
 class _LogSoftmax(Tensor):  # Static LogSoftmax tensor for backpropagation

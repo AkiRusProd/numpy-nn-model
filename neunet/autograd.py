@@ -68,7 +68,7 @@ class Tensor:
     def detach(self) -> 'Tensor':
         return Tensor(
             data=self.data,
-            args=self.args,
+            args=None,
             op=self.op,
             requires_grad=False,
             dtype=self.data.dtype,

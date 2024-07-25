@@ -3,13 +3,13 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tokenizers import ByteLevelBPETokenizer
+from tokenizers.implementations import ByteLevelBPETokenizer
 from tokenizers.processors import TemplateProcessing
 from tqdm import tqdm
 
 import neunet
 import neunet.nn as nn
-from data_loader import load_multi30k
+from datasets import load_dataset
 from neunet import Tensor
 from neunet.optim import Adam
 
@@ -246,12 +246,22 @@ BATCH_SIZE = 32
 PAD_TOKEN = '<pad>' # noqa: S105
 SOS_TOKEN = '<sos>' # noqa: S105
 EOS_TOKEN = '<eos>' # noqa: S105
-UNK_TOKEN = '<unk>' # noqa: S105
+# UNK_TOKEN = '<unk>' # noqa: S105
 
 DATASET_PATH = Path("./datasets/multi30k/")
 SAVE_PATH = Path("./saved models/seq2seq/")
 
-_, _, _ = load_multi30k(DATASET_PATH)
+if not DATASET_PATH.exists():
+    data = load_dataset("bentrevett/multi30k", cache_dir="datasets/multi30k")
+
+    for split, split_dataset in data.items():
+        with open(f"./datasets/multi30k/{split}.en", 'w', encoding='utf-8') as f:
+            for item in split_dataset:
+                f.write(item['en'] + '\n')
+
+        with open(f"./datasets/multi30k/{split}.de", 'w', encoding='utf-8') as f:
+            for item in split_dataset:
+                f.write(item['de'] + '\n')
 
 FILE_PATHS = [DATASET_PATH / "train.en", DATASET_PATH / "train.de", DATASET_PATH / "val.en", DATASET_PATH / "val.de", DATASET_PATH / "test.en", DATASET_PATH / "test.de"]
 FILE_PATHS = [str(path) for path in FILE_PATHS]
@@ -259,17 +269,17 @@ FILE_PATHS = [str(path) for path in FILE_PATHS]
 
 # [Train and load Tokenizer]
 if not (SAVE_PATH / "vocab").exists():
-    (SAVE_PATH / "vocab").mkdir(parents=True)
     tokenizer = ByteLevelBPETokenizer()
 
     tokenizer.train(files=FILE_PATHS, vocab_size=15000, min_frequency=1, special_tokens=[
         PAD_TOKEN,
         SOS_TOKEN,
         EOS_TOKEN,
-        UNK_TOKEN
+        # UNK_TOKEN
     ])
 
-    tokenizer.save_model(str(SAVE_PATH / "vocab", "multi30k-tokenizer"))
+    (SAVE_PATH / "vocab").mkdir(parents=True)
+    tokenizer.save_model(str(SAVE_PATH / "vocab"), "multi30k-tokenizer")
 
 tokenizer = ByteLevelBPETokenizer(
     str(SAVE_PATH / "vocab/multi30k-tokenizer-vocab.json"),
@@ -281,11 +291,11 @@ tokenizer = ByteLevelBPETokenizer(
 PAD_INDEX = tokenizer.token_to_id(PAD_TOKEN)
 SOS_INDEX = tokenizer.token_to_id(SOS_TOKEN)
 EOS_INDEX = tokenizer.token_to_id(EOS_TOKEN)
-UNK_INDEX = tokenizer.token_to_id(UNK_TOKEN)
+# UNK_INDEX = tokenizer.token_to_id(UNK_TOKEN)
 
 
 class DataPreprocessor():
-    def __init__(self, tokenizer):
+    def __init__(self, tokenizer: ByteLevelBPETokenizer):
         self.tokenizer = tokenizer
 
         self.tokenizer._tokenizer.post_processor  = TemplateProcessing(
@@ -296,26 +306,29 @@ class DataPreprocessor():
             ],
         )
 
-        self.tokenizer.enable_truncation(max_length=128)
+        # self.tokenizer.enable_truncation(max_length=128)
         self.tokenizer.enable_padding(pad_token = PAD_TOKEN)
         
-    def tokenize(self, paths: list[str], batch_size: int) -> np.array:
+    def tokenize(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
         examples = []
 
         for src_file in paths:
             print(f"Processing {src_file}")
             src_file = Path(src_file)
             lines = src_file.read_text(encoding="utf-8").splitlines()
-            examples += [x.ids for x in self.tokenizer.encode_batch(lines)]
 
-        examples = np.array(examples, dtype="int32")
+            if lines_limit:
+                lines = lines[:lines_limit]
 
-        examples_batches = np.array_split(examples, np.arange(batch_size, len(examples), batch_size))
+            for i in range(0, len(lines), batch_size):
+                examples.append(np.array([x.ids for x in self.tokenizer.encode_batch(lines[i:i+batch_size])]))
 
-        return examples_batches
 
-    def __call__(self, paths: list[str], batch_size: int) -> np.array:
-        return self.tokenize(paths, batch_size)
+        return examples
+
+    def __call__(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
+        return self.tokenize(paths, batch_size, lines_limit)
+
 
 data_post_processor = DataPreprocessor(tokenizer)
 
@@ -390,7 +403,7 @@ def train_step(source: np.ndarray, target: np.ndarray, epoch: int, epochs: int) 
         optimizer.step()
 
         optimizer.zero_grad()
-        loss_history.append(loss.item())
+        loss_history.append(loss.detach().item())
 
 
         tqdm_range.set_description(
@@ -418,7 +431,7 @@ def eval(source: np.ndarray, target: np.ndarray) -> float:
         output = output.reshape(output.shape[0] * output.shape[1], output.shape[2])
         
         loss = loss_function(output, neunet.tensor(target_batch[:, 1:].flatten(), device=device, dtype=neunet.int32))
-        loss_history.append(loss.item())
+        loss_history.append(loss.detach().item())
         
         tqdm_range.set_description(
                 f"testing  | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f}"
@@ -482,30 +495,30 @@ def predict(sentence: str, max_length: int = 50) -> tuple[str, Tensor]:
 
     enc_src = model.encoder.forward(src, src_mask)
 
-    tgt_ids = [SOS_INDEX]
+    tgt_tokens = [SOS_INDEX]
 
     for _ in range(max_length):
-        tgt = np.asarray(tgt_ids).reshape(1, -1)
+        tgt = np.asarray(tgt_tokens).reshape(1, -1)
         tgt_mask = model.get_pad_mask(tgt) & model.get_sub_mask(tgt)
 
         tgt, tgt_mask = neunet.tensor(tgt, dtype=neunet.int32, device=device), neunet.tensor(tgt_mask, dtype=neunet.int32, device=device)
 
-        out, attention = model.decoder.forward(tgt, tgt_mask, enc_src, src_mask)
+        outputs, attention = model.decoder.forward(tgt, tgt_mask, enc_src, src_mask)
         
-        tgt_indx = out.detach().cpu().numpy().argmax(axis=-1)[:, -1].item()
-        tgt_ids.append(tgt_indx)
+        tgt_next_token = outputs.detach().cpu().numpy().argmax(axis=-1)[:, -1].item()
+        tgt_tokens.append(tgt_next_token)
 
-        if tgt_indx == EOS_INDEX or len(tgt_ids) >= max_length:
+        if tgt_next_token == EOS_INDEX or len(tgt_tokens) >= max_length:
             break
     
     
     # Remove special tokens
-    if SOS_INDEX in tgt_ids:
-        tgt_ids.remove(SOS_INDEX)
-    if EOS_INDEX in tgt_ids:
-        tgt_ids.remove(EOS_INDEX)
+    if SOS_INDEX in tgt_tokens:
+        tgt_tokens.remove(SOS_INDEX)
+    if EOS_INDEX in tgt_tokens:
+        tgt_tokens.remove(EOS_INDEX)
 
-    decoded_sentence = tokenizer.decode(tgt_ids)
+    decoded_sentence = tokenizer.decode(tgt_tokens)
 
     return decoded_sentence, attention
 
@@ -534,12 +547,23 @@ if train_loss_history is not None and val_loss_history is not None:
 
 
 
-_, _, val_data = load_multi30k(DATASET_PATH)
+test_data = []
 
+with open(DATASET_PATH / "test.en", 'r') as f:
+    en_file = [l.strip() for l in open(DATASET_PATH / "test.en", 'r', encoding='utf-8')]
+    de_file = [l.strip() for l in open(DATASET_PATH / "test.de", 'r', encoding='utf-8')]
+
+for i in range(len(en_file)):
+    if en_file[i] == '' or de_file[i] == '':
+        continue
+    en_seq, de_seq = en_file[i], de_file[i]
+
+    test_data.append({'en': en_seq, 'de': de_seq})
+    
 sentences_num = 10
 
-random_indices = np.random.randint(0, len(val_data), sentences_num)
-sentences_selection = [val_data[i] for i in random_indices]
+random_indices = np.random.randint(0, len(test_data), sentences_num)
+sentences_selection = [test_data[i] for i in random_indices]
 
 # [Translate sentences from validation set]
 for i, example in enumerate(sentences_selection):

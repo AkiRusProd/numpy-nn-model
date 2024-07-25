@@ -136,12 +136,13 @@ Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/proj
 3. *[Conway`s Game of Life](examples/conway.py)*  
 4. *[Denoising Diffusion Probabilistic Model](examples/ddpm.py)*
 5. *[Generative Adversarial Network](examples/gan.py)*     
-6. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
-7. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
-8. *[Seq2Seq Transformer](examples/seq2seq.py)*
-9. *[Variational Autoencoder](examples/vae.py)*    
-10. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
-11. *[Word2Vec](examples/word2vec.py)*
+6. *[Generative Pre-trained Transformer](examples/gpt.py)*
+7. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
+8. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
+9. *[Seq2Seq Transformer](examples/seq2seq.py)*
+10. *[Variational Autoencoder](examples/vae.py)*    
+11. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
+12. *[Word2Vec](examples/word2vec.py)*
 
 
 
@@ -334,7 +335,7 @@ Code:
 <details>
 <summary>Seq2Seq Transformer</summary>
 
-#### Examples of translated sentences of validation set:  
+#### Examples of translated sentences (EN -> DE) of validation set:  
 
 >Example №1  
 *Input sentence: These four people are standing outdoors, with 3 dogs.  
@@ -655,6 +656,28 @@ Training process Example | Interpolation between images Example
 </details>
 
 <details>
+<summary>Generative Pre-trained Transformer</summary>
+
+#### Examples of a model trained to generate prompts for Stable Diffusion:  
+
+>Example №1  
+*a detailed image of a dark haired cyborg - car 3 d model, a glowing aura, symmetrical, intricate, elegant, highly detailed, digital painting, artstation, concept art, smooth, sharp focus, illustration, art by krenz cushart and artem demura* 
+
+>Example №2  
+*an female warrior, full length, red hair, dark eyes, symmetrical face, highly detailed, digital art, sharp focus, trending on art station, anime art style*  
+
+>Example №3  
+*portrait of a young ruggedly handsome but joyful pirate, male, masculine, upper body, red hair, long hair, d & d, fantasy, sharp features, piercing gaze, sharp features, digital painting, artstation, concept art, matte, sharp*
+
+>Example №4  
+*an anthropomorphic fox wizard, fine art, award winning, intricate, elegant, sharp focus, cinematic lighting, highly detailed, digital painting, 8 k concept art, art by guweiz and z. w. gu, masterpiece, trending on artstation*
+
+>Example №5  
+*a beautiful portrait painting of a cyberpunk city by simon stalenhag and pascal blanche and alphonse mucha, in style of colorful comic. symmetry, hyper detailed. octanev render. trending on artstation*
+
+</details>
+
+<details>
 <summary>Conway`s Game of Life Neural Network Simulation</summary>
 
 ```python
@@ -842,5 +865,5 @@ Native implementation Example | Neural network Example
 
 ### TODO:
 - [x] Add Seq2Seq Transformer example
-- [ ] Add GPT example
+- [x] Add GPT example
 - [ ] Add lr schedulers
