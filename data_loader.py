@@ -7,7 +7,6 @@ import numpy as np
 from tqdm import tqdm
 
 from mnist_data_downloader import download_mnist_data
-from multi30k_data_downloader import download_multi30k_data
 
 
 def prepare_mnist_data(data):
