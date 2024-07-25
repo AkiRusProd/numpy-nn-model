@@ -18,7 +18,7 @@ class ZeroPad2dTensor(Tensor):
             else:
                 unpadded_grad = remove_padding(grad, padding)
 
-            X._apply_grad(unpadded_grad)
+            X.apply_grad(unpadded_grad)
 
         self._backward = _backward
 

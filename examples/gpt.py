@@ -1,6 +1,8 @@
 import math
 from pathlib import Path
+from typing import Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 from tokenizers.implementations import ByteLevelBPETokenizer
 from tokenizers.processors import TemplateProcessing
@@ -8,11 +10,10 @@ from tqdm import tqdm
 
 import neunet
 import neunet.nn as nn
-from datasets import load_dataset
+from datasets import load_dataset  # type: ignore
 from neunet import Tensor
 from neunet.optim import Adam
 
-import matplotlib.pyplot as plt
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_heads, dropout=0.1):
@@ -22,7 +23,8 @@ class MultiHeadAttention(nn.Module):
         self.scale = math.sqrt(d_model)
         self.dropout = nn.Dropout(dropout)
 
-        assert d_model % n_heads == 0
+        if d_model % n_heads != 0:
+            raise ValueError("d_model must be divisible by n_heads")
 
         self.depth = d_model // n_heads
 
@@ -33,7 +35,7 @@ class MultiHeadAttention(nn.Module):
         self.fc = nn.Linear(d_model, d_model)
 
 
-    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor=None):
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Optional[Tensor]=None):
         batch_size = q.shape[0]
         q = self.wq(q).contiguous().reshape(batch_size, -1, self.n_heads, self.depth).transpose(0, 2, 1, 3)
         k = self.wk(k).contiguous().reshape(batch_size, -1, self.n_heads, self.depth).transpose(0, 2, 1, 3)
@@ -191,13 +193,12 @@ if not DATASET_PATH.exists():
 
     for split, split_dataset in data.items():
 
-        with open(f"./datasets/sd-prompts/sd-prompts-{split}.txt", 'w', encoding='utf-8') as f:
+        with Path(f"./datasets/sd-prompts/sd-prompts-{split}.txt").open('w', encoding='utf-8') as f:
             for item in split_dataset:
                 f.write(item['Prompt'] + '\n')
 
 
 FILE_PATHS = [DATASET_PATH / "sd-prompts-train.txt", DATASET_PATH / "sd-prompts-test.txt"]
-FILE_PATHS = [str(path) for path in FILE_PATHS]
 
 
 # [Train and load Tokenizer]
@@ -205,7 +206,7 @@ FILE_PATHS = [str(path) for path in FILE_PATHS]
 if not (SAVE_PATH / "vocab").exists():
     tokenizer = ByteLevelBPETokenizer()
 
-    tokenizer.train(files=FILE_PATHS, vocab_size=15000, min_frequency=1, special_tokens=[
+    tokenizer.train(files=[str(path) for path in FILE_PATHS], vocab_size=15000, min_frequency=1, special_tokens=[
         PAD_TOKEN,
         SOS_TOKEN,
         EOS_TOKEN,
@@ -231,7 +232,7 @@ class DataPreprocessor():
     def __init__(self, tokenizer: ByteLevelBPETokenizer):
         self.tokenizer = tokenizer
 
-        self.tokenizer._tokenizer.post_processor  = TemplateProcessing(
+        self.tokenizer._tokenizer.post_processor  = TemplateProcessing( # noqa SLF001
             single=f"{SOS_TOKEN} $A {EOS_TOKEN}",
             special_tokens=[
                 (f"{SOS_TOKEN}", tokenizer.token_to_id(f"{SOS_TOKEN}")),
@@ -242,13 +243,13 @@ class DataPreprocessor():
         # self.tokenizer.enable_truncation(max_length=151)
         self.tokenizer.enable_padding(pad_token = PAD_TOKEN)
         
-    def tokenize(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
+    def tokenize(self, paths: list[str], batch_size: int, lines_limit: Optional[int] = None) -> list[np.ndarray]:
         examples = []
 
         for src_file in paths:
             print(f"Processing {src_file}")
-            src_file = Path(src_file)
-            lines = src_file.read_text(encoding="utf-8").splitlines()
+            path_src_file = Path(src_file)
+            lines = path_src_file.read_text(encoding="utf-8").splitlines()
 
             if lines_limit:
                 lines = lines[:lines_limit]
@@ -259,13 +260,13 @@ class DataPreprocessor():
 
         return examples
 
-    def __call__(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
+    def __call__(self, paths: list[str], batch_size: int, lines_limit: Optional[int] = None) -> list[np.ndarray]:
         return self.tokenize(paths, batch_size, lines_limit)
 
 data_post_processor = DataPreprocessor(tokenizer)
 
-train_data = data_post_processor([FILE_PATHS[0]], batch_size = BATCH_SIZE, lines_limit=20000)
-val_data = data_post_processor([FILE_PATHS[1]], batch_size = BATCH_SIZE, lines_limit=2000)
+train_data = data_post_processor([str(FILE_PATHS[0])], batch_size = BATCH_SIZE, lines_limit=20000)
+val_data = data_post_processor([str(FILE_PATHS[1])], batch_size = BATCH_SIZE, lines_limit=2000)
 
 
 
@@ -300,7 +301,7 @@ loss_function = nn.CrossEntropyLoss(ignore_index = PAD_INDEX)
 
 # [train, eval, predict methods definition]
 
-def train_step(dataset: np.ndarray, epoch: int, epochs: int) -> float:
+def train_step(dataset: list[np.ndarray], epoch: int, epochs: int) -> float:
     loss_history = []
     model.train()
 
@@ -333,7 +334,7 @@ def train_step(dataset: np.ndarray, epoch: int, epochs: int) -> float:
 
     return epoch_loss
 
-def eval(dataset: np.ndarray) -> float:
+def eval(dataset: list[np.ndarray]) -> float:
     loss_history = []
     model.eval()
 
@@ -361,7 +362,7 @@ def eval(dataset: np.ndarray) -> float:
     return epoch_loss
 
 
-def train(train_data: np.ndarray, val_data: np.ndarray, epochs: int, save_every_epochs: int, save_path: str = None, validation_check: bool = False):
+def train(train_data: list[np.ndarray], val_data: list[np.ndarray], epochs: int, save_every_epochs: int, save_path: Optional[str] = None, validation_check: bool = False):
     best_val_loss = float('inf')
     
     train_loss_history = []
@@ -395,7 +396,7 @@ def train(train_data: np.ndarray, val_data: np.ndarray, epochs: int, save_every_
 def predict(sentence: str = "", max_length: int = 50, temperature: float = 0.7) -> tuple[str, Tensor]:
     model.eval()
 
-    tokens: list = [SOS_INDEX] + tokenizer.encode(sentence, add_special_tokens=False).ids
+    tokens: list = [SOS_INDEX, *tokenizer.encode(sentence, add_special_tokens=False).ids]
    
     for _ in range(max_length):
         inputs = np.asarray(tokens).reshape(1, -1)

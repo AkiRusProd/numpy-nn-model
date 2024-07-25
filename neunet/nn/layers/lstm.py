@@ -125,20 +125,20 @@ class _LSTMTensor(Tensor):
                     + X.xp.dot(output_gates_delta, weight_o.data.T)
                 )
 
-            X._apply_grad(grad_X)
-            weight_f._apply_grad(grad_weight_f)
-            weight_i._apply_grad(grad_weight_i)
-            weight_o._apply_grad(grad_weight_o)
-            weight_c._apply_grad(grad_weight_c)
-            weight_hf._apply_grad(grad_weight_hf)
-            weight_hi._apply_grad(grad_weight_hi)
-            weight_ho._apply_grad(grad_weight_ho)
-            weight_hc._apply_grad(grad_weight_hc)
+            X.apply_grad(grad_X)
+            weight_f.apply_grad(grad_weight_f)
+            weight_i.apply_grad(grad_weight_i)
+            weight_o.apply_grad(grad_weight_o)
+            weight_c.apply_grad(grad_weight_c)
+            weight_hf.apply_grad(grad_weight_hf)
+            weight_hi.apply_grad(grad_weight_hi)
+            weight_ho.apply_grad(grad_weight_ho)
+            weight_hc.apply_grad(grad_weight_hc)
             if all([bias_f, bias_i, bias_o, bias_c]):
-                bias_f._apply_grad(grad_bias_f)
-                bias_i._apply_grad(grad_bias_i)
-                bias_o._apply_grad(grad_bias_o)
-                bias_c._apply_grad(grad_bias_c)
+                bias_f.apply_grad(grad_bias_f)
+                bias_i.apply_grad(grad_bias_i)
+                bias_o.apply_grad(grad_bias_o)
+                bias_c.apply_grad(grad_bias_c)
 
         self.grad_fn = grad_fn
 

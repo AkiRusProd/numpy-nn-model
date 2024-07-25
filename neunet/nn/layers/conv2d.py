@@ -108,11 +108,11 @@ class _Conv2dTensor(Tensor):  # tensor for static backpropagation
             weight.data = remove_stride(weight.data, dilation)
             grad_weight = remove_stride(grad_weight, dilation)
 
-            X._apply_grad(grad_X)
-            weight._apply_grad(grad_weight)
+            X.apply_grad(grad_X)
+            weight.apply_grad(grad_weight)
 
             if bias is not None:
-                bias._apply_grad(grad_bias)
+                bias.apply_grad(grad_bias)
 
         self.grad_fn = grad_fn
 

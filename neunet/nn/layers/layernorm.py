@@ -87,10 +87,10 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
                 grad_weight = X.xp.sum(grad * X_hat, axis=0)
                 grad_bias = X.xp.sum(grad, axis=0)
 
-            X._apply_grad(grad_X)
+            X.apply_grad(grad_X)
             if elementwise_affine:
-                weight._apply_grad(grad_weight)
-                bias._apply_grad(grad_bias)
+                weight.apply_grad(grad_weight)
+                bias.apply_grad(grad_bias)
 
         self.grad_fn = grad_fn
 

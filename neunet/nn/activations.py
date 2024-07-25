@@ -9,7 +9,7 @@ class _SigmoidTensor(Tensor):  # Static sigmoid tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(x: Tensor, f_x, grad):
-            x._apply_grad(grad * f_x * (1 - f_x))
+            x.apply_grad(grad * f_x * (1 - f_x))
 
         self.grad_fn = grad_fn
 
@@ -43,7 +43,7 @@ class _ReLUTensor(Tensor):  # Static ReLU tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(t: Tensor, f_x, grad):
-            t._apply_grad(grad * (f_x > 0))
+            t.apply_grad(grad * (f_x > 0))
 
         self.grad_fn = grad_fn
 
@@ -76,7 +76,7 @@ class _LeakyReLUTensor(Tensor):  # Static LeakyReLU tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(t: Tensor, f_x, alpha, grad):
-            t._apply_grad(
+            t.apply_grad(
                 grad * t.xp.where(f_x <= 0, alpha, 1).astype(grad.dtype)
             )
 
@@ -110,7 +110,7 @@ class _TanhTensor(Tensor):  # Static Tanh tensor for backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(t: Tensor, f_x, grad):
-            t._apply_grad(grad * (1 - f_x ** 2))
+            t.apply_grad(grad * (1 - f_x ** 2))
 
         self.grad_fn = grad_fn
 
@@ -144,7 +144,7 @@ class _SoftplusTensor(Tensor):  # Static Softplus tensor for backpropagation
 
         def grad_fn(t: Tensor, grad):
             x = t.data
-            t._apply_grad(grad * (1 / (1 + t.xp.exp(-x))))
+            t.apply_grad(grad * (1 / (1 + t.xp.exp(-x))))
 
         self.grad_fn = grad_fn
 
@@ -178,7 +178,7 @@ class _SoftsignTensor(Tensor):  # Static Softsign tensor for backpropagation
 
         def grad_fn(t: Tensor, grad):
             x = t.data
-            t._apply_grad(grad * (1 / (1 + t.xp.abs(x)) ** 2))
+            t.apply_grad(grad * (1 / (1 + t.xp.abs(x)) ** 2))
 
         self.grad_fn = grad_fn
 
@@ -214,7 +214,7 @@ class _SwishTensorTensor(Tensor):  # Static Swish tensor for backpropagation
             x = t.data
             sigmoid = lambda x: 1 / (1 + t.xp.exp(-x))
 
-            t._apply_grad(grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x)))
+            t.apply_grad(grad * (beta * f_x + sigmoid(beta * x) * (1 - beta * f_x)))
 
         self.grad_fn = grad_fn
 
@@ -262,7 +262,7 @@ class _MishTensor(Tensor):  # Static Mish tensor for backpropagation
                 / xp.power((2 * xp.exp(x) + xp.exp(2 * x) + 2), 2)
             )
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -301,7 +301,7 @@ class _TanhExpTensor(Tensor):  # Static TanhExp tensor for backpropagation
 
             grad_x = grad * (xp.tanh(xp.exp(x)) - x * xp.exp(x) * (xp.power(xp.tanh(xp.exp(x)), 2) - 1))
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -337,7 +337,7 @@ class _ELUTensor(Tensor):  # Static ELU tensor for backpropagation
             x = t.data
             grad_x = grad * (t.xp.where(x <= 0, alpha + f_x, 1).astype(grad.dtype))
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -363,7 +363,7 @@ class _SELUTensor(Tensor):  # Static SELU tensor for backpropagation
             x = t.data
             grad_x = grad * (lmbda * t.xp.where(x > 0, 1, alpha * t.xp.exp(x)).astype(grad.dtype))
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -401,7 +401,7 @@ class _GELUTensor(Tensor):  # Static GELU tensor for backpropagation
                 + 0.5
             )
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -442,7 +442,7 @@ class _SoftmaxTensor(Tensor):  # Static Softmax tensor for backpropagation
         def grad_fn(t: Tensor, f_x, axis, grad):
             grad_x=(grad - (grad * f_x).sum(axis, keepdims=True)) * f_x
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 
@@ -469,7 +469,7 @@ class _LogSoftmax(Tensor):  # Static LogSoftmax tensor for backpropagation
 
             grad_x = grad - softmax * grad.sum(axis = axis, keepdims=True)
 
-            t._apply_grad(grad_x)
+            t.apply_grad(grad_x)
 
         self.grad_fn = grad_fn
 

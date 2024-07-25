@@ -1,5 +1,6 @@
 import math
 from pathlib import Path
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,7 @@ from tqdm import tqdm
 
 import neunet
 import neunet.nn as nn
-from datasets import load_dataset
+from datasets import load_dataset  # type: ignore
 from neunet import Tensor
 from neunet.optim import Adam
 
@@ -27,7 +28,8 @@ class MultiHeadAttention(nn.Module):
         self.scale = math.sqrt(d_model)
         self.dropout = nn.Dropout(dropout)
 
-        assert d_model % n_heads == 0
+        if d_model % n_heads != 0:
+            raise ValueError("d_model must be divisible by n_heads")
 
         self.depth = d_model // n_heads
 
@@ -37,7 +39,7 @@ class MultiHeadAttention(nn.Module):
 
         self.fc = nn.Linear(d_model, d_model)
 
-    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Tensor=None):
+    def forward(self, q: Tensor, k: Tensor, v: Tensor, mask: Optional[Tensor]=None):
         batch_size = q.shape[0]
         q = self.wq(q).contiguous().reshape(batch_size, -1, self.n_heads, self.depth).transpose(0, 2, 1, 3)
         k = self.wk(k).contiguous().reshape(batch_size, -1, self.n_heads, self.depth).transpose(0, 2, 1, 3)
@@ -246,7 +248,7 @@ BATCH_SIZE = 32
 PAD_TOKEN = '<pad>' # noqa: S105
 SOS_TOKEN = '<sos>' # noqa: S105
 EOS_TOKEN = '<eos>' # noqa: S105
-# UNK_TOKEN = '<unk>' # noqa: S105
+# UNK_TOKEN = '<unk>'
 
 DATASET_PATH = Path("./datasets/multi30k/")
 SAVE_PATH = Path("./saved models/seq2seq/")
@@ -255,23 +257,22 @@ if not DATASET_PATH.exists():
     data = load_dataset("bentrevett/multi30k", cache_dir="datasets/multi30k")
 
     for split, split_dataset in data.items():
-        with open(f"./datasets/multi30k/{split}.en", 'w', encoding='utf-8') as f:
+        with Path(f"./datasets/multi30k/{split}.en").open('w', encoding='utf-8') as f:
             for item in split_dataset:
                 f.write(item['en'] + '\n')
 
-        with open(f"./datasets/multi30k/{split}.de", 'w', encoding='utf-8') as f:
+        with Path(f"./datasets/multi30k/{split}.de").open('w', encoding='utf-8') as f:
             for item in split_dataset:
                 f.write(item['de'] + '\n')
 
 FILE_PATHS = [DATASET_PATH / "train.en", DATASET_PATH / "train.de", DATASET_PATH / "val.en", DATASET_PATH / "val.de", DATASET_PATH / "test.en", DATASET_PATH / "test.de"]
-FILE_PATHS = [str(path) for path in FILE_PATHS]
 
 
 # [Train and load Tokenizer]
 if not (SAVE_PATH / "vocab").exists():
     tokenizer = ByteLevelBPETokenizer()
 
-    tokenizer.train(files=FILE_PATHS, vocab_size=15000, min_frequency=1, special_tokens=[
+    tokenizer.train(files=[str(path) for path in FILE_PATHS], vocab_size=15000, min_frequency=1, special_tokens=[
         PAD_TOKEN,
         SOS_TOKEN,
         EOS_TOKEN,
@@ -298,7 +299,7 @@ class DataPreprocessor():
     def __init__(self, tokenizer: ByteLevelBPETokenizer):
         self.tokenizer = tokenizer
 
-        self.tokenizer._tokenizer.post_processor  = TemplateProcessing(
+        self.tokenizer._tokenizer.post_processor  = TemplateProcessing( # noqa SLF001
             single=f"{SOS_TOKEN} $A {EOS_TOKEN}",
             special_tokens=[
                 (f"{SOS_TOKEN}", tokenizer.token_to_id(f"{SOS_TOKEN}")),
@@ -309,13 +310,13 @@ class DataPreprocessor():
         # self.tokenizer.enable_truncation(max_length=128)
         self.tokenizer.enable_padding(pad_token = PAD_TOKEN)
         
-    def tokenize(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
+    def tokenize(self, paths: list[str], batch_size: int, lines_limit: Optional[int] = None) -> list[np.ndarray]:
         examples = []
 
         for src_file in paths:
             print(f"Processing {src_file}")
-            src_file = Path(src_file)
-            lines = src_file.read_text(encoding="utf-8").splitlines()
+            path_src_file = Path(src_file)
+            lines = path_src_file.read_text(encoding="utf-8").splitlines()
 
             if lines_limit:
                 lines = lines[:lines_limit]
@@ -326,20 +327,20 @@ class DataPreprocessor():
 
         return examples
 
-    def __call__(self, paths: list[str], batch_size: int, lines_limit: int = None) -> np.ndarray:
+    def __call__(self, paths: list[str], batch_size: int, lines_limit: Optional[int] = None) -> list[np.ndarray]:
         return self.tokenize(paths, batch_size, lines_limit)
 
 
 data_post_processor = DataPreprocessor(tokenizer)
 
-train_src = data_post_processor([DATASET_PATH / "train.en"], batch_size = BATCH_SIZE)
-train_tgt = data_post_processor([DATASET_PATH / "train.de"], batch_size = BATCH_SIZE)
+train_src = data_post_processor([str(DATASET_PATH / "train.en")], batch_size = BATCH_SIZE)
+train_tgt = data_post_processor([str(DATASET_PATH / "train.de")], batch_size = BATCH_SIZE)
 
-val_src = data_post_processor([DATASET_PATH / "val.en"], batch_size = BATCH_SIZE)
-val_tgt = data_post_processor([DATASET_PATH / "val.de"], batch_size = BATCH_SIZE)
+val_src = data_post_processor([str(DATASET_PATH / "val.en")], batch_size = BATCH_SIZE)
+val_tgt = data_post_processor([str(DATASET_PATH / "val.de")], batch_size = BATCH_SIZE)
 
-test_src = data_post_processor([DATASET_PATH / "test.en"], batch_size = BATCH_SIZE)
-test_tgt = data_post_processor([DATASET_PATH / "test.de"], batch_size = BATCH_SIZE)
+test_src = data_post_processor([str(DATASET_PATH / "test.en")], batch_size = BATCH_SIZE)
+test_tgt = data_post_processor([str(DATASET_PATH / "test.de")], batch_size = BATCH_SIZE)
 
 
 train_data = train_src, train_tgt
@@ -386,11 +387,11 @@ loss_function = nn.CrossEntropyLoss(ignore_index = PAD_INDEX)
 
 # [train, eval, predict methods definition]
 
-def train_step(source: np.ndarray, target: np.ndarray, epoch: int, epochs: int) -> float:
+def train_step(source: list[np.ndarray], target: list[np.ndarray], epoch: int, epochs: int) -> float:
     loss_history = []
     model.train()
 
-    tqdm_range = tqdm(enumerate(zip(source, target)), total = len(source))
+    tqdm_range = tqdm(enumerate(zip(source, target, strict=False)), total = len(source))
     for batch_num, (source_batch, target_batch) in tqdm_range:
 
         output, _ = model.forward(source_batch, target_batch[:,:-1])
@@ -419,11 +420,11 @@ def train_step(source: np.ndarray, target: np.ndarray, epoch: int, epochs: int) 
 
     return epoch_loss
 
-def eval(source: np.ndarray, target: np.ndarray) -> float:
+def eval(source: list[np.ndarray], target: list[np.ndarray]) -> float:
     loss_history = []
     model.eval()
 
-    tqdm_range = tqdm(enumerate(zip(source, target)), total = len(source))
+    tqdm_range = tqdm(enumerate(zip(source, target, strict=False)), total = len(source))
     for batch_num, (source_batch, target_batch) in tqdm_range:
         
         output, _ = model.forward(source_batch, target_batch[:,:-1])
@@ -447,7 +448,7 @@ def eval(source: np.ndarray, target: np.ndarray) -> float:
     return epoch_loss
 
 
-def train(train_data: np.ndarray, val_data: np.ndarray, epochs: int, save_every_epochs: int, save_path: str = None, validation_check: bool = False):
+def train(train_data: tuple[list[np.ndarray], list[np.ndarray]], val_data: tuple[list[np.ndarray], list[np.ndarray]], epochs: int, save_every_epochs: int, save_path: Optional[str] = None, validation_check: bool = False):
     best_val_loss = float('inf')
     
     train_loss_history = []
@@ -547,23 +548,22 @@ if train_loss_history is not None and val_loss_history is not None:
 
 
 
-test_data = []
+raw_test_data: list[dict[str, str]] = []
 
-with open(DATASET_PATH / "test.en", 'r') as f:
-    en_file = [l.strip() for l in open(DATASET_PATH / "test.en", 'r', encoding='utf-8')]
-    de_file = [l.strip() for l in open(DATASET_PATH / "test.de", 'r', encoding='utf-8')]
+en_file = [l.strip() for l in Path(DATASET_PATH / "test.en").open('r', encoding='utf-8')]
+de_file = [l.strip() for l in Path(DATASET_PATH / "test.de").open('r', encoding='utf-8')]
 
 for i in range(len(en_file)):
     if en_file[i] == '' or de_file[i] == '':
         continue
     en_seq, de_seq = en_file[i], de_file[i]
 
-    test_data.append({'en': en_seq, 'de': de_seq})
+    raw_test_data.append({'en': en_seq, 'de': de_seq})
     
 sentences_num = 10
 
-random_indices = np.random.randint(0, len(test_data), sentences_num)
-sentences_selection = [test_data[i] for i in random_indices]
+random_indices = np.random.randint(0, len(raw_test_data), sentences_num)
+sentences_selection = [raw_test_data[i] for i in random_indices]
 
 # [Translate sentences from validation set]
 for i, example in enumerate(sentences_selection):
@@ -575,7 +575,8 @@ for i, example in enumerate(sentences_selection):
 
 
 def plot_attention(sentence: str, translation: str, attention: Tensor, heads_num: int = 8, rows_num: int = 2, cols_num: int = 4):
-    assert rows_num * cols_num == heads_num
+    if rows_num * cols_num != heads_num:
+        raise ValueError("heads_num must be equal to rows_num * cols_num")
     attention = attention.detach().cpu().numpy().squeeze()
 
     sentence = tokenizer.encode(sentence, add_special_tokens=False).tokens

@@ -55,12 +55,12 @@ class _RNNTensor(Tensor):
                 grad_X[:, t, :] = X.xp.dot(grad_states, weight.data.T)
                 next_grad_states = X.xp.dot(grad_states, weight_h.data.T)
 
-            X._apply_grad(grad_X.reshape(X.shape))
+            X.apply_grad(grad_X.reshape(X.shape))
 
-            weight._apply_grad(grad_weight)
-            weight_h._apply_grad(grad_weight_h)
+            weight.apply_grad(grad_weight)
+            weight_h.apply_grad(grad_weight_h)
             if bias is not None:
-                bias._apply_grad(grad_bias)
+                bias.apply_grad(grad_bias)
 
 
         self.grad_fn = grad_fn

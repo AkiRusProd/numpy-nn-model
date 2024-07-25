@@ -22,8 +22,8 @@ class _BidirectionalTensor(Tensor):
             elif merge_mode == "avg":
                 direct_grad, reverse_grad = grad / 2, grad / 2
 
-            D_O._apply_grad(direct_grad)
-            R_O._apply_grad(reverse_grad)
+            D_O.apply_grad(direct_grad)
+            R_O.apply_grad(reverse_grad)
 
         self.grad_fn = grad_fn
 

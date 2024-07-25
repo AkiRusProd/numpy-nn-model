@@ -675,6 +675,9 @@ Training process Example | Interpolation between images Example
 >Example №5  
 *a beautiful portrait painting of a cyberpunk city by simon stalenhag and pascal blanche and alphonse mucha, in style of colorful comic. symmetry, hyper detailed. octanev render. trending on artstation*
 
+Code:
+*[Model example](examples/gpt.py)*
+
 </details>
 
 <details>

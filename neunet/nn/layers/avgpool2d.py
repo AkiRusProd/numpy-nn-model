@@ -43,7 +43,7 @@ class _AvgPool2dTensor(Tensor):
 
             grad_X = remove_padding(grad_X, padding)
 
-            X._apply_grad(grad_X)
+            X.apply_grad(grad_X)
 
         self.grad_fn = grad_fn
 

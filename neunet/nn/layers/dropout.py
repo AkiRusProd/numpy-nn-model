@@ -7,7 +7,7 @@ class _DropoutTensor(Tensor):  # tensor for static backpropagation
         super().__init__(data, args, op, device=device)
 
         def grad_fn(X: Tensor, mask, grad):
-            X._apply_grad(grad * mask)
+            X.apply_grad(grad * mask)
 
         self.grad_fn = grad_fn
 

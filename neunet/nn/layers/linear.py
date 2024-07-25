@@ -16,12 +16,12 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
 
         def grad_fn(X: Tensor, weight: Tensor, bias: Union[Tensor, None], grad):
             # X, weight, bias = self.args
-            X._apply_grad(X.xp.matmul(grad, weight.data))
-            weight._apply_grad(
+            X.apply_grad(X.xp.matmul(grad, weight.data))
+            weight.apply_grad(
                 X.xp.matmul(X.data.swapaxes(-1, -2), grad).swapaxes(-1, -2)
             )
             if bias is not None:
-                bias._apply_grad(X.xp.sum(grad, axis=0, keepdims=True))
+                bias.apply_grad(X.xp.sum(grad, axis=0, keepdims=True))
 
         self.grad_fn = grad_fn
 

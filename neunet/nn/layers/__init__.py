@@ -9,9 +9,9 @@ from neunet.nn.layers.embedding import Embedding as Embedding
 from neunet.nn.layers.flatten import Flatten as Flatten
 from neunet.nn.layers.gru import GRU as GRU
 from neunet.nn.layers.layernorm import LayerNorm as LayerNorm
-from neunet.nn.layers.rmsnorm import RMSNorm as RMSNorm
 from neunet.nn.layers.linear import Linear as Linear
 from neunet.nn.layers.lstm import LSTM as LSTM
 from neunet.nn.layers.maxpool2d import MaxPool2d as MaxPool2d
+from neunet.nn.layers.rmsnorm import RMSNorm as RMSNorm
 from neunet.nn.layers.rnn import RNN as RNN
 from neunet.nn.layers.zeropad2d import ZeroPad2d as ZeroPad2d

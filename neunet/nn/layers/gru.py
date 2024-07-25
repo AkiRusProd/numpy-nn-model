@@ -109,17 +109,17 @@ class _GRUTensor(Tensor):
                     + X.xp.dot(reset_gates_delta, weight_r.data.T)
                 )
 
-            X._apply_grad(grad_X)
-            weight_z._apply_grad(grad_weight_z)
-            weight_r._apply_grad(grad_weight_r)
-            weight_h._apply_grad(grad_weight_h)
-            weight_hz._apply_grad(grad_weight_hz)
-            weight_hr._apply_grad(grad_weight_hr)
-            weight_hh._apply_grad(grad_weight_hh)
+            X.apply_grad(grad_X)
+            weight_z.apply_grad(grad_weight_z)
+            weight_r.apply_grad(grad_weight_r)
+            weight_h.apply_grad(grad_weight_h)
+            weight_hz.apply_grad(grad_weight_hz)
+            weight_hr.apply_grad(grad_weight_hr)
+            weight_hh.apply_grad(grad_weight_hh)
             if all([bias_z, bias_r, bias_h]):
-                bias_z._apply_grad(grad_bias_z)
-                bias_r._apply_grad(grad_bias_r)
-                bias_h._apply_grad(grad_bias_h)
+                bias_z.apply_grad(grad_bias_z)
+                bias_r.apply_grad(grad_bias_r)
+                bias_h.apply_grad(grad_bias_h)
 
         self.grad_fn = grad_fn
 

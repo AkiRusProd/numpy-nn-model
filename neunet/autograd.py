@@ -1,8 +1,7 @@
-from typing import Any, Union
+from typing import Any, Callable, Union
 
 import cupy as cp
 import numpy as np
-
 
 
 class Tensor:
@@ -24,7 +23,7 @@ class Tensor:
         self.args = args
         self.requires_grad = requires_grad
         self.device = device
-        self.grad_fn = lambda: None
+        self.grad_fn: Callable = lambda:  None
 
     def ensure_tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
         if isinstance(t, Tensor):
@@ -82,7 +81,7 @@ class Tensor:
         self.data[...] = self.xp.ascontiguousarray(self.data)
         return self
 
-    def _apply_grad(self, grad):
+    def apply_grad(self, grad):
         if not self.requires_grad:
             return
 
@@ -109,9 +108,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad)
+                self.apply_grad(grad)
             if t.requires_grad:
-                t._apply_grad(grad)
+                t.apply_grad(grad)
 
         out.grad_fn = grad_fn
 
@@ -133,9 +132,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad)
+                self.apply_grad(grad)
             if t.requires_grad:
-                t._apply_grad(-grad)
+                t.apply_grad(-grad)
 
         out.grad_fn = grad_fn
 
@@ -157,9 +156,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * t.data)
+                self.apply_grad(grad * t.data)
             if t.requires_grad:
-                t._apply_grad(self.data * grad)
+                t.apply_grad(self.data * grad)
 
         out.grad_fn = grad_fn
 
@@ -181,9 +180,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad / t.data)
+                self.apply_grad(grad / t.data)
             if t.requires_grad:
-                t._apply_grad(-grad  * self.data / (t.data**2))
+                t.apply_grad(-grad  * self.data / (t.data**2))
 
         out.grad_fn = grad_fn
 
@@ -206,24 +205,24 @@ class Tensor:
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.data.ndim > 1 and t.data.ndim > 1:  # [matrix x matrix]
                 if self.requires_grad:
-                    self._apply_grad(self.xp.matmul(grad, t.data.swapaxes(-1, -2)))
+                    self.apply_grad(self.xp.matmul(grad, t.data.swapaxes(-1, -2)))
                 if t.requires_grad:
-                    t._apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), grad))
+                    t.apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), grad))
             elif self.data.ndim == 1 and t.data.ndim == 1:  # [vector x vector]
                 if self.requires_grad:
-                    self._apply_grad(grad * t.data)
+                    self.apply_grad(grad * t.data)
                 if t.requires_grad:
-                    t._apply_grad(grad * self.data)
+                    t.apply_grad(grad * self.data)
             elif self.data.ndim == 1 and t.data.ndim > 1:  # [vector x matrix]
                 if self.requires_grad:
-                    self._apply_grad(self.xp.matmul(grad, t.data.swapaxes(-1, -2)))
+                    self.apply_grad(self.xp.matmul(grad, t.data.swapaxes(-1, -2)))
                 if t.requires_grad:
-                    t._apply_grad(self.xp.outer(self.data, grad))
+                    t.apply_grad(self.xp.outer(self.data, grad))
             elif self.data.ndim > 1 and t.data.ndim == 1:  # [matrix x vector]
                 if self.requires_grad:
-                    self._apply_grad(self.xp.outer(grad, t.data))
+                    self.apply_grad(self.xp.outer(grad, t.data))
                 if t.requires_grad:
-                    t._apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), grad))
+                    t.apply_grad(self.xp.matmul(self.data.swapaxes(-1, -2), grad))
 
         out.grad_fn = grad_fn
 
@@ -246,7 +245,7 @@ class Tensor:
 
             if grad.ndim != self.data.ndim and axis is not None:
                 grad = self.xp.expand_dims(grad, axis)
-            self._apply_grad(self.xp.ones_like(self.data) * grad)
+            self.apply_grad(self.xp.ones_like(self.data) * grad)
 
         out.grad_fn = grad_fn
 
@@ -270,7 +269,7 @@ class Tensor:
                 grad = self.xp.expand_dims(grad, axis)
 
             _axis = list(axis) if isinstance(axis, tuple) else axis
-            self._apply_grad(
+            self.apply_grad(
                 self.xp.ones_like(self.data)
                 * grad
                 / self.xp.prod(self.xp.array(self.data.shape)[_axis])
@@ -298,7 +297,7 @@ class Tensor:
                 grad = self.xp.expand_dims(grad, axis)
 
             _axis = list(axis) if isinstance(axis, tuple) else axis
-            self._apply_grad(
+            self.apply_grad(
                 self.xp.ones_like(self.data)
                 * grad
                 * 2
@@ -327,9 +326,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * t.data * self.data ** (t.data - 1))
+                self.apply_grad(grad * t.data * self.data ** (t.data - 1))
             if t.requires_grad:
-                t._apply_grad(grad * self.data ** t.data * self.xp.log(self.data))
+                t.apply_grad(grad * self.data ** t.data * self.xp.log(self.data))
 
         out.grad_fn = grad_fn
 
@@ -347,8 +346,8 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                # self._apply_grad(grad * 1 / (2 * self.xp.sqrt(self.data)))
-                self._apply_grad(grad * 0.5 * self.data**-0.5)
+                # self.apply_grad(grad * 1 / (2 * self.xp.sqrt(self.data)))
+                self.apply_grad(grad * 0.5 * self.data**-0.5)
 
         out.grad_fn = grad_fn
 
@@ -365,7 +364,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * 1 / self.data)
+                self.apply_grad(grad * 1 / self.data)
 
         out.grad_fn = grad_fn
 
@@ -382,7 +381,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * self.xp.exp(self.data))
+                self.apply_grad(grad * self.xp.exp(self.data))
 
         out.grad_fn = grad_fn
 
@@ -399,7 +398,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * (1 - self.xp.tanh(self.data) ** 2))
+                self.apply_grad(grad * (1 - self.xp.tanh(self.data) ** 2))
 
         out.grad_fn = grad_fn
 
@@ -416,7 +415,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * self.xp.cos(self.data))
+                self.apply_grad(grad * self.xp.cos(self.data))
 
         out.grad_fn = grad_fn
 
@@ -433,7 +432,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * -self.xp.sin(self.data))
+                self.apply_grad(grad * -self.xp.sin(self.data))
 
         out.grad_fn = grad_fn
 
@@ -455,9 +454,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * (self.data >= t.data))
+                self.apply_grad(grad * (self.data >= t.data))
             if t.requires_grad:
-                t._apply_grad(grad * (self.data <= t.data))
+                t.apply_grad(grad * (self.data <= t.data))
 
         out.grad_fn = grad_fn
 
@@ -479,9 +478,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * (self.data <= t.data))
+                self.apply_grad(grad * (self.data <= t.data))
             if t.requires_grad:
-                t._apply_grad(grad * (self.data >= t.data))
+                t.apply_grad(grad * (self.data >= t.data))
 
         out.grad_fn = grad_fn
 
@@ -502,7 +501,7 @@ class Tensor:
 
             if grad.ndim != self.data.ndim and axis is not None:
                 grad = self.xp.expand_dims(grad, axis)
-            self._apply_grad(grad * (self.data == self.data.max(axis=axis, keepdims=True)))
+            self.apply_grad(grad * (self.data == self.data.max(axis=axis, keepdims=True)))
 
         out.grad_fn = grad_fn
 
@@ -524,7 +523,7 @@ class Tensor:
 
             if grad.ndim != self.data.ndim and axis is not None:
                 grad = self.xp.expand_dims(grad, axis)
-            self._apply_grad(grad * (self.data == self.data.min(axis=axis, keepdims=True)))
+            self.apply_grad(grad * (self.data == self.data.min(axis=axis, keepdims=True)))
 
         out.grad_fn = grad_fn
 
@@ -555,7 +554,7 @@ class Tensor:
 
             for i, arg in enumerate(args[:-1]):
                 if arg.requires_grad:
-                    arg._apply_grad(grads[i])
+                    arg.apply_grad(grads[i])
 
         out.grad_fn = grad_fn
 
@@ -574,7 +573,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad.reshape(self.data.shape))
+                self.apply_grad(grad.reshape(self.data.shape))
 
         out.grad_fn = grad_fn
 
@@ -596,7 +595,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad * self.xp.sign(self.data))
+                self.apply_grad(grad * self.xp.sign(self.data))
 
         out.grad_fn = grad_fn
 
@@ -616,7 +615,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', axes: Any, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad.transpose(axes))
+                self.apply_grad(grad.transpose(axes))
 
         out.grad_fn = grad_fn
 
@@ -633,7 +632,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', axis1: int, axis2: int, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad.swapaxes(axis1, axis2))
+                self.apply_grad(grad.swapaxes(axis1, axis2))
 
         out.grad_fn = grad_fn
 
@@ -652,7 +651,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', axis: Any, grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(self.xp.flip(grad, axis=axis))
+                self.apply_grad(self.xp.flip(grad, axis=axis))
 
         out.grad_fn = grad_fn
 
@@ -675,9 +674,9 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', condition: 'Tensor', t: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(self.xp.where(condition.data, grad, self.xp.zeros_like(grad)))
+                self.apply_grad(self.xp.where(condition.data, grad, self.xp.zeros_like(grad)))
             if t.requires_grad:
-                t._apply_grad(self.xp.where(condition.data, self.xp.zeros_like(grad), grad))
+                t.apply_grad(self.xp.where(condition.data, self.xp.zeros_like(grad), grad))
 
         out.grad_fn = grad_fn
 
@@ -818,7 +817,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(-grad)
+                self.apply_grad(-grad)
 
         out.grad_fn = grad_fn
 
@@ -835,7 +834,7 @@ class Tensor:
 
         def grad_fn(self: 'Tensor', grad: Union[np.ndarray, cp.ndarray]):
             if self.requires_grad:
-                self._apply_grad(grad)
+                self.apply_grad(grad)
 
         out.grad_fn = grad_fn
 
@@ -910,7 +909,7 @@ class Tensor:
     #             grad = self.xp.zeros_like(self.data)
     #             grad[i] = out.grad
 
-    #             self._apply_grad(grad)
+    #             self.apply_grad(grad)
 
     #     for i, o in enumerate(out):
     #         o.grad_fn = grad_fn
@@ -933,7 +932,7 @@ class Tensor:
                 _grad = self.xp.zeros_like(self.data)
                 _grad[index] = grad
 
-                self._apply_grad(_grad)
+                self.apply_grad(_grad)
 
         out.grad_fn = grad_fn
 
@@ -997,7 +996,7 @@ class Tensor:
         else:
             grad = self.xp.array(grad, dtype=self.dtype)
 
-        self._apply_grad(grad)
+        self.apply_grad(grad)
         # Perform a topological sort to ensure gradients are calculated in the correct order
         tape = []
         visited_ids = set()

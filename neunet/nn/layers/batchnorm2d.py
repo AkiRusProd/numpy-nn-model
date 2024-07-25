@@ -46,10 +46,10 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
                 )
                 grad_bias = X.xp.sum(grad, axis=(0, 2, 3), keepdims=True).reshape(bias.data.shape)
 
-            X._apply_grad(grad_X)
+            X.apply_grad(grad_X)
             if affine:
-                weight._apply_grad(grad_weight)
-                bias._apply_grad(grad_bias)
+                weight.apply_grad(grad_weight)
+                bias.apply_grad(grad_bias)
 
         self.grad_fn = grad_fn
 
