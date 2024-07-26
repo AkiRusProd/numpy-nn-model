@@ -78,8 +78,8 @@ class DecoderLayer(nn.Module):
         self.self_attn = MultiHeadAttention(d_model, n_heads, dropout)
         self.cross_attn = MultiHeadAttention(d_model, n_heads, dropout)
         self.ffn = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
+        self.norm1 = nn.RMSNorm(d_model)
+        self.norm2 = nn.RMSNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask):

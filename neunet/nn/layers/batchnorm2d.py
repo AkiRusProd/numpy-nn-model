@@ -15,7 +15,7 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, X_centered, stddev_inv, affine, grad):
             # https://math.stackexchange.com/questions/2359981/batch-normalization-equation-derivation
             # https://arxiv.org/pdf/1502.03167
-            batch_size = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
+            N = X.data.shape[0] * X.data.shape[2] * X.data.shape[3]
 
             axis = (0, 2, 3)
             # _axis = list(axis) if isinstance(axis, tuple) else axis
@@ -30,13 +30,13 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
                 * X.xp.sum(dX_hat * X_centered, axis=axis, keepdims=True)
             )
             dvar = (
-                X.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / batch_size
+                X.xp.ones_like(X.data) * dstddev_inv * 2 * X_centered / N
             )  # X.xp.prod(X.xp.array(X.shape)[_axis])
             dmean = (
                 X.xp.ones_like(X.data)
                 * X.xp.sum(dX_hat * stddev_inv[..., None, None], axis=axis, keepdims=True)
                 * (-1)
-                / batch_size
+                / N
             )  # X.xp.prod(X.xp.array(X.shape)[_axis])
             grad_X = dX_hat * stddev_inv[..., None, None] + dvar + dmean
 

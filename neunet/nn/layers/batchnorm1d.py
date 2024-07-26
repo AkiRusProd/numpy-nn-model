@@ -16,16 +16,16 @@ class _BatchNorm1dTensor(Tensor):  # tensor for static backpropagation
             # The method of calculating the derivative is similar to BatchNorm.
             # https://chrisyeh96.github.io/2017/08/28/deriving-batchnorm-backprop.html
             X_hat = X_centered * stddev_inv
-            batch_size = X.data.shape[0]
+            N = X.data.shape[0]
 
             weight_data = weight.data if affine else 1
 
             grad_X = (
-                (1 / batch_size)
+                (1 / N)
                 * weight_data
                 * stddev_inv
                 * (
-                    batch_size * grad
+                    N * grad
                     - X.xp.sum(grad, axis=0)
                     - X_centered * X.xp.power(stddev_inv, 2) * X.xp.sum(grad * X_centered, axis=0)
                 )
