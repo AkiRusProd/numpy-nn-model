@@ -61,7 +61,7 @@ class Bidirectional(Module):
             return (
                 _BidirectionalTensor(
                     O[0],
-                    [X, D_O[0], R_O[0], self.merge_mode],
+                    (X, D_O[0], R_O[0], self.merge_mode),
                     f"bidirectional{self.direct_layer.__class__.__name__}",
                     self.device,
                 ),
@@ -77,7 +77,7 @@ class Bidirectional(Module):
 
             return _BidirectionalTensor(
                 O,
-                [D_O, R_O, self.merge_mode],
+                (D_O, R_O, self.merge_mode),
                 f"bidirectional{self.direct_layer.__class__.__name__}",
                 self.device,
             )

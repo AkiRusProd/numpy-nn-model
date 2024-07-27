@@ -90,5 +90,5 @@ class RMSNorm(Module): #layer with static backpropagation
         if self.bias is not None:
             O = O + self.bias.data
 
-        return _RMSNormTensor(O, [X, self.weight, self.bias, X_norm, X_std], "rmsnorm", device = self.device)
+        return _RMSNormTensor(O, (X, self.weight, self.bias, X_norm, X_std), "rmsnorm", device = self.device)
 

@@ -18,7 +18,6 @@ class Dropout(Module):  # layer with static backpropagation
     def __init__(self, p: float=0.5):
         self.p = p
         self.scale = 1 / (1 - p)
-        self.mask = 1
         self.training = True
 
     def forward(self, X: Tensor) -> Tensor:
@@ -26,16 +25,16 @@ class Dropout(Module):  # layer with static backpropagation
             raise TypeError("Input must be a tensor")
 
         if self.training:
-            self.mask = (
+            mask = (
                 X.xp.random.binomial(1, 1 - self.p, size=X.data.shape).astype(X.data.dtype)
                 * self.scale
             )
         else:
-            self.mask = 1
+            mask = 1
 
-        self.O = X.data * self.mask
+        O = X.data * mask
 
-        return _DropoutTensor(self.O, [X, self.mask], "dropout", device=X.device)
+        return _DropoutTensor(O, (X, mask), "dropout", device=X.device)
 
     def __call__(self, X):
         return self.forward(X)

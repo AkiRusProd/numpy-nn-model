@@ -18,11 +18,11 @@ class Tensor:
         else:
             self.data = self.xp.array(data, dtype=dtype if dtype else np.float32)
 
-        self.grad = None
-        self.op = op
-        self.args = args
-        self.requires_grad = requires_grad
-        self.device = device
+        self.grad: Union[np.ndarray, cp.ndarray] = None
+        self.op: str = op # for debugging
+        self.args: tuple = args
+        self.requires_grad: bool = requires_grad
+        self.device: str = device
         self.grad_fn: Callable = lambda:  None
 
     def ensure_tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
@@ -233,7 +233,7 @@ class Tensor:
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         out = Tensor(
             self.data.sum(*args, **kwargs),
-            [self, axis],
+            (self, axis),
             "sum",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -255,7 +255,7 @@ class Tensor:
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         out = Tensor(
             self.data.mean(*args, **kwargs),
-            [self, axis],
+            (self, axis),
             "mean",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -283,7 +283,7 @@ class Tensor:
         axis = kwargs.get("axis", None) if len(args) == 0 else args[0]
         out = Tensor(
             self.data.var(*args, **kwargs),
-            [self, axis],
+            (self, axis),
             "var",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -338,7 +338,7 @@ class Tensor:
     def sqrt(self) -> 'Tensor':
         out = Tensor(
             self.xp.sqrt(self.data),
-            [self],
+            (self,),
             "sqrt",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -356,7 +356,7 @@ class Tensor:
     def log(self) -> 'Tensor':
         out = Tensor(
             self.xp.log(self.data),
-            [self],
+            (self,),
             "log",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -373,7 +373,7 @@ class Tensor:
     def exp(self) -> 'Tensor':
         out = Tensor(
             self.xp.exp(self.data),
-            [self],
+            (self,),
             "exp",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -390,7 +390,7 @@ class Tensor:
     def tanh(self) -> 'Tensor':
         out = Tensor(
             self.xp.tanh(self.data),
-            [self],
+            (self,),
             "tanh",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -407,7 +407,7 @@ class Tensor:
     def sin(self):
         out = Tensor(
             self.xp.sin(self.data),
-            [self],
+            (self,),
             "sin",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -424,7 +424,7 @@ class Tensor:
     def cos(self) -> 'Tensor':
         out = Tensor(
             self.xp.cos(self.data),
-            [self],
+            (self,),
             "cos",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -489,7 +489,7 @@ class Tensor:
     def max(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amax
         out = Tensor(
             self.data.max(axis=axis, keepdims=keepdims),
-            [self, axis],
+            (self, axis),
             "max",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -511,7 +511,7 @@ class Tensor:
     def min(self, axis=None, keepdims=False) -> 'Tensor':  # equivalent to torch.amin
         out = Tensor(
             self.data.min(axis=axis, keepdims=keepdims),
-            [self, axis],
+            (self, axis),
             "min",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -564,7 +564,7 @@ class Tensor:
         shape = shape[0] if len(shape) == 1 else shape
         out = Tensor(
             self.data.reshape(shape),
-            [self],
+            (self,),
             "reshape",
             requires_grad=self.requires_grad,
             dtype=self.dtype,
@@ -587,7 +587,7 @@ class Tensor:
     def abs(self) -> 'Tensor':
         out = Tensor(
             self.xp.abs(self.data),
-            [self],
+            (self,),
             "abs",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -607,7 +607,7 @@ class Tensor:
             axes = tuple(range(self.data.ndim)[::-1])
         out = Tensor(
             self.data.transpose(axes),
-            [self, axes],
+            (self, axes),
             "transpose",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -624,7 +624,7 @@ class Tensor:
     def swapaxes(self, axis1: int, axis2: int) -> 'Tensor':
         out = Tensor(
             self.xp.swapaxes(self.data, axis1, axis2),
-            [self, axis1, axis2],
+            (self, axis1, axis2),
             "swapaxes",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -643,7 +643,7 @@ class Tensor:
             axis = range(self.data.ndim)
         out = Tensor(
             self.xp.flip(self.data, axis),
-            [self, axis],
+            (self, axis),
             "flip",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -662,7 +662,7 @@ class Tensor:
         t = self.ensure_tensor(t)
 
         requires_grad = self.requires_grad or t.requires_grad
-        args = [self, condition, t] if requires_grad else None
+        args = (self, condition, t) if requires_grad else None
 
         out = Tensor(
             np.where(condition.data, self.data, t.data),
@@ -809,7 +809,7 @@ class Tensor:
     def __neg__(self) -> 'Tensor':
         out = Tensor(
             -self.data,
-            [self],
+            (self,),
             "neg",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -826,7 +826,7 @@ class Tensor:
     def __pos__(self) -> 'Tensor':
         out = Tensor(
             self.data,
-            [self],
+            (self,),
             "pos",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -920,7 +920,7 @@ class Tensor:
     ) -> 'Tensor':  # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad
         out = Tensor(
             self.data[index],
-            [self, index],
+            (self, index),
             "getitem",
             requires_grad=self.requires_grad,
             device=self.device,
@@ -969,17 +969,18 @@ class Tensor:
         return self.data.size
 
     def _reverse_broadcast(self, grad):
-        if grad.shape != self.data.shape:
+        grad_shape, self_shape = grad.shape, self.data.shape
+        if grad_shape != self_shape:
 
             if self.data.ndim == grad.ndim:
-                axis=tuple(np.where(np.array(self.data.shape) != np.array(grad.shape))[0])
+                axis=tuple(np.where(np.array(self_shape) != np.array(grad_shape))[0])
                 grad = grad.sum(axis,keepdims=True)
             else:
-                data_shape = (1,) * (grad.ndim - self.data.ndim) + self.data.shape
-                axis = tuple(np.where(np.array(data_shape) != np.array(grad.shape))[0])
+                data_shape = (1,) * (grad.ndim - self.data.ndim) + self_shape
+                axis = tuple(np.where(np.array(data_shape) != np.array(grad_shape))[0])
                 grad = grad.sum(axis=axis)
 
-            grad = grad.reshape(self.data.shape)
+            grad = grad.reshape(self_shape)
 
         return grad
 

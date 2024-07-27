@@ -388,7 +388,7 @@ loss_function = nn.CrossEntropyLoss(ignore_index = PAD_INDEX)
 # [train, eval, predict methods definition]
 
 def train_step(source: list[np.ndarray], target: list[np.ndarray], epoch: int, epochs: int) -> float:
-    loss_history = []
+    total_loss = 0.0
     model.train()
 
     tqdm_range = tqdm(enumerate(zip(source, target, strict=False)), total = len(source))
@@ -404,15 +404,15 @@ def train_step(source: list[np.ndarray], target: list[np.ndarray], epoch: int, e
         optimizer.step()
 
         optimizer.zero_grad()
-        loss_history.append(loss.detach().item())
+        total_loss += loss.detach().item()
 
 
         tqdm_range.set_description(
-                f"training | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f} | epoch {epoch + 1}/{epochs}" #loss: {loss:.4f}
+                f"training | loss: {loss.detach().item():.7f} | perplexity: {np.exp(loss.detach().item()):.7f} | epoch {epoch + 1}/{epochs}" #loss: {loss:.4f}
             )
 
         if batch_num == (len(source) - 1):
-            epoch_loss = np.mean(loss_history)
+            epoch_loss = total_loss / len(source)
 
             tqdm_range.set_description(
                     f"training | avg loss: {epoch_loss:.7f} | avg perplexity: {np.exp(epoch_loss):.7f} | epoch {epoch + 1}/{epochs}"
@@ -421,7 +421,7 @@ def train_step(source: list[np.ndarray], target: list[np.ndarray], epoch: int, e
     return epoch_loss
 
 def eval(source: list[np.ndarray], target: list[np.ndarray]) -> float:
-    loss_history = []
+    total_loss = 0.0
     model.eval()
 
     tqdm_range = tqdm(enumerate(zip(source, target, strict=False)), total = len(source))
@@ -432,14 +432,14 @@ def eval(source: list[np.ndarray], target: list[np.ndarray]) -> float:
         output = output.reshape(output.shape[0] * output.shape[1], output.shape[2])
         
         loss = loss_function(output, neunet.tensor(target_batch[:, 1:].flatten(), device=device, dtype=neunet.int32))
-        loss_history.append(loss.detach().item())
+        total_loss += loss.detach().item()
         
         tqdm_range.set_description(
-                f"testing  | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f}"
+                f"testing  | loss: {loss.detach().item():.7f} | perplexity: {np.exp(loss.detach().item()):.7f}"
             )
 
         if batch_num == (len(source) - 1):
-            epoch_loss = np.mean(loss_history)
+            epoch_loss = total_loss / len(source)
 
             tqdm_range.set_description(
                     f"testing  | avg loss: {epoch_loss:.7f} | avg perplexity: {np.exp(epoch_loss):.7f}"

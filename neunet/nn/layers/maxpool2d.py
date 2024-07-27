@@ -231,7 +231,7 @@ class MaxPool2d(Module):
 
         return _MaxPool2dTensor(
             O,
-            [
+            (
                 X,
                 self.stride,
                 self.padding,
@@ -240,7 +240,7 @@ class MaxPool2d(Module):
                 self.dilated_kernel_size,
                 windows,
                 O_einsum,
-            ],
+            ),
             "maxpool2d",
             device=X.device,
         )

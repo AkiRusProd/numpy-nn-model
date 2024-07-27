@@ -51,12 +51,11 @@ class Linear(Module):  # layer with static backpropagation
         if X.device != self.device:
             raise ValueError("Tensors must be on the same device")
 
-        self.X = X
-        self.O = self.xp.matmul(self.X.data, self.weight.data.T)
+        O = self.xp.matmul(X.data, self.weight.data.T)
         if self.bias is not None:
-            self.O = self.O + self.bias.data
+            O = O + self.bias.data
 
-        return _LinearTensor(self.O, [self.X, self.weight, self.bias], "linear", device=self.device)
+        return _LinearTensor(O, (X, self.weight, self.bias), "linear", device=self.device)
 
     def __call__(self, X):
         return self.forward(X)

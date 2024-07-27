@@ -133,7 +133,7 @@ class LayerNorm(Module):  # layer with static backpropagation
 
         return _LayerNormTensor(
             O,
-            [
+            (
                 X,
                 self.weight,
                 self.bias,
@@ -141,7 +141,7 @@ class LayerNorm(Module):  # layer with static backpropagation
                 stddev_inv,
                 axis,
                 self.elementwise_affine,
-            ],
+            ),
             "layernorm",
             device=self.device,
         )

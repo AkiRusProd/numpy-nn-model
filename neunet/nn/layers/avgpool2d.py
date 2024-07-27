@@ -159,14 +159,14 @@ class AvgPool2d(Module):
 
         return _AvgPool2dTensor(
             O,
-            [
+            (
                 X,
                 self.kernel_size,
                 self.stride,
                 self.padding,
                 self.input_size,
                 self.output_size,
-            ],
+            ),
             "maxpool2d",
             device=X.device,
         )

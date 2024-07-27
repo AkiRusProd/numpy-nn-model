@@ -38,14 +38,12 @@ class ZeroPad2d(Module):
         if X.ndim != 3 and X.ndim != 4:
             raise ValueError("X must be 3D or 4D tensor")
 
-        X.data = X.data
-
         if X.data.ndim == 3:
             padded_data = set_padding(X.data.reshape(1, *X.data.shape), self.padding)[0]
         else:
             padded_data = set_padding(X.data, self.padding)
 
-        return ZeroPad2dTensor(padded_data, [X, self.padding], "zeropad2d", device=X.device)
+        return ZeroPad2dTensor(padded_data, (X, self.padding), "zeropad2d", device=X.device)
 
     def __call__(self, X):
         return self.forward(X)

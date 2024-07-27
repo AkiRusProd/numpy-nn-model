@@ -62,7 +62,7 @@ class PositionwiseFeedForward(nn.Module):
         self.fc_2 = nn.Linear(d_ff, d_model)
         self.dropout = nn.Dropout(dropout)
 
-        self.activation = nn.ReLU()
+        self.activation = nn.Swish()
 
     def forward(self, x):
         x = self.fc_1(x)
@@ -302,7 +302,7 @@ loss_function = nn.CrossEntropyLoss(ignore_index = PAD_INDEX)
 # [train, eval, predict methods definition]
 
 def train_step(dataset: list[np.ndarray], epoch: int, epochs: int) -> float:
-    loss_history = []
+    total_loss = 0.0
     model.train()
 
     tqdm_range = tqdm(enumerate(dataset), total = len(dataset))
@@ -318,15 +318,15 @@ def train_step(dataset: list[np.ndarray], epoch: int, epochs: int) -> float:
         optimizer.step()
 
         optimizer.zero_grad()
-        loss_history.append(loss.detach().item())
+        total_loss += loss.detach().item()
 
 
         tqdm_range.set_description(
-                f"training | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f} | epoch {epoch + 1}/{epochs}" #loss: {loss:.4f}
+                f"training | loss: {loss.detach().item():.7f} | perplexity: {np.exp(loss.detach().item()):.7f} | epoch {epoch + 1}/{epochs}" #loss: {loss:.4f}
             )
 
         if batch_num == (len(dataset) - 1):
-            epoch_loss = np.mean(loss_history)
+            epoch_loss = total_loss / len(dataset)
 
             tqdm_range.set_description(
                     f"training | avg loss: {epoch_loss:.7f} | avg perplexity: {np.exp(epoch_loss):.7f} | epoch {epoch + 1}/{epochs}"
@@ -335,7 +335,7 @@ def train_step(dataset: list[np.ndarray], epoch: int, epochs: int) -> float:
     return epoch_loss
 
 def eval(dataset: list[np.ndarray]) -> float:
-    loss_history = []
+    total_loss = 0.0
     model.eval()
 
     tqdm_range = tqdm(enumerate(dataset), total = len(dataset))
@@ -346,14 +346,14 @@ def eval(dataset: list[np.ndarray]) -> float:
         output = output.reshape(output.shape[0] * output.shape[1], output.shape[2])
         
         loss = loss_function(output, neunet.tensor(batch[:, 1:].flatten(), device=device, dtype=neunet.int32))
-        loss_history.append(loss.detach().item())
+        total_loss += loss.detach().item()
         
         tqdm_range.set_description(
-                f"testing  | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f}"
+                f"testing  | loss: {loss.detach().item():.7f} | perplexity: {np.exp(loss.detach().item()):.7f}"
             )
 
         if batch_num == (len(dataset) - 1):
-            epoch_loss = np.mean(loss_history)
+            epoch_loss = total_loss / len(dataset)
 
             tqdm_range.set_description(
                     f"testing  | avg loss: {epoch_loss:.7f} | avg perplexity: {np.exp(epoch_loss):.7f}"

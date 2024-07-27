@@ -325,7 +325,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
 
         return _ConvTranspose2dTensor(
             O,
-            [
+            (
                 X,
                 self.weight,
                 self.bias,
@@ -338,7 +338,7 @@ class ConvTranspose2d(Module):  # layer with static backpropagation
                 self.conv_size,
                 self.dilated_kernel_size,
                 windows,
-            ],
+            ),
             "convtranspose2d",
             self.device,
         )

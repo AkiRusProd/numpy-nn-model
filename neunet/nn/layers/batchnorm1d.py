@@ -93,7 +93,7 @@ class BatchNorm1d(Module):  # layer with static backpropagation
 
         return _BatchNorm1dTensor(
             O,
-            [X, self.weight, self.bias, X_centered, stddev_inv, self.affine],
+            (X, self.weight, self.bias, X_centered, stddev_inv, self.affine),
             "batchnorm",
             device=self.device,
         )

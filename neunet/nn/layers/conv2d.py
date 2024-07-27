@@ -336,7 +336,7 @@ class Conv2d(Module):  # layer with static backpropagation
 
         return _Conv2dTensor(
             O,
-            [
+            (
                 X,
                 self.weight,
                 self.bias,
@@ -349,7 +349,7 @@ class Conv2d(Module):  # layer with static backpropagation
                 self.conv_size,
                 self.dilated_kernel_size,
                 windows,
-            ],
+            ),
             "conv2d",
             self.device,
         )
