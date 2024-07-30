@@ -131,18 +131,19 @@ print(z.grad, '\n')
 Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
 
 #### All of them:
-1. *[Autoencoder](examples/ae.py)*        
-2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.py)*    
-3. *[Conway`s Game of Life](examples/conway.py)*  
-4. *[Denoising Diffusion Probabilistic Model](examples/ddpm.py)*
-5. *[Generative Adversarial Network](examples/gan.py)*     
-6. *[Generative Pre-trained Transformer](examples/gpt.py)*
-7. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.py)*    
-8. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.py)*    
-9. *[Seq2Seq Transformer](examples/seq2seq.py)*
-10. *[Variational Autoencoder](examples/vae.py)*    
-11. *[Vector Quantized Variational Autoencoder](examples/vqvae.py)* 
-12. *[Word2Vec](examples/word2vec.py)*
+1. *[Autoencoder](examples/ae.ipynb)*        
+2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.ipynb)*    
+3. *[Conway`s Game of Life](examples/conway.ipynb)*  
+4. *[Denoising Diffusion Probabilistic Model](examples/ddpm.ipynb)*
+5. *[Generative Adversarial Network](examples/gan.ipynb)*     
+6. *[Generative Pre-trained Transformer](examples/gpt.ipynb)*
+7. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.ipynb)*    
+8. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.ipynb)*    
+9. *[Optimizers visualization](examples/optimizers_visualization.ipynb)*
+10. *[Seq2Seq Transformer](examples/seq2seq.ipynb)*
+11. *[Variational Autoencoder](examples/vae.ipynb)*    
+12. *[Vector Quantized Variational Autoencoder](examples/vqvae.ipynb)* 
+13. *[Word2Vec](examples/word2vec.ipynb)*
 
 
 
