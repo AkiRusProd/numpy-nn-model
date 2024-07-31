@@ -128,7 +128,7 @@ print(z.grad, '\n')
 
 
 ### Model Examples:
-Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/projects/mnist-in-csv/) Dataset   
+Models implementations provided in Jupyter notebooks are available in [examples](examples/) folder.    
 
 #### All of them:
 1. *[Autoencoder](examples/ae.ipynb)*        
@@ -158,7 +158,7 @@ Some [examples](examples/) were trained on the [MNIST](https://pjreddie.com/proj
 </p>
 
 Code:   
-*[Model Example](examples/ddpm.py)*
+*[Model Example](examples/ddpm.ipynb)*
 </details>
 
 <details>
@@ -249,88 +249,7 @@ for epoch in range(epochs):
 ###### (prediction on test MNIST data with this model is 97 %)
 
 Code:   
-*[Model Example](examples/convolutional_digits_classifier.py)*
-</details>
-
-<details>
-<summary>LSTM Classifier</summary>
-
-```python
-from tqdm import tqdm
-from neunet.optim import Adam
-import neunet as nnet
-import neunet.nn as nn
-import numpy as np
-import os
-
-from data_loader import load_mnist
-
-image_size = (1, 28, 28)
-
-training_dataset, test_dataset, training_targets, test_targets = load_mnist()
-training_dataset = training_dataset / 127.5-1
-test_dataset = test_dataset / 127.5-1
-
-class RecurrentClassifier(nn.Module):
-    def __init__(self):
-        super(RecurrentClassifier, self).__init__()
-
-        self.lstm1 = nn.LSTM(28, 128, return_sequences=True)
-        self.lstm2 = nn.LSTM(128, 128, return_sequences=False)
-        self.fc1 = nn.Linear(128, 10)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        x = self.lstm1(x)
-        x = self.lstm2(x)
-        x = x.reshape(x.shape[0], -1)
-        x = self.fc1(x)
-        x = self.sigmoid(x)
-
-        return x
-
-
-classifier = RecurrentClassifier()
-
-def one_hot_encode(labels):
-    one_hot_labels = np.zeros((labels.shape[0], 10))
-    for i in range(labels.shape[0]):
-        one_hot_labels[i, int(labels[i])] = 1
-
-    return one_hot_labels
-
-
-loss_fn = nn.MSELoss()
-optimizer = Adam(classifier.parameters(), lr = 0.0001)
-
-batch_size = 100
-epochs = 5
-
-for epoch in range(epochs):
-    tqdm_range = tqdm(range(0, len(training_dataset), batch_size), desc = 'epoch ' + str(epoch))
-    for i in tqdm_range:
-        batch = training_dataset[i:i+batch_size]
-        batch = batch.reshape(batch.shape[0], image_size[1], image_size[2])
-        batch = nnet.tensor(batch)
-
-        labels = one_hot_encode(training_targets[i:i+batch_size])
-
-        optimizer.zero_grad()
-
-        outputs = classifier(batch)
-
-        loss = loss_fn(outputs, labels)
-
-        loss.backward()
-
-        optimizer.step()
-
-        tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
-```
-###### (prediction on test MNIST data with this model is 93 %)
-
-Code:   
-*[Model Example](examples/recurrent_digits_classifier.py)*
+*[Model Example](examples/convolutional_digits_classifier.ipynb)*
 </details>
 
 <details>
@@ -369,6 +288,8 @@ Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt a
 <img src="generated images/attention plots.jpg" width=100% height=100%>
 </p>
 
+Code:   
+*[Model Example](examples/seq2seq.ipynb)*
 </details>
 
 
@@ -519,7 +440,7 @@ for epoch in range(epochs):
         image.save(f'generated images/{i}.png')
 ```
 Code:   
-*[Model example](examples/vae.py)*   
+*[Model example](examples/vae.ipynb)*   
 
 ##### VAE Results:
 Noisy Data Example | Noise Removed Data Example
@@ -647,7 +568,7 @@ for epoch in range(epochs):
 
 
 Code:   
-*[Model example](examples/gan.py)*   
+*[Model example](examples/gan.ipynb)*   
 
 
 ##### GAN Results:
@@ -677,7 +598,7 @@ Training process Example | Interpolation between images Example
 *a beautiful portrait painting of a cyberpunk city by simon stalenhag and pascal blanche and alphonse mucha, in style of colorful comic. symmetry, hyper detailed. octanev render. trending on artstation*
 
 Code:
-*[Model example](examples/gpt.py)*
+*[Model example](examples/gpt.ipynb)*
 
 </details>
 
@@ -855,7 +776,7 @@ plt.show()
 ```
 
 Code:   
-*[Model example](examples/conway.py)*   
+*[Model example](examples/conway.ipynb)*   
 
 
 ##### Conway`s Game of Life Simulation Results:
