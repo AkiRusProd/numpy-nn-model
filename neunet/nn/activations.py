@@ -479,9 +479,14 @@ class LogSoftmax(Module):
         self.axis = axis
 
     def forward(self, x: Tensor):
-        e_x = x.xp.exp(x.data - x.xp.max(x.data, axis = self.axis, keepdims=True))
+        # e_x = x.xp.exp(x.data - x.xp.max(x.data, axis = self.axis, keepdims=True))
+        # f_x =  x.xp.log(e_x / x.xp.sum(e_x, axis = self.axis, keepdims=True))
         
-        f_x =  x.xp.log(e_x / x.xp.sum(e_x, axis = self.axis, keepdims=True))
+        # Numerically stable computation
+        max_x = x.xp.max(x.data, axis = self.axis, keepdims=True)
+        e_x = x.xp.exp(x.data - max_x)
+
+        f_x = x.data - max_x - x.xp.log(x.xp.sum(e_x, axis = self.axis, keepdims=True))
         return _LogSoftmax(f_x, [x, f_x, self.axis], "log_softmax", device=x.device)
 
     def __call__(self, x):
