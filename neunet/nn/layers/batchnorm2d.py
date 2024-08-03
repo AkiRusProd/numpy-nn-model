@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Literal, Union
 
 import numpy as np
 
@@ -55,7 +55,7 @@ class _BatchNorm2dTensor(Tensor):  # tensor for static backpropagation
 
 
 class BatchNorm2d(Module):  # layer with static backpropagation
-    def __init__(self, num_features: int, eps: float=1e-5, momentum: float=0.1, affine: bool=True, device: str="cpu"):
+    def __init__(self, num_features: int, eps: float=1e-5, momentum: float=0.1, affine: bool=True, device: Literal["cpu", "cuda"] = "cpu"):
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Literal
 
 import cupy as cp
 import numpy as np
@@ -49,7 +50,7 @@ class Module:
             if hasattr(item, "train"):
                 item.train(mode)
 
-    def to(self, device: str):
+    def to(self, device: Literal["cpu", "cuda"]):
         if device == "cpu":
             self.xp = np
         else:
@@ -135,7 +136,7 @@ class Sequential(Module):
             if hasattr(module, "train"):
                 module.train(mode)
 
-    def to(self, device: str):
+    def to(self, device: Literal["cpu", "cuda"]):
         for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
                 self.modules[i] = module.to(device)
@@ -216,7 +217,7 @@ class ModuleList(Module):
             if hasattr(module, "train"):
                 module.train(mode)
 
-    def to(self, device: str):
+    def to(self, device: Literal["cpu", "cuda"]):
         for i, module in enumerate(self.modules):
             if hasattr(module, "to"):
                 self.modules[i] = module.to(device)

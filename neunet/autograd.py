@@ -1,11 +1,11 @@
-from typing import Any, Callable, Union
+from typing import Any, Callable, Literal, Union
 
 import cupy as cp
 import numpy as np
 
 
 class Tensor:
-    def __init__(self, data: Any, args=None, op=None, requires_grad: bool=True, dtype = None, device: str="cpu"):
+    def __init__(self, data: Any, args=None, op=None, requires_grad: bool=True, dtype = None, device: Literal["cpu", "cuda"] = "cpu"):
         if device not in ["cpu", "cuda"]:
             raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
@@ -22,7 +22,7 @@ class Tensor:
         self.op: str = op # for debugging
         self.args: tuple = args
         self.requires_grad: bool = requires_grad
-        self.device: str = device
+        self.device: Literal["cpu", "cuda"] = device
         self.grad_fn: Callable = lambda:  None
 
     def ensure_tensor(self, t: Union[Any, 'Tensor'], requires_grad=False) -> 'Tensor':
@@ -42,7 +42,7 @@ class Tensor:
 
         return self.data
 
-    def to(self, device: str) -> 'Tensor':
+    def to(self, device: Literal["cpu", "cuda"]) -> 'Tensor':
         if device not in ["cpu", "cuda"]:
             raise ValueError("Device must be 'cpu' or 'cuda'")
         if device == "cpu":
@@ -891,30 +891,6 @@ class Tensor:
         t = self.ensure_tensor(t)
         return t.power(self)
 
-    # add unpacking of split tensors
-    # def __iter__(self) -> Iterator['Tensor']:
-    #     out = iter(
-    #         Tensor(
-    #             self.data[i],
-    #             [self,],
-    #             "getitem",
-    #             requires_grad=self.requires_grad,
-    #             device=self.device,
-    #         )
-    #         for i in range(self.data.shape[0])
-    #     )
-
-    #     def grad_fn():
-    #         if self.requires_grad:
-    #             grad = self.xp.zeros_like(self.data)
-    #             grad[i] = out.grad
-
-    #             self.apply_grad(grad)
-
-    #     for i, o in enumerate(out):
-    #         o.grad_fn = grad_fn
-
-    #     return out
     def __getitem__(
         self, index: Any
     ) -> 'Tensor':  # problem when use grad array indexes: example y[0].grad; non-leaf tensor; in torch it retain_grad

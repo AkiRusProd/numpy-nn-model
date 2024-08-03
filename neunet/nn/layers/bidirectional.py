@@ -1,5 +1,5 @@
 import copy as copy_object
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
@@ -29,7 +29,7 @@ class _BidirectionalTensor(Tensor):
 
 
 class Bidirectional(Module):
-    def __init__(self, layer: Any, merge_mode: str="sum", device: str="cpu"):
+    def __init__(self, layer: Any, merge_mode: str="sum", device: Literal["cpu", "cuda"] = "cpu"):
         if layer.__class__.__name__ not in ["LSTM", "GRU", "RNN"]:
             raise ValueError("Bidirectional layer can only be used with LSTM, GRU or RNN layers")
 

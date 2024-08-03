@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import cupy as cp
 import numpy as np
@@ -88,7 +88,7 @@ class RNN(Module):
         bias: bool=True,
         cycled_states: bool=False,
         return_sequences: Union[str, bool]="both",
-        device: str="cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         self.input_size = input_size
         self.hidden_size = hidden_size

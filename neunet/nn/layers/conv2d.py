@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import cupy as cp
 import numpy as np
@@ -154,7 +154,7 @@ class Conv2d(Module):  # layer with static backpropagation
         padding: Union[int, tuple[int, int]]=(0, 0),
         dilation: Union[int, tuple[int, int]]=(1, 1),
         bias: bool = True, 
-        device: str="cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         self.in_channels = in_channels
         self.out_channels = out_channels

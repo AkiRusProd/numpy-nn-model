@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Literal, Union
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class _LinearTensor(Tensor):  # tensor for static backpropagation
 
 
 class Linear(Module):  # layer with static backpropagation
-    def __init__(self, in_features: int, out_features: int, bias: bool=True, device: str="cpu"):
+    def __init__(self, in_features: int, out_features: int, bias: bool=True, device: Literal["cpu", "cuda"] = "cpu"):
         self.in_features = in_features
         self.out_features = out_features
 

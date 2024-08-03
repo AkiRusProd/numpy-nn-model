@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Literal, Union
 
 import numpy as np
 
@@ -96,7 +96,7 @@ class _LayerNormTensor(Tensor):  # tensor for static backpropagation
 
 
 class LayerNorm(Module):  # layer with static backpropagation
-    def __init__(self, normalized_shape: Union[int, tuple[int]], eps: float=1e-05, elementwise_affine: bool=True, device: str="cpu"):
+    def __init__(self, normalized_shape: Union[int, tuple[int]], eps: float=1e-05, elementwise_affine: bool=True, device: Literal["cpu", "cuda"] = "cpu"):
         self.normalized_shape = (
             (normalized_shape,) if isinstance(normalized_shape, int) else normalized_shape
         )

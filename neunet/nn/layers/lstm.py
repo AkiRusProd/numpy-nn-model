@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Literal, Union
 
 import cupy as cp
 import numpy as np
@@ -174,7 +174,7 @@ class LSTM(Module):
         return_sequences: Union[str, bool]="both",
         bias: bool=True,
         cycled_states: bool=False,
-        device: str="cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
     ):
         self.input_size = input_size
         self.hidden_size = hidden_size

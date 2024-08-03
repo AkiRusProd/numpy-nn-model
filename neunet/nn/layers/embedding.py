@@ -1,3 +1,5 @@
+from typing import Literal
+
 import numpy as np
 
 import neunet
@@ -57,7 +59,7 @@ class _EmbeddingTensor(Tensor):  # tensor for static backpropagation
 
 
 class Embedding(Module): # layer with dynamic backpropagation
-    def __init__(self, num_embeddings: int, embedding_dim: int, device: str="cpu"):
+    def __init__(self, num_embeddings: int, embedding_dim: int, device: Literal["cpu", "cuda"] = "cpu"):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
 
