@@ -76,16 +76,20 @@ class _CUDALinearTensor(Tensor):  # tensor for static backpropagation
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, batch_size, in_features, out_features, grad):
+        def grad_fn(X: Tensor, X_data, weight: Tensor, bias: Tensor, batch_size, in_features, out_features, grad):
 
-            grad_X = X.xp.zeros_like(X.data, dtype=np.float32)
+            grad = grad.reshape(-1, grad.shape[-1])
+
+            grad_X = X.xp.zeros_like(X_data, dtype=np.float32)
             grad_weight = cp.zeros_like(weight.data, dtype=np.float32)
             grad_bias = cp.zeros_like(bias.data, dtype=np.float32)
 
-            cuda_linear_layer_backward(X.data, weight.data,
+            cuda_linear_layer_backward(X_data, weight.data,
                                         grad, grad_X,
                                         grad_weight, grad_bias,
-                                        batch_size, in_features, out_features)
+                                        X_data.shape[0], in_features, out_features)
+            
+            grad_X = grad_X.reshape(X.shape)
             X.apply_grad(grad_X)
             weight.apply_grad(
                 grad_weight
@@ -120,19 +124,20 @@ class CUDALinear(Module):
         self.grad_bias = None
 
     def forward(self, X: Tensor) -> Tensor:
-        """
-        Прямой проход через линейный слой.
-        
-        :param X: Входная матрица (размер: batch_size x in_features).
-        :return: Результат линейного слоя (размер: batch_size x out_features).
-        """
-        self.X = X  # Сохраняем для backward
+        self.X = X
         batch_size = X.shape[0]
 
-        O = X.xp.zeros((batch_size, self.out_features), dtype=cp.float32)
-        cuda_linear_layer(X.data, self.weight.data, self.bias.data, O,
-                            batch_size, self.in_features, self.out_features)
-        return _CUDALinearTensor(O, (X, self.weight, self.bias, batch_size, self.in_features, self.out_features), "linear", device=self.device)
+        # hack
+        X_data = X.data.reshape((-1, self.in_features))
+
+        # O = X.xp.zeros((batch_size, self.out_features), dtype=cp.float32)
+        O = X.xp.zeros((np.prod(X.shape[:-1]), self.out_features), dtype=np.float32)
+
+        cuda_linear_layer(X_data, self.weight.data, self.bias.data, O,
+                            O.shape[0], self.in_features, self.out_features)
+        
+        O = O.reshape(X.shape[:-1] + (self.out_features,))
+        return _CUDALinearTensor(O, (X, X_data, self.weight, self.bias, O.shape[0], self.in_features, self.out_features), "linear", device=self.device)
 
     def __call__(self, X):
         return self.forward(X)
