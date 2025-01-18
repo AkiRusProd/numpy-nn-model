@@ -55,8 +55,10 @@ class ndarray:
         return self.array
 
 # Helper for casting data to pointers
-def _to_pointer(array: ndarray):
-    if isinstance(array, cp.ndarray):
+def _to_pointer(array: Union[ndarray, None]):
+    if array is None:
+        return array
+    elif isinstance(array, cp.ndarray):
         return ctypes.cast(array.data.ptr, POINTER(c_float))
     return array.ctypes.data_as(POINTER(c_float))
 
@@ -80,7 +82,7 @@ class _CUDALinearTensor(Tensor):
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
             grad_X = X.xp.zeros_like(X.data, dtype=np.float32)
             grad_weight = cp.zeros_like(weight.data, dtype=np.float32)
-            grad_bias = cp.zeros_like(bias.data, dtype=np.float32)
+            grad_bias = cp.zeros_like(bias.data, dtype=np.float32) if bias is not None else None
 
             cuda_linear_module_backward(
                 X.data, weight.data, grad, grad_X,
@@ -96,7 +98,7 @@ class _CUDALinearTensor(Tensor):
         self.grad_fn = grad_fn
 
 class CUDALinear(Module):
-    def __init__(self, in_features, out_features, device: Literal["cpu", "cuda"] = "cpu"):
+    def __init__(self, in_features, out_features,  bias: bool=True, device: Literal["cpu", "cuda"] = "cpu"):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -110,7 +112,6 @@ class CUDALinear(Module):
             )
         )
 
-        bias = True # TODO: Make it optional
         if bias == True:
             self.bias: Union[Tensor, None] = Parameter(neunet.tensor(np.random.uniform(-stdv, stdv, (1, out_features)), dtype=np.float32))
         else:
@@ -125,7 +126,7 @@ class CUDALinear(Module):
         # Compute forward pass
         input_rows = np.prod(X.shape[:-1])
         cuda_linear_module_forward(
-            X.data, self.weight.data, self.bias.data, output,
+            X.data, self.weight.data, self.bias.data if self.bias is not None else None, output,
             input_rows, self.in_features, self.out_features
         )
 
