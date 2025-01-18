@@ -1,7 +1,7 @@
 import ctypes
 import os
-from ctypes import *
-from typing import Literal
+from ctypes import POINTER, c_float, c_size_t
+from typing import Literal, Union
 
 import cupy as cp
 import numpy as np
@@ -11,88 +11,85 @@ from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
 
-# for cublas methods (my os doesn`t see this path in environment variables)
-DLL_PATH = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin'
 
-os.add_dll_directory(DLL_PATH)
+# Set DLL path for CUDA libraries
+# DLL_PATH = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin'
+# os.add_dll_directory(DLL_PATH)
 
-def __get_cuda_linear_module_forward():
-    dll = ctypes.CDLL('neunet/nn/kernel_modules/linear/linear.dll', mode=ctypes.RTLD_GLOBAL)
-    func = dll.cudaLinearModuleForward
-    func.argtypes = [
-        POINTER(c_float),  # input
-        POINTER(c_float),  # weights
-        POINTER(c_float),  # bias
-        POINTER(c_float),  # output
-        c_size_t,          # input rows
-        c_size_t,          # input cols
-        c_size_t           # output cols
-    ]
+def find_cuda_path():
+    cuda_path = os.getenv('CUDA_PATH')
+    if cuda_path:
+        return os.path.join(cuda_path, 'bin')
+    raise EnvironmentError("CUDA_PATH is not set in the environment variables.")
+
+DLL_PATH = find_cuda_path()
+
+# Helper to load CUDA functions
+def _load_cuda_function(dll_path, function_name, argtypes):
+    dll = ctypes.CDLL(dll_path, mode=ctypes.RTLD_GLOBAL)
+    func = getattr(dll, function_name)
+    func.argtypes = argtypes
     return func
 
-
-def __get_cuda_linear_module_backward():
-    dll = ctypes.CDLL('neunet/nn/kernel_modules/linear/linear.dll', mode=ctypes.RTLD_GLOBAL)
-    func = dll.cudaLinearModuleBackward
-    func.argtypes = [
-        POINTER(c_float),  # input
-        POINTER(c_float),  # weights
-        POINTER(c_float),  # d_output
-        POINTER(c_float),  # d_input
-        POINTER(c_float),  # d_weights
-        POINTER(c_float),  # d_bias
-        c_size_t,          # input rows
-        c_size_t,          # input cols
-        c_size_t           # output cols
+# Load CUDA linear module functions
+CUDA_LINEAR_DLL = 'neunet/nn/kernel_modules/linear/linear.dll'
+CUDA_LINEAR_FORWARD = _load_cuda_function(
+    CUDA_LINEAR_DLL, 'cudaLinearModuleForward', [
+        POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+        c_size_t, c_size_t, c_size_t
     ]
-    return func
+)
+CUDA_LINEAR_BACKWARD = _load_cuda_function(
+    CUDA_LINEAR_DLL, 'cudaLinearModuleBackward', [
+        POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
+        POINTER(c_float), POINTER(c_float),
+        c_size_t, c_size_t, c_size_t
+    ]
+)
 
+class ndarray:
+    def __init__(self, array: Union[np.ndarray, cp.ndarray]):
+        self.array = array
 
-__cuda_linear = __get_cuda_linear_module_forward()
-__cuda_linear_backward = __get_cuda_linear_module_backward()
+    def __array__(self):
+        return self.array
 
+# Helper for casting data to pointers
+def _to_pointer(array: ndarray):
+    if isinstance(array, cp.ndarray):
+        return ctypes.cast(array.data.ptr, POINTER(c_float))
+    return array.ctypes.data_as(POINTER(c_float))
 
-def cuda_linear_module_forward(X, weights, bias, output_matrix, input_rows, input_cols, output_cols):
+def cuda_linear_module_forward(X: ndarray, weights: ndarray, bias: ndarray, O: ndarray, input_rows: int, input_cols: int, output_cols: int):
+    CUDA_LINEAR_FORWARD(
+        _to_pointer(X), _to_pointer(weights), _to_pointer(bias), _to_pointer(O),
+        input_rows, input_cols, output_cols
+    )
 
-    input_p = ctypes.cast(X.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(X, cp.ndarray) else X.ctypes.data_as(POINTER(c_float))
-    weights_p = ctypes.cast(weights.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(weights, cp.ndarray) else weights.ctypes.data_as(POINTER(c_float))
-    bias_p = ctypes.cast(bias.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(bias, cp.ndarray) else bias.ctypes.data_as(POINTER(c_float))
-    output_p = ctypes.cast(output_matrix.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(output_matrix, cp.ndarray) else output_matrix.ctypes.data_as(POINTER(c_float))
+def cuda_linear_module_backward(X: ndarray, weights: ndarray, grad_O: ndarray, grad_X: ndarray, grad_weight: ndarray, grad_bias: ndarray, input_rows: int, input_cols: int, output_cols: int):
+    CUDA_LINEAR_BACKWARD(
+        _to_pointer(X), _to_pointer(weights), _to_pointer(grad_O), _to_pointer(grad_X),
+        _to_pointer(grad_weight), _to_pointer(grad_bias),
+        input_rows, input_cols, output_cols
+    )
 
-    __cuda_linear(input_p, weights_p, bias_p, output_p, input_rows, input_cols, output_cols)
-
-
-def cuda_linear_module_backward(X, weights, d_output, d_input, d_weights, d_bias,
-                               input_rows, input_cols, output_cols):
-    input_p = ctypes.cast(X.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(X, cp.ndarray) else X.ctypes.data_as(POINTER(c_float))
-    weights_p = ctypes.cast(weights.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(weights, cp.ndarray) else weights.ctypes.data_as(POINTER(c_float))
-    d_output_p = ctypes.cast(d_output.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(d_output, cp.ndarray) else d_output.ctypes.data_as(POINTER(c_float))
-    d_input_p = ctypes.cast(d_input.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(d_input, cp.ndarray) else d_input.ctypes.data_as(POINTER(c_float))
-    d_weights_p = ctypes.cast(d_weights.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(d_weights, cp.ndarray) else d_weights.ctypes.data_as(POINTER(c_float))
-    d_bias_p = ctypes.cast(d_bias.data.ptr, ctypes.POINTER(ctypes.c_float)) if isinstance(d_bias, cp.ndarray) else d_bias.ctypes.data_as(POINTER(c_float))
-    __cuda_linear_backward(input_p, weights_p, d_output_p, d_input_p, d_weights_p, d_bias_p,
-                           input_rows, input_cols, output_cols)
-
-
-class _CUDALinearTensor(Tensor):  # tensor for static backpropagation
+class _CUDALinearTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def grad_fn(X: Tensor,  weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
-            
+        def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
             grad_X = X.xp.zeros_like(X.data, dtype=np.float32)
             grad_weight = cp.zeros_like(weight.data, dtype=np.float32)
             grad_bias = cp.zeros_like(bias.data, dtype=np.float32)
 
-            cuda_linear_module_backward(X.data, weight.data,
-                                        grad, grad_X,
-                                        grad_weight, grad_bias,
-                                        in_rows_num, in_features, out_features)
-            
-            X.apply_grad(grad_X)
-            weight.apply_grad(
-                grad_weight
+            cuda_linear_module_backward(
+                X.data, weight.data, grad, grad_X,
+                grad_weight, grad_bias,
+                in_rows_num, in_features, out_features
             )
+
+            X.apply_grad(grad_X)
+            weight.apply_grad(grad_weight)
             if bias is not None:
                 bias.apply_grad(grad_bias)
 
@@ -100,9 +97,11 @@ class _CUDALinearTensor(Tensor):  # tensor for static backpropagation
 
 class CUDALinear(Module):
     def __init__(self, in_features, out_features, device: Literal["cpu", "cuda"] = "cpu"):
+        super().__init__()
         self.in_features = in_features
         self.out_features = out_features
 
+        # Initialize weights and bias
         stdv = 1.0 / np.sqrt(in_features)
         self.weight = Parameter(
             neunet.tensor(
@@ -118,20 +117,22 @@ class CUDALinear(Module):
             self.bias = None
         self.to(device)
 
-        # Gradients
-        self.grad_weight = None
-        self.grad_bias = None
-
     def forward(self, X: Tensor) -> Tensor:
+        # Allocate output tensor
+        output_shape = X.shape[:-1] + (self.out_features,)
+        output = X.xp.zeros(output_shape, dtype=np.float32)
 
-        O = X.xp.zeros(X.shape[:-1] + (self.out_features,), dtype=np.float32)
-   
-        in_rows_num = np.prod(X.shape[:-1])
+        # Compute forward pass
+        input_rows = np.prod(X.shape[:-1])
+        cuda_linear_module_forward(
+            X.data, self.weight.data, self.bias.data, output,
+            input_rows, self.in_features, self.out_features
+        )
 
-        cuda_linear_module_forward(X.data, self.weight.data, self.bias.data, O,
-                            in_rows_num, self.in_features, self.out_features)
-
-        return _CUDALinearTensor(O, (X, self.weight, self.bias, in_rows_num, self.in_features, self.out_features), "linear", device=self.device)
+        return _CUDALinearTensor(
+            output, (X, self.weight, self.bias, input_rows, self.in_features, self.out_features),
+            "linear", device=self.device
+        )
 
     def __call__(self, X):
         return self.forward(X)
