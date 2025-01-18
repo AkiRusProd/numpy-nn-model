@@ -8,13 +8,21 @@
 using namespace std;
 
 // CUDA kernel for adding bias to each column in the output matrix C
-__global__ void addBiasKernel(float *C, const float *bias, int rowsNum, int colsNum) {
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+// __global__ void addBiasKernel(float *C, const float *bias, int rowsNum, int colsNum) {
+//     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     
-    if (idx < colsNum) {
-        for (int i = 0; i < rowsNum; i++) {
-            C[i * colsNum + idx] += bias[idx];
-        }
+//     if (idx < colsNum) {
+//         for (int i = 0; i < rowsNum; i++) {
+//             C[i * colsNum + idx] += bias[idx];
+//         }
+//     }
+// }
+
+__global__ void addBiasKernel(float *C, const float *bias, int rowsNum, int colsNum) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    int col = blockIdx.y * blockDim.y + threadIdx.y;
+    if (row < rowsNum && col < colsNum) {
+        C[row * colsNum + col] += bias[col];
     }
 }
 
