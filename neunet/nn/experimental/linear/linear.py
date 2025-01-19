@@ -32,7 +32,7 @@ def _load_cuda_function(dll_path, function_name, argtypes):
     return func
 
 # Load CUDA linear module functions
-CUDA_LINEAR_DLL = 'neunet/nn/kernel_modules/linear/linear.dll'
+CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linear.dll'
 CUDA_LINEAR_FORWARD = _load_cuda_function(
     CUDA_LINEAR_DLL, 'cudaLinearModuleForward', [
         POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
