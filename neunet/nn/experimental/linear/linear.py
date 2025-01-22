@@ -20,6 +20,11 @@ def find_cuda_path():
     cuda_path = os.getenv('CUDA_PATH')
     if cuda_path:
         return os.path.join(cuda_path, 'bin')
+    elif os.name == 'posix':
+        cuda_path = '/usr/local/cuda'
+        if os.path.exists(cuda_path):
+            return '/usr/local/cuda/bin'
+    
     raise EnvironmentError("CUDA_PATH is not set in the environment variables.")
 
 DLL_PATH = find_cuda_path()
@@ -32,7 +37,13 @@ def _load_cuda_function(dll_path, function_name, argtypes):
     return func
 
 # Load CUDA linear module functions
-CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linear.dll'
+if os.name == 'posix':
+    CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linearcuda.so'
+elif os.name == 'nt':
+    CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linearcuda.dll'
+else:
+    raise OSError("Unsupported operating system")
+
 CUDA_LINEAR_FORWARD = _load_cuda_function(
     CUDA_LINEAR_DLL, 'cudaLinearModuleForward', [
         POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),

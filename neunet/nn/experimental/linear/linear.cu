@@ -4,7 +4,13 @@
 #include <curand.h>
 #include <cstdlib>
 #include <iostream>
+
+#ifdef _WIN32
 #define DLLEXPORT extern "C" __declspec(dllexport)
+#else
+#define DLLEXPORT extern "C"
+#endif
+
 using namespace std;
 
 // CUDA kernel for adding bias to each column in the output matrix C
