@@ -78,6 +78,7 @@
 15) RNN
 16) LSTM
 17) GRU
+18) CUDALinear (Experimental module, written in CUDA)
 
 *[See Modules...](neunet/nn/layers)*
 
