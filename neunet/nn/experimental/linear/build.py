@@ -1,11 +1,12 @@
 import os
 import subprocess
+import locale
 
 def compile():
     print("Compiling CUDA linear module...")
 
     if os.name == 'posix':
-        result = subprocess.run([
+        command = [
             "nvcc",
             "-o", "neunet/nn/experimental/linear/linearcuda.so",
             "-Xcompiler", "-fPIC",
@@ -14,12 +15,9 @@ def compile():
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand"
-        ],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
-        )
-     
+        ]
     elif os.name == 'nt':
-        result = subprocess.run([
+        command = [
             "nvcc",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
@@ -27,25 +25,31 @@ def compile():
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand"
-        ],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
-        )
-
+        ]
     else:
         raise OSError("Unsupported operating system")
-    
-    stdout = result.stdout.decode()
-    stderr = result.stderr.decode()
-    
-    if len(stdout) > 0:
-        print(stdout)
 
-    if len(stderr) > 0:
-        print(stderr)
+    system_encoding = locale.getpreferredencoding(False)
 
-    if result.returncode != 0:
-        raise subprocess.CalledProcessError(result.returncode, result.args,
-                                                output=result.stdout, stderr=result.stderr)   
+    try:
+        result = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
+        stdout = result.stdout.decode(system_encoding, errors="replace")
+        stderr = result.stderr.decode(system_encoding, errors="replace")
+        
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(stderr)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred during compilation: {e}")
+        if e.stdout:
+            print(e.stdout.decode(system_encoding, errors="replace"))
+        if e.stderr:
+            print(e.stderr.decode(system_encoding, errors="replace"))
+        raise
 
     print("CUDA linear module compiled successfully.")
 
