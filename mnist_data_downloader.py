@@ -13,7 +13,7 @@ def download_mnist_data(url, path):
     resp = requests.get(url, stream=True, timeout=10)
     total = int(resp.headers.get("content-length", 0))
     with (
-        Path.open(path, "wb") as file,
+        Path(path).open("wb") as file,
         tqdm(
             desc=f"downloading file to {path = }",
             total=total,

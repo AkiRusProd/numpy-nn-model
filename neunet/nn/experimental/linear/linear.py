@@ -10,24 +10,11 @@ import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
+from neunet.nn.experimental.linear.utils import load_dlls, get_module_path
 
+load_dlls()
 
-# Set DLL path for CUDA libraries
-# DLL_PATH = 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin'
-# os.add_dll_directory(DLL_PATH)
-
-def find_cuda_path():
-    cuda_path = os.getenv('CUDA_PATH')
-    if cuda_path:
-        return os.path.join(cuda_path, 'bin')
-    elif os.name == 'posix':
-        cuda_path = '/usr/local/cuda'
-        if os.path.exists(cuda_path):
-            return '/usr/local/cuda/bin'
-    
-    raise EnvironmentError("CUDA_PATH is not set in the environment variables.")
-
-DLL_PATH = find_cuda_path()
+CUDA_LINEAR_DLL = get_module_path()
 
 # Helper to load CUDA functions
 def _load_cuda_function(dll_path, function_name, argtypes):
@@ -36,27 +23,36 @@ def _load_cuda_function(dll_path, function_name, argtypes):
     func.argtypes = argtypes
     return func
 
-# Load CUDA linear module functions
-if os.name == 'posix':
-    CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linearcuda.so'
-elif os.name == 'nt':
-    CUDA_LINEAR_DLL = 'neunet/nn/experimental/linear/linearcuda.dll'
-else:
-    raise OSError("Unsupported operating system")
 
 CUDA_LINEAR_FORWARD = _load_cuda_function(
-    CUDA_LINEAR_DLL, 'cudaLinearModuleForward', [
-        POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
-        c_size_t, c_size_t, c_size_t
-    ]
+    CUDA_LINEAR_DLL,
+    "cudaLinearModuleForward",
+    [
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        c_size_t,
+        c_size_t,
+        c_size_t,
+    ],
 )
 CUDA_LINEAR_BACKWARD = _load_cuda_function(
-    CUDA_LINEAR_DLL, 'cudaLinearModuleBackward', [
-        POINTER(c_float), POINTER(c_float), POINTER(c_float), POINTER(c_float),
-        POINTER(c_float), POINTER(c_float),
-        c_size_t, c_size_t, c_size_t
-    ]
+    CUDA_LINEAR_DLL,
+    "cudaLinearModuleBackward",
+    [
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_float),
+        c_size_t,
+        c_size_t,
+        c_size_t,
+    ],
 )
+
 
 class ndarray:
     def __init__(self, array: Union[np.ndarray, cp.ndarray]):
@@ -65,25 +61,65 @@ class ndarray:
     def __array__(self):
         return self.array
 
-# Helper for casting data to pointers
-def _to_pointer(array: Union[ndarray, None]):
-    if array is None:
-        return array
-    elif isinstance(array, cp.ndarray):
-        return ctypes.cast(array.data.ptr, POINTER(c_float))
-    return array.ctypes.data_as(POINTER(c_float))
 
-def cuda_linear_module_forward(X: ndarray, weights: ndarray, bias: ndarray, O: ndarray, input_rows: int, input_cols: int, output_cols: int):
-    CUDA_LINEAR_FORWARD(
-        _to_pointer(X), _to_pointer(weights), _to_pointer(bias), _to_pointer(O),
-        input_rows, input_cols, output_cols
+def call_cuda_function(func, *args):
+    # Helper for casting data to pointers
+    def _to_pointer(array: Union[ndarray, None]):
+        if array is None:
+            return None
+        elif isinstance(array, np.ndarray):
+            return array.ctypes.data_as(POINTER(c_float))
+        elif isinstance(array, cp.ndarray):
+            return ctypes.cast(array.data.ptr, POINTER(c_float))
+
+        return array
+
+    return func(*[_to_pointer(arg) for arg in args])
+
+
+def cuda_linear_module_forward(
+    X: ndarray,
+    weights: ndarray,
+    bias: ndarray,
+    O: ndarray,
+    input_rows: int,
+    input_cols: int,
+    output_cols: int,
+):
+    return call_cuda_function(
+        CUDA_LINEAR_FORWARD, 
+        X, 
+        weights, 
+        bias, 
+        O, 
+        input_rows, 
+        input_cols, 
+        output_cols
     )
 
-def cuda_linear_module_backward(X: ndarray, weights: ndarray, grad_O: ndarray, grad_X: ndarray, grad_weight: ndarray, grad_bias: ndarray, input_rows: int, input_cols: int, output_cols: int):
-    CUDA_LINEAR_BACKWARD(
-        _to_pointer(X), _to_pointer(weights), _to_pointer(grad_O), _to_pointer(grad_X),
-        _to_pointer(grad_weight), _to_pointer(grad_bias),
-        input_rows, input_cols, output_cols
+
+def cuda_linear_module_backward(
+    X: ndarray,
+    weights: ndarray,
+    grad_O: ndarray,
+    grad_X: ndarray,
+    grad_weight: ndarray,
+    grad_bias: ndarray,
+    input_rows: int,
+    input_cols: int,
+    output_cols: int,
+):
+    return call_cuda_function(
+        CUDA_LINEAR_BACKWARD,
+        X,
+        weights,
+        grad_O,
+        grad_X,
+        grad_weight,
+        grad_bias,
+        input_rows,
+        input_cols,
+        output_cols,
     )
 
 class _CUDALinearTensor(Tensor):
