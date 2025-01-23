@@ -139,5 +139,9 @@ dmypy.json
 *.zip
 *.nt
 
+*dll
+*exp
+*lib
+
 datasets/
 saved models/
