@@ -57,8 +57,22 @@ void blasMatMulWithBias(const float *A, const float *B, const float *bias, float
     cublasHandle_t handle;
     cublasCreate(&handle);
 
-    // Matrix multiplication: C = A * B
-    cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, colsNum, rowsNum, width, &alf, B, colsNum, A, width, &bet, C, colsNum);
+    // matrix multiplication: C = A * B^T
+    cublasSgemm(handle,
+                CUBLAS_OP_T,   // Transpose A (A is originally rowsNum x width in row-major, becomes width x rowsNum)
+                CUBLAS_OP_N,   // No transpose B (B is colsNum x width in row-major)
+                colsNum,       // m: rows of op(A) and C (colsNum)
+                rowsNum,       // n: columns of op(B) and C (rowsNum)
+                width,         // k: columns of op(A) and rows of op(B) (width)
+                &alf,
+                B,             // A: originally B (colsNum x width in row-major)
+                width,         // lda: leading dimension of A (width, since row-major)
+                A,             // B: originally A (rowsNum x width in row-major)
+                width,         // ldb: leading dimension of B (width, since row-major)
+                &bet,
+                C,             // C: result matrix (rowsNum x colsNum in row-major)
+                colsNum);      // ldc: leading dimension of C (colsNum, since row-major)
+
 
     // Add bias to each column of C
     if (bias != nullptr) {
@@ -147,12 +161,37 @@ extern "C" {
         const float bet = 0.0f;
 
         // Compute d_input = d_output * W^T
-        cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, inputColsNum, inputRowsNum, outputColsNum,
-                    &alf, p_weights, outputColsNum, p_d_output, outputColsNum, &bet, p_d_input, inputColsNum);
+        cublasSgemm(handle,
+                    CUBLAS_OP_N,     // No transpose (A is inputColsNum x outputColsNum in column-major)
+                    CUBLAS_OP_N,     // No transpose (B is outputColsNum x inputRowsNum in column-major)
+                    inputColsNum,    // m: rows of op(A) and C (inputColsNum)
+                    inputRowsNum,    // n: columns of op(B) and C (inputRowsNum)
+                    outputColsNum,   // k: columns of op(A) and rows of op(B) (outputColsNum)
+                    &alf,
+                    p_weights,       // A: inputColsNum x outputColsNum (column-major)
+                    inputColsNum,    // lda: rows of A in column-major (inputColsNum)
+                    p_d_output,      // B: outputColsNum x inputRowsNum (column-major)
+                    outputColsNum,   // ldb: rows of B in column-major (outputColsNum)
+                    &bet,
+                    p_d_input,       // C: inputColsNum x inputRowsNum (column-major)
+                    inputColsNum);   // ldc: rows of C in column-major (inputColsNum)
 
-        // Compute d_weights = A^T * d_output
-        cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_T, outputColsNum, inputColsNum, inputRowsNum,
-                    &alf, p_d_output, outputColsNum, p_input, inputColsNum, &bet, p_d_weights, outputColsNum);
+
+        // Compute d_weights = X^T * d_output (corrected for row-major)
+        cublasSgemm(handle,
+                    CUBLAS_OP_N,     // No transpose (A is inputColsNum x inputRowsNum in column-major)
+                    CUBLAS_OP_T,     // Transpose B (B is outputColsNum x inputRowsNum → becomes inputRowsNum x outputColsNum)
+                    inputColsNum,    // m: rows of op(A) and C
+                    outputColsNum,   // n: columns of op(B) and C
+                    inputRowsNum,    // k: columns of op(A) and rows of op(B)
+                    &alf,
+                    p_input,         // A: inputColsNum x inputRowsNum (column-major)
+                    inputColsNum,    // lda: rows of A in column-major (inputColsNum)
+                    p_d_output,      // B: outputColsNum x inputRowsNum (column-major)
+                    outputColsNum,   // ldb: rows of B in column-major (outputColsNum)
+                    &bet,
+                    p_d_weights,     // C: inputColsNum x outputColsNum (column-major)
+                    inputColsNum);   // ldc: rows of C in column-major (inputColsNum)
 
         // Compute d_bias = sum(d_output, axis=0) if d_bias is not nullptr
         // Use custom kernel to sum along rows
