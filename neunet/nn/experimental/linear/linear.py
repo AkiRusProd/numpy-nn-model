@@ -127,9 +127,9 @@ class _CUDALinearTensor(Tensor):
         super().__init__(data, args, op, device=device)
 
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
-            grad_X = X.xp.zeros_like(X.data, dtype=np.float32)
-            grad_weight = cp.zeros_like(weight.data, dtype=np.float32)
-            grad_bias = cp.zeros_like(bias.data, dtype=np.float32) if bias is not None else None
+            grad_X = X.xp.zeros_like(X.data, dtype=X.xp.float32)
+            grad_weight = X.xp.zeros_like(weight.data, dtype=X.xp.float32)
+            grad_bias = X.xp.zeros_like(bias.data, dtype=X.xp.float32) if bias is not None else None
 
             cuda_linear_module_backward(
                 X.data, weight.data, grad, grad_X,
@@ -168,7 +168,7 @@ class CUDALinear(Module):
     def forward(self, X: Tensor) -> Tensor:
         # Allocate output tensor
         output_shape = X.shape[:-1] + (self.out_features,)
-        output = X.xp.zeros(output_shape, dtype=np.float32)
+        output = X.xp.zeros(output_shape, dtype=X.xp.float32)
 
         # Compute forward pass
         input_rows = np.prod(X.shape[:-1])

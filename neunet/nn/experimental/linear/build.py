@@ -11,7 +11,7 @@ def compile():
             "-o", "neunet/nn/experimental/linear/linearcuda.so",
             "-Xcompiler", "-fPIC",
             "-shared",
-            "neunet/nn/experimental/linear/linear.cu",
+            "neunet/nn/experimental/linear/linear_cached.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand"
@@ -21,7 +21,7 @@ def compile():
             "nvcc",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
-            "neunet/nn/experimental/linear/linear.cu",
+            "neunet/nn/experimental/linear/linear_cached.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand"
@@ -54,3 +54,5 @@ def compile():
     print("CUDA linear module compiled successfully.")
 
 compile()
+
+# nvcc -O3 -arch=sm_75 --use_fast_math -Xptxas="-v,-O3,-warn-spills" -Xcompiler "/O2 /fp:fast /MT" -Xcompiler -DNDEBUG -shared neunet/nn/experimental/linear/linear.cu -o neunet/nn/experimental/linear/linearcuda.dll -I/usr/local/cuda/include -L/usr/local/cuda/lib64 -lcublas -lcurand -lcudart_static
