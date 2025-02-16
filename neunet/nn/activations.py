@@ -1,7 +1,6 @@
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 
-# import numpy as np
 
 
 class _SigmoidTensor(Tensor):  # Static sigmoid tensor for backpropagation
