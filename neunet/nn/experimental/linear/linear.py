@@ -1,5 +1,4 @@
 import ctypes
-import os
 from ctypes import POINTER, c_float, c_size_t
 from typing import Literal, Union
 
@@ -10,11 +9,11 @@ import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
-from neunet.nn.experimental.linear.utils import load_dlls, get_module_path
+from neunet.nn.experimental.utils import load_dlls, get_module_path, CUDA_LINEAR_MODULE
 
 load_dlls()
 
-CUDA_LINEAR_DLL = get_module_path()
+CUDA_LINEAR_DLL = get_module_path(CUDA_LINEAR_MODULE)
 
 # Helper to load CUDA functions
 def _load_cuda_function(dll_path, function_name, argtypes):
@@ -127,9 +126,9 @@ class _CUDALinearTensor(Tensor):
         super().__init__(data, args, op, device=device)
 
         def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
-            grad_X = X.xp.zeros_like(X.data, dtype=X.xp.float32)
-            grad_weight = X.xp.zeros_like(weight.data, dtype=X.xp.float32)
-            grad_bias = X.xp.zeros_like(bias.data, dtype=X.xp.float32) if bias is not None else None
+            grad_X = X.xp.empty_like(X.data, dtype=X.xp.float32)
+            grad_weight = X.xp.empty_like(weight.data, dtype=X.xp.float32)
+            grad_bias = X.xp.empty_like(bias.data, dtype=X.xp.float32) if bias is not None else None
 
             cuda_linear_module_backward(
                 X.data, weight.data, grad, grad_X,
@@ -167,11 +166,14 @@ class CUDALinear(Module):
 
     def forward(self, X: Tensor) -> Tensor:
         # Allocate output tensor
+        if X.device != self.device:
+            raise ValueError(f"Input tensor must be on {self.device}")
+        
         output_shape = X.shape[:-1] + (self.out_features,)
-        output = X.xp.zeros(output_shape, dtype=X.xp.float32)
+        output = X.xp.empty(output_shape, dtype=X.xp.float32)
 
         # Compute forward pass
-        input_rows = np.prod(X.shape[:-1])
+        input_rows = int(np.prod(X.shape[:-1]))
         cuda_linear_module_forward(
             X.data, self.weight.data, self.bias.data if self.bias is not None else None, output,
             input_rows, self.in_features, self.out_features
