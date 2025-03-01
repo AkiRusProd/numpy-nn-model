@@ -1,9 +1,11 @@
 import os
 
-CUDA_LINEAR_MODULES = {
+CUDA_LINEAR_MODULE = {
+    "name": "linear",
     'posix': 'neunet/nn/experimental/linear/linearcuda.so',
     'nt': 'neunet/nn/experimental/linear/linearcuda.dll'
 }
+
 
 def load_dlls():
     """
@@ -17,18 +19,18 @@ def load_dlls():
         return
     raise EnvironmentError("CUDA_PATH is not set in the environment variables.")
 
-def get_module_path():
+def get_module_path(module: dict[str, str]):
     """
-    Verifies the presence of the compiled CUDA linear module and returns its path.
+    Verifies the presence of the compiled CUDA module and returns its path.
     """
-    module_path = CUDA_LINEAR_MODULES.get(os.name)
+    module_path = module.get(os.name)
     if not module_path:
         raise OSError("Unsupported operating system")
     elif os.path.exists(module_path):
-        print("CUDA linear module loaded.")
+        print(f"CUDA {module['name']} module loaded.")
         return module_path
     else:
         raise FileNotFoundError(
-            f"CUDA linear module not found at '{module_path}'. "
-            "Please compile it with 'python neunet/nn/experimental/linear/build.py'"
+            f"CUDA module not found at '{module_path}'. "
+            "Please compile it with 'build.py' from CUDA module in the 'neunet/nn/experimental' directory."
         )

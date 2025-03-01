@@ -11,20 +11,22 @@ def compile():
             "-o", "neunet/nn/experimental/linear/linearcuda.so",
             "-Xcompiler", "-fPIC",
             "-shared",
-            "neunet/nn/experimental/linear/linear_cached.cu",
+            "neunet/nn/experimental/linear/linear_cublaslt_no_manual_mem.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
-            "-lcublas", "-lcurand"
+            "-lcublas", "-lcurand",
+            "-lcublas", "-lcublasLt", "-lcurand"
         ]
     elif os.name == 'nt':
         command = [
             "nvcc",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
-            "neunet/nn/experimental/linear/linear_cached.cu",
+            "neunet/nn/experimental/linear/linear_cublaslt_no_manual_mem.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
-            "-lcublas", "-lcurand"
+            "-lcublas", "-lcurand",
+            "-lcublas", "-lcublasLt", "-lcurand"
         ]
     else:
         raise OSError("Unsupported operating system")
@@ -55,4 +57,4 @@ def compile():
 
 compile()
 
-# nvcc -O3 -arch=sm_75 --use_fast_math -Xptxas="-v,-O3,-warn-spills" -Xcompiler "/O2 /fp:fast /MT" -Xcompiler -DNDEBUG -shared neunet/nn/experimental/linear/linear.cu -o neunet/nn/experimental/linear/linearcuda.dll -I/usr/local/cuda/include -L/usr/local/cuda/lib64 -lcublas -lcurand -lcudart_static
+# nvcc -O3 -arch=sm_75 --use_fast_math -Xptxas="-v,-O3,-warn-spills" -Xcompiler "/O2 /fp:fast /MT" -Xcompiler -DNDEBUG -shared neunet/nn/experimental/linear/linear.cu -o neunet/nn/experimental/linear/linearcuda.dll -I/usr/local/cuda/include -L/usr/local/cuda/lib64 -lcublas -lcurand -lcudart_static -lcublas -lcublasLt -lcurand
