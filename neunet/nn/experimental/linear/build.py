@@ -4,6 +4,11 @@ import locale
 
 def compile():
     print("Compiling CUDA linear module...")
+    cuda_source_name = "linear_cublaslt_no_manual_mem.cu"
+    if cuda_source_name == "linear_cublaslt_no_manual_mem.cu":
+        print("WARNING: The CUDALinear module, compiled from `linear_cublaslt_no_manual_mem.cu`, “works” with numpy arrays only in the “undefined behavior” mode.")
+        print("REASON: The code does not explicitly copy the numpy array from CPU to GPU, but it works. Possibly implicit allocation.")
+
 
     if os.name == 'posix':
         command = [
@@ -11,7 +16,7 @@ def compile():
             "-o", "neunet/nn/experimental/linear/linearcuda.so",
             "-Xcompiler", "-fPIC",
             "-shared",
-            "neunet/nn/experimental/linear/linear_cublaslt_no_manual_mem.cu",
+            f"neunet/nn/experimental/linear/{cuda_source_name}",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand",
@@ -22,7 +27,7 @@ def compile():
             "nvcc",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
-            "neunet/nn/experimental/linear/linear_cublaslt_no_manual_mem.cu",
+            f"neunet/nn/experimental/linear/{cuda_source_name}",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
             "-lcublas", "-lcurand",
