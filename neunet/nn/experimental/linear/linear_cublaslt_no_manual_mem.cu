@@ -143,6 +143,13 @@ extern "C" {
         float *input, float *weights, float *d_output, 
         float *d_input, float *d_weights, float *d_bias, 
         int inputRowsNum, int inputColsNum, int outputColsNum) {
+
+        if(((uintptr_t)input % 16) != 0 || ((uintptr_t)weights % 16) != 0 || ((uintptr_t)d_output % 16) != 0 || 
+            ((uintptr_t)d_input % 16) != 0 || ((uintptr_t)d_weights % 16) != 0 || ((uintptr_t)d_bias % 16) != 0) 
+         {
+             printf("All cuBLASLt pointers must be aligned!\n");
+             exit(EXIT_FAILURE);
+         }
     
         // Initialize cuBLAS and cuBLASLt
         if (!cublaslt_handle) {

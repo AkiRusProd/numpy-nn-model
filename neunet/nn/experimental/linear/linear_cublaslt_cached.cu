@@ -150,11 +150,11 @@ void matmul_cublaslt(
 extern "C" {
     DLLEXPORT void cudaLinearModuleForward(float *input, float *weights, float *bias, float *output, int inputRowsNum, int inputColsNum, int outputColsNum) {
 
-    // check alignment (some modes work unaligned but it always best to be aligned for performance)
-    if(((uintptr_t)input % 16) != 0 || ((uintptr_t)weights % 16) != 0 || ((uintptr_t)bias % 16) != 0 || ((uintptr_t)output % 16) != 0) {
-        printf("All cuBLASLt pointers must be aligned!\n");
-        exit(EXIT_FAILURE);
-    }
+        // check alignment (some modes work unaligned but it always best to be aligned for performance)
+        if(((uintptr_t)input % 16) != 0 || ((uintptr_t)weights % 16) != 0 || ((uintptr_t)bias % 16) != 0 || ((uintptr_t)output % 16) != 0) {
+            printf("All cuBLASLt pointers must be aligned!\n");
+            exit(EXIT_FAILURE);
+        }
 
         // Check and allocate memory for p_input
         if (p_input_fw == nullptr || current_input_fw_rows != inputRowsNum || current_input_fw_cols != inputColsNum) {
@@ -227,6 +227,14 @@ extern "C" {
         float *input, float *weights, float *d_output, 
         float *d_input, float *d_weights, float *d_bias, 
         int inputRowsNum, int inputColsNum, int outputColsNum) {
+
+        if(((uintptr_t)input % 16) != 0 || ((uintptr_t)weights % 16) != 0 || ((uintptr_t)d_output % 16) != 0 || 
+            ((uintptr_t)d_input % 16) != 0 || ((uintptr_t)d_weights % 16) != 0 || ((uintptr_t)d_bias % 16) != 0) 
+         {
+             printf("All cuBLASLt pointers must be aligned!\n");
+             exit(EXIT_FAILURE);
+         }
+    
     
         // Check and allocate memory for p_input
         if (p_input_bw == nullptr || current_input_bw_rows != inputRowsNum || current_input_bw_cols != inputColsNum) {
