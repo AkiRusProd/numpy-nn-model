@@ -103,14 +103,6 @@ def cuda_softmax_forward(x: cp.ndarray, o: cp.ndarray, dim: int):
     )
     return o
 
-# TODO:
-# def calculate_tpb(slice_size):
-#     if slice_size <= 32: return 32
-#     if slice_size <= 64: return 64
-#     if slice_size <= 128: return 128
-#     if slice_size <= 256: return 256
-#     return 512
-
 def cuda_softmax_backward(grad_x: cp.ndarray, grad: cp.ndarray, f_x: cp.ndarray, dim: int):
     if not all([isinstance(arg, cp.ndarray) for arg in [grad_x, grad, f_x]]):
         raise ValueError("All arguments must be cupy arrays.")

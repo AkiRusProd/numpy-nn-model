@@ -18,18 +18,25 @@ __inline__ __device__ float warp_reduce_sum(float val) {
     return val;
 }
 
-constexpr int TPB = 256;
+int get_threads_per_block(int slice_size) {
+    if (slice_size <= 32) return 32;
+    if (slice_size <= 64) return 64;
+    if (slice_size <= 128) return 128;
+    if (slice_size <= 256) return 256;
+    return 512;
+}
 
 __global__ void fused_softmax_forward_kernel(
     float* output, 
     const float* input,
     int num_slices,
     int slice_size,
-    int stride
+    int stride,
+    int threads_per_block
 ) {
     const int slice_idx = blockIdx.x;
     const int tid = threadIdx.x;
-    constexpr int nwarps = TPB / 32;
+    const int nwarps = threads_per_block / 32;
     
     extern __shared__ float smem[];
     float* slice_max = smem;
@@ -46,7 +53,7 @@ __global__ void fused_softmax_forward_kernel(
     // 1. Compute thread-local max
     float thread_max = -INFINITY;
     #pragma unroll
-    for (int i = tid; i < slice_size; i += TPB) {
+    for (int i = tid; i < slice_size; i += threads_per_block) {
         const int offset = i * stride;
         thread_max = fmaxf(thread_max, slice_input[offset]);
     }
@@ -75,7 +82,7 @@ __global__ void fused_softmax_forward_kernel(
     // 5. Compute exp and thread-local sum
     float thread_sum = 0.0f;
     #pragma unroll
-    for (int i = tid; i < slice_size; i += TPB) {
+    for (int i = tid; i < slice_size; i += threads_per_block) {
         const int offset = i * stride;
         float val = expf(slice_input[offset] - block_max);
         slice_output[offset] = val;
@@ -105,7 +112,7 @@ __global__ void fused_softmax_forward_kernel(
     
     // 9. Normalize and write output
     #pragma unroll
-    for (int i = tid; i < slice_size; i += TPB) {
+    for (int i = tid; i < slice_size; i += threads_per_block) {
         const int offset = i * stride;
         slice_output[offset] /= block_sum;
     }
@@ -120,12 +127,14 @@ extern "C" {
         int stride,
         cudaStream_t stream
     ) {
+        int threads_per_block = get_threads_per_block(slice_size);
+
         dim3 grid(num_slices);
-        dim3 block(TPB);
-        size_t smem_size = 2 * (TPB / 32) * sizeof(float);
+        dim3 block(threads_per_block);
+        size_t smem_size = 2 * (threads_per_block / 32) * sizeof(float);
         
         fused_softmax_forward_kernel<<<grid, block, smem_size, stream>>>(
-            output, input, num_slices, slice_size, stride
+            output, input, num_slices, slice_size, stride, threads_per_block
         );
     }
 }
@@ -136,11 +145,12 @@ __global__ void fused_softmax_backward_kernel(
     const float* f_x,
     int num_slices,
     int slice_size,
-    int stride
+    int stride,
+    int threads_per_block
 ) {
     const int slice_idx = blockIdx.x;
     const int tid = threadIdx.x;
-    constexpr int nwarps = TPB / 32;
+    const int nwarps = threads_per_block / 32;
     
     extern __shared__ float smem[];
     float* slice_sum = smem;
@@ -157,7 +167,7 @@ __global__ void fused_softmax_backward_kernel(
     // 1. Thread-local sum of grad * f_x
     float thread_sum = 0.0f;
     #pragma unroll
-    for (int i = tid; i < slice_size; i += TPB) {
+    for (int i = tid; i < slice_size; i += threads_per_block) {
         const int offset = i * stride;
         thread_sum += slice_grad[offset] * slice_fx[offset];
     }
@@ -185,7 +195,7 @@ __global__ void fused_softmax_backward_kernel(
     
     // 5. Compute (grad[i] - sum) * f_x[i] and write to grad_x
     #pragma unroll
-    for (int i = tid; i < slice_size; i += TPB) {
+    for (int i = tid; i < slice_size; i += threads_per_block) {
         const int offset = i * stride;
         float g = slice_grad[offset];
         float fx = slice_fx[offset];
@@ -203,12 +213,14 @@ extern "C" {
         int stride,
         cudaStream_t stream
     ) {
+        int threads_per_block = get_threads_per_block(slice_size);
+
         dim3 grid(num_slices);
-        dim3 block(TPB);
-        size_t smem_size = (TPB / 32) * sizeof(float);
+        dim3 block(threads_per_block);
+        size_t smem_size = (threads_per_block / 32) * sizeof(float);
         
         fused_softmax_backward_kernel<<<grid, block, smem_size, stream>>>(
-            grad_x, grad, f_x, num_slices, slice_size, stride
+            grad_x, grad, f_x, num_slices, slice_size, stride, threads_per_block
         );
     }
 }
