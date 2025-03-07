@@ -6,6 +6,11 @@ CUDA_LINEAR_MODULE = {
     'nt': 'neunet/nn/experimental/linear/linearcuda.dll'
 }
 
+CUDA_SOFTMAX_MODULE = {
+    "name": "softmax",
+    'posix': 'neunet/nn/experimental/activations/softmax/softmaxcuda.so',
+    'nt': 'neunet/nn/experimental/activations/softmax/softmaxcuda.dll'
+}
 
 def load_dlls():
     """
