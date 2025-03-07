@@ -1,4 +1,5 @@
 #include <cuda_fp16.h>
+#include <cuda_runtime.h>
 
 #ifdef _WIN32
 #define DLLEXPORT extern "C" __declspec(dllexport)
@@ -6,24 +7,45 @@
 #define DLLEXPORT extern "C"
 #endif
 
+// __inline__ __device__ float warp_reduce_max(float val) {
+//     for (int offset = 16; offset > 0; offset /= 2)
+//         val = fmaxf(val, __shfl_down_sync(0xffffffff, val, offset));
+//     return val;
+// }
+
 __inline__ __device__ float warp_reduce_max(float val) {
-    for (int offset = 16; offset > 0; offset /= 2)
-        val = fmaxf(val, __shfl_down_sync(0xffffffff, val, offset));
+    val = fmaxf(val, __shfl_xor_sync(0xffffffff, val, 16));
+    val = fmaxf(val, __shfl_xor_sync(0xffffffff, val, 8));
+    val = fmaxf(val, __shfl_xor_sync(0xffffffff, val, 4));
+    val = fmaxf(val, __shfl_xor_sync(0xffffffff, val, 2));
+    val = fmaxf(val, __shfl_xor_sync(0xffffffff, val, 1));
     return val;
 }
 
+// __inline__ __device__ float warp_reduce_sum(float val) {
+//     for (int offset = 16; offset > 0; offset /= 2)
+//         val += __shfl_down_sync(0xffffffff, val, offset);
+//     return val;
+// }
+
 __inline__ __device__ float warp_reduce_sum(float val) {
-    for (int offset = 16; offset > 0; offset /= 2)
-        val += __shfl_down_sync(0xffffffff, val, offset);
+    val += __shfl_xor_sync(0xffffffff, val, 16);
+    val += __shfl_xor_sync(0xffffffff, val, 8);
+    val += __shfl_xor_sync(0xffffffff, val, 4);
+    val += __shfl_xor_sync(0xffffffff, val, 2);
+    val += __shfl_xor_sync(0xffffffff, val, 1);
     return val;
 }
 
 int get_threads_per_block(int slice_size) {
-    if (slice_size <= 32) return 32;
-    if (slice_size <= 64) return 64;
-    if (slice_size <= 128) return 128;
-    if (slice_size <= 256) return 256;
-    return 512;
+    int max_tpb;
+    cudaDeviceGetAttribute(&max_tpb, cudaDevAttrMaxThreadsPerBlock, 0);
+    
+    int tpb = 32;
+    while (tpb < max_tpb && tpb < slice_size) {
+        tpb *= 2;
+    }
+    return min(tpb, max_tpb);
 }
 
 __global__ void fused_softmax_forward_kernel(

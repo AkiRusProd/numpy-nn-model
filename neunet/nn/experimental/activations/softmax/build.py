@@ -4,7 +4,7 @@ import subprocess
 
 
 def compile():
-    print("Compiling CUDA linear module...")
+    print("Compiling CUDA softmax module...")
 
     if os.name == 'posix':
         command = [
