@@ -78,7 +78,8 @@
 15) RNN
 16) LSTM
 17) GRU
-18) CUDALinear (Experimental module, written in CUDA)
+18) CUDALinear (Experimental module with fused bias in forward, written in CUDA + cublaslt)
+19) CUDASoftmax (Experimental fused module, written in CUDA)
 
 *[See Modules...](neunet/nn/layers)*
 
