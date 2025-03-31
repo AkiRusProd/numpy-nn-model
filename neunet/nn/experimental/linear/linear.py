@@ -144,7 +144,7 @@ class _CUDALinearTensor(Tensor):
         self.grad_fn = grad_fn
 
 class CUDALinear(Module):
-    def __init__(self, in_features, out_features,  bias: bool=True, device: Literal["cpu", "cuda"] = "cpu"):
+    def __init__(self, in_features, out_features,  bias: bool=True, device: Literal["cuda"] = "cuda"):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
