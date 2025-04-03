@@ -127,8 +127,8 @@ class _CUDACrossEntropyTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def grad_fn(y_pred: Tensor, grad_y_pred, grad): # TODO: add grad to backward
-            y_pred.apply_grad(grad_y_pred)
+        def grad_fn(y_pred: Tensor, grad_y_pred, grad):
+            y_pred.apply_grad(grad_y_pred * grad)
            
         self.grad_fn = grad_fn
 
