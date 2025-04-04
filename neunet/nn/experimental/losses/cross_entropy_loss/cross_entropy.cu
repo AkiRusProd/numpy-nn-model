@@ -29,10 +29,14 @@ __global__ void cross_entropy_forward_backward_kernel(
 
     extern __shared__ float shared_mem[];
     float* shared_max = shared_mem;
-    float* shared_sum = shared_mem + blockDim.x;
+    // float* shared_sum = shared_mem + blockDim.x; // for block-wide reductions
+    float* shared_sum = shared_mem + (blockDim.x / 32); // for warp-level reductions
 
     const int row = blockIdx.x;
     const int tid = threadIdx.x;
+    const int warp_id = tid / 32;
+    const int lane_id = tid % 32;
+
 
     int label_idx = labels_ptr[row];
     
@@ -45,7 +49,7 @@ __global__ void cross_entropy_forward_backward_kernel(
                 logits_ptr[base + idx] = 0.0f;
             }
         }
-        // Set loss and lse to zero for this sample (Im not sure if this is needed)
+        // Set loss to zero for this sample (Im not sure if this is needed)
         if (tid == 0) {
             loss_ptr[row] = 0.0f;
         }
@@ -68,17 +72,41 @@ __global__ void cross_entropy_forward_backward_kernel(
         const int idx = chunk_start + tid;
         const float x = (idx < n_cols) ? logits_ptr[row * logits_stride + idx] : -FLT_MAX;
 
-        // 1. Block-wide max reduction for current chunk
-        shared_max[tid] = x;
+        // 1.a Block-wide max reduction for current chunk
+        // shared_max[tid] = x;
+        // __syncthreads();
+
+        // for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        //     if (tid < s) {
+        //         shared_max[tid] = fmaxf(shared_max[tid], shared_max[tid + s]);
+        //     }
+        //     __syncthreads();
+        // }
+        // const float chunk_max = shared_max[0];
+
+        // 1.b Warp-level max reduction for current chunk
+        float warp_max = x;
+        for (int offset = 16; offset > 0; offset >>= 1) {
+            warp_max = fmaxf(warp_max, __shfl_down_sync(0xffffffff, warp_max, offset));
+        }
+        if (lane_id == 0) {
+            shared_max[warp_id] = warp_max;
+        }
         __syncthreads();
 
-        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-            if (tid < s) {
-                shared_max[tid] = fmaxf(shared_max[tid], shared_max[tid + s]);
+        float chunk_max;
+        if (tid < 32) {
+            float val = (tid < (blockDim.x / 32)) ? shared_max[tid] : -FLT_MAX;
+            for (int offset = 16; offset > 0; offset >>= 1) {
+                val = fmaxf(val, __shfl_down_sync(0xffffffff, val, offset));
             }
-            __syncthreads();
+            if (tid == 0) {
+                chunk_max = val;
+                shared_max[0] = chunk_max;
+            }
         }
-        const float chunk_max = shared_max[0];
+        __syncthreads();
+        chunk_max = shared_max[0];
 
         // 2. Compute new max and update sum of exponents
         const float m_new = fmaxf(shared_m, chunk_max);
@@ -86,17 +114,41 @@ __global__ void cross_entropy_forward_backward_kernel(
         // 3. Compute exp(x - m_new) for current chunk
         const float exp_x = (idx < n_cols) ? expf(x - m_new) : 0.0f;
 
-        // 4. Block-wide sum reduction for exponents
-        shared_sum[tid] = exp_x;
+        // 4.a Block-wide sum reduction for exponents
+        // shared_sum[tid] = exp_x;
+        // __syncthreads();
+
+        // for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        //     if (tid < s) {
+        //         shared_sum[tid] += shared_sum[tid + s];
+        //     }
+        //     __syncthreads();
+        // }
+        // const float chunk_sum = shared_sum[0];
+
+        // 4.b Warp-level sum reduction for exponents
+        float warp_sum = exp_x;
+        for (int offset = 16; offset > 0; offset >>= 1) {
+            warp_sum += __shfl_down_sync(0xffffffff, warp_sum, offset);
+        }
+        if (lane_id == 0) {
+            shared_sum[warp_id] = warp_sum;
+        }
         __syncthreads();
 
-        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-            if (tid < s) {
-                shared_sum[tid] += shared_sum[tid + s];
+        float chunk_sum;
+        if (tid < 32) {
+            float val = (tid < (blockDim.x / 32)) ? shared_sum[tid] : 0.0f;
+            for (int offset = 16; offset > 0; offset >>= 1) {
+                val += __shfl_down_sync(0xffffffff, val, offset);
             }
-            __syncthreads();
+            if (tid == 0) {
+                chunk_sum = val;
+                shared_sum[0] = chunk_sum;
+            }
         }
-        const float chunk_sum = shared_sum[0];
+        __syncthreads();
+        chunk_sum = shared_sum[0];
 
         // 5. Update shared variables
         if (threadIdx.x == 0) {
@@ -211,13 +263,14 @@ extern "C" {
         // (1 example is processed by 1 block)
 
         // blocks_per_grid = n_rows: Each block processes one row of the logits matrix.
-        // threads_per_block = 256: Each block has 256 threads for parallel processing.
+        // threads_per_block = 1024: Each block has 1024 threads for parallel processing.
         // shared_mem_size = 2 * threads_per_block * sizeof(float): Shared memory for max and sum reductions.
 
         int blocks_per_grid = n_rows;
         int threads_per_block = 1024;
 
-        size_t shared_mem_size = 2 * threads_per_block * sizeof(float);
+        // size_t shared_mem_size = 2 * threads_per_block * sizeof(float); // for block-wide reductions
+        size_t shared_mem_size = 2 * (threads_per_block / 32) * sizeof(float); // for warp-level reductions
                 
         cross_entropy_forward_backward_kernel<<<blocks_per_grid, threads_per_block, shared_mem_size>>>(
             logits_ptr,
