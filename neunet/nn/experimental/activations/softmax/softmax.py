@@ -81,6 +81,13 @@ def cuda_softmax_forward(x: cp.ndarray, o: cp.ndarray, dim: int):
 
     dim = dim % ndim 
 
+    # Explanation:
+    # Let's say the tensor has shape (2, 3, 4), and dim=1 (axis of size 3). Then:
+    # slice_size = 3 (size of dim axis).
+    # num_slices = (2 * 4) = 8 (number of slices).
+    # Each block processes one vector of 3 elements.
+    # Each thread processes 1 element at 1 moment.
+
     slice_size = shape[dim]
     num_slices = x.size // slice_size
 
