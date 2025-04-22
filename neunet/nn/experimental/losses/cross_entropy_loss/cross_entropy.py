@@ -102,7 +102,7 @@ def cross_entropy_forward_backward(
         loss,
         lse,
         labels,
-        logits.strides[0] // logits.itemsize,    # check this
+        logits.strides[0] // logits.itemsize,    # check this (NOTE: in case of contiguous array this is equal to vocab_size)
         ignore_index,
         batch_sequence_size,
         vocab_size,

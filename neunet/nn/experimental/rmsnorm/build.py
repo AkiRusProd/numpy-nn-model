@@ -4,24 +4,24 @@ import subprocess
 
 
 def compile():
-    print("Compiling CUDA cross entropy module...")
+    print("Compiling CUDA rmsnorm module...")
 
     if os.name == 'posix':
         command = [
             "nvcc",
-            "-o", "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy_cuda.dll",
+            "-o", "neunet/nn/experimental/rmsnorm/rmsnorm_cuda.dll",
             "-Xcompiler", "-fPIC",
             "-shared",
-            "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy.cu",
+            "neunet/nn/experimental/rmsnorm/rmsnorm.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
         ]
     elif os.name == 'nt':
         command = [
             "nvcc",
-            "-o", "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy_cuda.dll",
+            "-o", "neunet/nn/experimental/rmsnorm/rmsnorm_cuda.dll",
             "-shared",
-            "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy.cu",
+            "neunet/nn/experimental/rmsnorm/rmsnorm.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
         ]
@@ -50,7 +50,7 @@ def compile():
             print(e.stderr.decode(system_encoding, errors="replace"))
         raise
 
-    print("CUDA cross entropy module compiled successfully.")
+    print("CUDA rmsnorm module compiled successfully.")
 
 compile()
 

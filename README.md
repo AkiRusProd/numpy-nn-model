@@ -90,6 +90,7 @@
 1) CUDALinear (Module with fused bias in forward, written in CUDA + cublaslt)
 2) CUDASoftmax (Fused module, written in CUDA)
 3) CUDACrossEntropyLoss (Module with fused forward and backward in one kernel)
+4) CUDARMSNorm (Same as RMSNorm, but in CUDA)
 
 *[See Experimental Modules...](neunet/nn/experimental)*
 

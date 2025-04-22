@@ -259,12 +259,12 @@ extern "C" {
         int n_non_ignore
     ) {
         // Explanation:
-        // Number of blocks = number of examples in batch
+        // Number of blocks = number of batch x seg_len examples
         // (1 example is processed by 1 block)
 
         // blocks_per_grid = n_rows: Each block processes one row of the logits matrix.
         // threads_per_block = 1024: Each block has 1024 threads for parallel processing.
-        // shared_mem_size = 2 * threads_per_block * sizeof(float): Shared memory for max and sum reductions.
+        // shared_mem_size = 2 * threads_per_block * sizeof(float): Shared memory for block-wide max and sum reductions.
 
         int blocks_per_grid = n_rows;
         int threads_per_block = 1024;
