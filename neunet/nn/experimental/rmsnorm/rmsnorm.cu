@@ -24,6 +24,7 @@ __global__ void rms_norm_forward_kernel(
 
     const float* x_row = X + row * n_cols;
     float* y_row = Y + row * n_cols;
+    float* x_norm_row = X_norm + row * n_cols;
 
     // 1. Summation of squares for the row
     // sum_sq is a partial sum of squares calculated by a separate thread for its part of the row elements. 
@@ -38,8 +39,10 @@ __global__ void rms_norm_forward_kernel(
     // Note: this is loop with uncoalesced access pattern (less efficient)
     float sum_sq = 0.0f;
     for (int i = tid; i < n_cols; i += blockDim.x) {
-        float val = x_row[i];
-        sum_sq += val * val;
+        if (i < n_cols) {
+            float val = x_row[i];
+            sum_sq += val * val;
+        }
     }
 
     // Collect all partial amounts in one place for reduction.
@@ -69,10 +72,12 @@ __global__ void rms_norm_forward_kernel(
     // Note: this is loop with uncoalesced access pattern (less efficient)
     float current_X_std = X_std[row] + eps;
     for (int i = tid; i < n_cols; i += blockDim.x) {
-        X_norm[i] = x_row[i] / current_X_std;
-        y_row[i] = X_norm[i] * weight[i];
-        if (bias != nullptr) {
-            y_row[i] += bias[i];
+        if (i < n_cols) {
+            x_norm_row[i] = x_row[i] / current_X_std;
+            y_row[i] = x_norm_row[i] * weight[i];
+            if (bias != nullptr) {
+                y_row[i] += bias[i];
+            }
         }
     }
 }
@@ -150,10 +155,12 @@ __global__ void rms_norm_backward_kernel(
     // The same logic as in the forward pass.
     float sum_val = 0.0f;
     for (int j = tid; j < n_cols; j += blockDim.x) {
-        float wj = weight[j];
-        float goj = grad_out_row[j];
-        float xj = x_row[j];
-        sum_val += wj * goj * xj / X_std[row];
+        if (j < n_cols){
+            float wj = weight[j];
+            float goj = grad_out_row[j];
+            float xj = x_row[j];
+            sum_val += wj * goj * xj / X_std[row];
+        }
     }
 
     shared[tid] = sum_val;
@@ -172,15 +179,17 @@ __global__ void rms_norm_backward_kernel(
     // 2. Gradient calculation
     float N = n_cols;
     for (int j = tid; j < n_cols; j += blockDim.x) {
-        float wj = weight[j];
-        float goj = grad_out_row[j];
-        float xj = x_row[j];
+        if (j < n_cols){
+            float wj = weight[j];
+            float goj = grad_out_row[j];
+            float xj = x_row[j];
 
-        // Input gradient calculation
-        float dX_hat = wj * goj;
-        float term1 = dX_hat * X_std[row];
-        float term2 = xj * (sum_dXhat_X_Xstd / N);
-        grad_x_row[j] = (term1 - term2) / X_std_sq;
+            // Input gradient calculation
+            float dX_hat = wj * goj;
+            float term1 = dX_hat * X_std[row];
+            float term2 = xj * (sum_dXhat_X_Xstd / N);
+            grad_x_row[j] = (term1 - term2) / X_std_sq;
+        }
     }
 }
 

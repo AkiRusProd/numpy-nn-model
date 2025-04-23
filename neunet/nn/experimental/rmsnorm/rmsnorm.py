@@ -224,8 +224,8 @@ class CUDARMSNorm(nn.Module): #layer with static backpropagation
         if X.device != "cuda":
             raise NotImplementedError(f"Only CUDA is supported with cupy backend, got {X.device} instead.")
 
+        X_std = cp.empty(X.shape[:-1], dtype = X.dtype)
         X_norm = cp.empty_like(X.data)
-        X_std = cp.empty_like(X.data)
         O = cp.empty_like(X.data)
 
         O, X_norm, X_std = rmsnorm_forward(
