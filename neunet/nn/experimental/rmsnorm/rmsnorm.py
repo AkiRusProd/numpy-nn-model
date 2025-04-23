@@ -107,7 +107,7 @@ def rmsnorm_forward(
     call_cuda_function(
         CUDA_RMSNORM_FORWARD,
         X, weight, bias, 
-        O, X_norm, X_std,
+        O, X_std, X_norm,
         n_rows, n_cols, eps, None
     )
 
@@ -164,7 +164,7 @@ def rmsnorm_backward(
     call_cuda_function(
         CUDA_RMSNORM_BACKWARD,
         grad_O, X, weight,
-        X_norm, X_std,
+        X_std, X_norm, 
         grad_X, grad_weight, grad_bias,
         n_rows, n_cols, None
     )
@@ -202,6 +202,7 @@ class CUDARMSNorm(nn.Module): #layer with static backpropagation
     Root Mean Squared Normalization with autograd backward pass.
     References: 
     https://dl.acm.org/doi/pdf/10.5555/3454287.3455397
+    https://pytorch.org/docs/stable/generated/torch.nn.RMSNorm.html
     https://github.com/meta-llama/llama/blob/main/llama/model.py
     https://catalyst-team.github.io/catalyst/v20.12/_modules/catalyst/contrib/nn/modules/rms_norm.html
     """

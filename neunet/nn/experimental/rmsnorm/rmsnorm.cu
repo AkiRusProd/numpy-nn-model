@@ -71,7 +71,7 @@ __global__ void rms_norm_forward_kernel(
     for (int i = tid; i < n_cols; i += blockDim.x) {
         X_norm[i] = x_row[i] / current_X_std;
         y_row[i] = X_norm[i] * weight[i];
-        if (bias) {
+        if (bias != nullptr) {
             y_row[i] += bias[i];
         }
     }
@@ -238,7 +238,7 @@ extern "C" {
         const float* X,           
         const float* weight,      
         const float* X_std,     
-        float* X_norm,
+        const float* X_norm,
         float* grad_X,       
         float* grad_weight,      
         float* grad_bias,  
