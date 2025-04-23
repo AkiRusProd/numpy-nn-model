@@ -1,5 +1,7 @@
 import ctypes
 from ctypes import POINTER, c_float, c_int
+from typing import Literal, Union
+
 import cupy as cp
 import numpy as np
 
@@ -7,8 +9,6 @@ import neunet
 import neunet.nn as nn
 from neunet.autograd import Tensor
 from neunet.nn.experimental.utils import CUDA_RMSNORM_MODULE, get_module_path, load_dlls
-
-from typing import Union, Literal
 
 load_dlls()
 
@@ -227,7 +227,7 @@ class CUDARMSNorm(nn.Module): #layer with static backpropagation
         X_std = cp.empty_like(X.data)
         O = cp.empty_like(X.data)
 
-        rmsnorm_forward(
+        O, X_norm, X_std = rmsnorm_forward(
             X.data, self.weight.data, self.bias.data if self.bias is not None else None,
             X_norm, X_std, O, self.eps
         )

@@ -241,9 +241,9 @@ extern "C" {
         float* X_norm,
         float* grad_X,       
         float* grad_weight,      
-        float* grad_bias,        
-        int n_cols,             
-        int n_rows,                         
+        float* grad_bias,  
+        int n_rows,      
+        int n_cols,                                     
         cudaStream_t stream = 0) {
 
         
@@ -253,7 +253,7 @@ extern "C" {
 
         rms_norm_backward_kernel<<<grid, threads_per_block, shared_mem_size, stream>>>(
             grad_Y, X, weight, X_std, grad_X,
-            n_cols, n_rows
+            n_rows, n_cols
         );
 
         // int threads_per_block = 256;
