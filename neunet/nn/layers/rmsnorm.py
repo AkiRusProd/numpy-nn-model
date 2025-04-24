@@ -84,8 +84,8 @@ class RMSNorm(Module): #layer with static backpropagation
     def forward(self, X: Tensor) -> Tensor:
         xp = X.xp
 
-        X_std = xp.sqrt(xp.mean(X.data ** 2, -1, keepdims=True))
-        X_norm = X.data / (X_std + self.eps)
+        X_std = xp.sqrt(xp.mean(X.data ** 2, -1, keepdims=True) + self.eps)
+        X_norm = X.data / X_std
 
         O = X_norm * self.weight.data
         if self.bias is not None:

@@ -64,16 +64,15 @@ __global__ void rms_norm_forward_kernel(
     // The standard deviation is calculated in the first thread (tid == 0) and stored in X_std[row].
     if (tid == 0) {
         float mean_sq = shared[0] / n_cols;
-        X_std[row] = sqrtf(mean_sq);
+        X_std[row] = sqrtf(mean_sq + eps);
     }
     __syncthreads();
 
     // 3. Normalization and scaling
     // Note: this is loop with uncoalesced access pattern (less efficient)
-    float current_X_std = X_std[row] + eps;
     for (int i = tid; i < n_cols; i += blockDim.x) {
         if (i < n_cols) {
-            x_norm_row[i] = x_row[i] / current_X_std;
+            x_norm_row[i] = x_row[i] / X_std[row];
             y_row[i] = x_norm_row[i] * weight[i];
             if (bias != nullptr) {
                 y_row[i] += bias[i];
