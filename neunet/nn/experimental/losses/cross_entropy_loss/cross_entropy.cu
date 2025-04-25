@@ -208,7 +208,7 @@ __global__ void cross_entropy_forward_backward_kernel(
 
         // Apply reduction scaling
         probs *= scale;
-        logits_ptr[row * logits_stride + idx] = probs; // Update logits in-place
+        logits_ptr[row * logits_stride + idx] = probs; // Update logits in-place with their gradients
     }
 
     // Alternative approach: Loop with uncoalesced access pattern (less efficient)

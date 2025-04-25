@@ -43,12 +43,13 @@ class Tensor:
         return self.data
 
     def to(self, device: Literal["cpu", "cuda"]) -> 'Tensor':
+        if device == self.device:
+            return self  # Avoid unnecessary copying if already on the target device
+
         if device not in ["cpu", "cuda"]:
             raise ValueError("Device must be 'cpu' or 'cuda'")
-        if device == "cpu":
-            xp = np
-        else:
-            xp = cp
+
+        xp = np if device == "cpu" else cp
 
         data = (
             xp.array(self.data)
@@ -975,8 +976,8 @@ class Tensor:
 
         self.apply_grad(grad)
         # Perform a topological sort to ensure gradients are calculated in the correct order
-        tape = []
-        visited_ids = set()
+        tape: list[Tensor] = []
+        visited_ids: set[int] = set()
 
         def toposort(v, tape: list, visited_ids: set):
             # Topological Sort Using DFS

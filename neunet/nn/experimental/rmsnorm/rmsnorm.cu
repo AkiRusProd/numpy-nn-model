@@ -4,6 +4,16 @@
 #define DLLEXPORT extern "C"
 #endif
 
+__inline__ __device__ float warp_reduce_sum(float val) {
+    val += __shfl_xor_sync(0xffffffff, val, 16);
+    val += __shfl_xor_sync(0xffffffff, val, 8);
+    val += __shfl_xor_sync(0xffffffff, val, 4);
+    val += __shfl_xor_sync(0xffffffff, val, 2);
+    val += __shfl_xor_sync(0xffffffff, val, 1);
+    return val;
+}
+
+
 __global__ void rms_norm_forward_kernel(
     const float* X,    
     const float* weight, 
@@ -45,20 +55,41 @@ __global__ void rms_norm_forward_kernel(
         }
     }
 
+    // a. Block-wide reduction
+
     // Collect all partial amounts in one place for reduction.
     // Each thread writes its partial sum to shared memory.
     // shared[] — array in shared memory of the block (fast access for all threads of the block).
-    shared[tid] = sum_sq;
-    __syncthreads();
+    // shared[tid] = sum_sq;
+    // __syncthreads();
 
     // Sum all partial sums into one result (Parallel Reduction). 
     // The final result is in shared[0].
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            shared[tid] += shared[tid + s];
-        }
-        __syncthreads();
+    // for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+    //     if (tid < s) {
+    //         shared[tid] += shared[tid + s];
+    //     }
+    //     __syncthreads();
+    // }
+
+    // b. Warp-wide reduction
+
+    sum_sq = warp_reduce_sum(sum_sq);
+    if (tid % 32 == 0) { // if tid is first thread in warp
+        shared[tid / 32] = sum_sq;
     }
+
+    __syncthreads();
+
+    if (tid < 32) {
+        int num_warps = blockDim.x / 32; // Note: blockDim.x must be a multiple of 32
+        float val = (tid < num_warps) ? shared[tid] : 0.0f;
+        val = warp_reduce_sum(val);
+        if (tid == 0) {
+            shared[0] = val;
+        }
+    }
+    __syncthreads();
 
     // 2. Calculating the standard deviation
     // The standard deviation is calculated in the first thread (tid == 0) and stored in X_std[row].
@@ -118,7 +149,8 @@ extern "C" {
         
         dim3 grid(n_rows);       // One block per row
         int threads_per_block = 1024;
-        size_t shared_mem_size = threads_per_block * sizeof(float); // for block-wide reductions
+        // size_t shared_mem_size = threads_per_block * sizeof(float); // for block-wide reductions
+        size_t shared_mem_size = (threads_per_block / 32) * sizeof(float); // for warp-wide reductions
 
         rms_norm_forward_kernel<<<grid, threads_per_block, shared_mem_size, stream>>>(
             X, weight, bias, Y, X_std, X_norm, n_rows, n_cols, eps
@@ -162,18 +194,39 @@ __global__ void rms_norm_backward_kernel(
         }
     }
 
-    shared[tid] = sum_val;
+    // a. Block-wide reduction
+
+    // shared[tid] = sum_val;
+    // __syncthreads();
+
+    // for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+    //     if (tid < s) {
+    //         shared[tid] += shared[tid + s];
+    //     }
+    //     __syncthreads();
+    // }
+
+    // float sum_dXhat_X_Xstd = shared[0];
+    // __syncthreads();
+
+    // b. Warp-wide reduction
+    sum_val = warp_reduce_sum(sum_val);
+    if (tid % 32 == 0) {
+        shared[tid / 32] = sum_val;
+    }
     __syncthreads();
 
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            shared[tid] += shared[tid + s];
+    if (tid < 32) {
+        const int num_warps = blockDim.x / 32;
+        float val = (tid < num_warps) ? shared[tid] : 0.0f;
+        val = warp_reduce_sum(val);
+        if (tid == 0) {
+            shared[0] = val;
         }
-        __syncthreads();
     }
+    __syncthreads();
 
     float sum_dXhat_X_Xstd = shared[0];
-    __syncthreads();
 
     // 2. Gradient calculation
     float N = n_cols;
@@ -257,7 +310,8 @@ extern "C" {
         
         dim3 grid(n_rows); 
         int threads_per_block = 1024;
-        size_t shared_mem_size = threads_per_block * sizeof(float);
+        // size_t shared_mem_size = threads_per_block * sizeof(float); // for block-wide reductions
+        size_t shared_mem_size = (threads_per_block / 32) * sizeof(float); // for warp-wide reductions
 
         rms_norm_backward_kernel<<<grid, threads_per_block, shared_mem_size, stream>>>(
             grad_Y, X, weight, X_std, grad_X,
