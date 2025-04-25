@@ -12,6 +12,18 @@ CUDA_SOFTMAX_MODULE = {
     'nt': 'neunet/nn/experimental/activations/softmax/softmaxcuda.dll'
 }
 
+CUDA_CROSS_ENTROPY_MODULE = {
+    "name": "cross_entropy",
+    'posix': 'neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy_cuda.so',
+    'nt': 'neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy_cuda.dll'
+}
+
+CUDA_RMSNORM_MODULE = {
+    "name": "rmsnorm",
+    'posix': 'neunet/nn/experimental/rmsnorm/rmsnorm_cuda.so',
+    'nt': 'neunet/nn/experimental/rmsnorm/rmsnorm_cuda.dll'
+}
+
 def load_dlls():
     """
     Loads CUDA DLLs for Windows systems by adding the CUDA binary directory to the DLL search path.

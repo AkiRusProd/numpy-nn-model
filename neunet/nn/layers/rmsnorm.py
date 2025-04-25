@@ -65,6 +65,7 @@ class RMSNorm(Module): #layer with static backpropagation
     Root Mean Squared Normalization with autograd backward pass.
     References: 
     https://dl.acm.org/doi/pdf/10.5555/3454287.3455397
+    https://pytorch.org/docs/stable/generated/torch.nn.RMSNorm.html
     https://github.com/meta-llama/llama/blob/main/llama/model.py
     https://catalyst-team.github.io/catalyst/v20.12/_modules/catalyst/contrib/nn/modules/rms_norm.html
     """
@@ -83,8 +84,8 @@ class RMSNorm(Module): #layer with static backpropagation
     def forward(self, X: Tensor) -> Tensor:
         xp = X.xp
 
-        X_std = xp.sqrt(xp.mean(X.data ** 2, -1, keepdims=True))
-        X_norm = X.data / (X_std + self.eps)
+        X_std = xp.sqrt(xp.mean(X.data ** 2, -1, keepdims=True) + self.eps)
+        X_norm = X.data / X_std
 
         O = X_norm * self.weight.data
         if self.bias is not None:
