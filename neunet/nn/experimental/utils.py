@@ -24,6 +24,12 @@ CUDA_RMSNORM_MODULE = {
     'nt': 'neunet/nn/experimental/rmsnorm/rmsnorm_cuda.dll'
 }
 
+CUDA_SWISH_MODULE = {
+    "name": "swish",
+    'posix': 'neunet/nn/experimental/activations/swish/swish_cuda.so',
+    'nt': 'neunet/nn/experimental/activations/swish/swish_cuda.dll'
+}
+
 def load_dlls():
     """
     Loads CUDA DLLs for Windows systems by adding the CUDA binary directory to the DLL search path.
