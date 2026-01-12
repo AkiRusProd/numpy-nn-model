@@ -22,11 +22,11 @@ def test_swish_comparison():
     data = np.random.randn(batch_size, features).astype(np.float32)
     
     # Native Swish on GPU
-    t_native = Tensor(data, device='cuda', requires_grad=True)
+    t_native = Tensor(data.copy(), device='cuda', requires_grad=True)
     model_native = Swish(beta=beta)
     
     # CUDA Swish
-    t_cuda = Tensor(data, device='cuda', requires_grad=True)
+    t_cuda = Tensor(data.copy(), device='cuda', requires_grad=True)
     model_cuda = CUDASwish(beta=beta)
     
     # Forward Pass
@@ -50,8 +50,8 @@ def test_swish_comparison():
     grad_np = np.random.randn(*out_native.shape).astype(np.float32)
     grad_cuda = cp.array(grad_np)
     
-    out_native.backward(grad_cuda)
-    out_cuda.backward(grad_cuda)
+    out_native.backward(grad_cuda.copy())
+    out_cuda.backward(grad_cuda.copy())
     
     # Compare Backward Results (Gradients)
     print("\n--- Backward Pass Comparison ---")
