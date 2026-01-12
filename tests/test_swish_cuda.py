@@ -61,6 +61,10 @@ def test_swish_comparison():
     try:
         cp.testing.assert_allclose(t_native.grad, t_cuda.grad, rtol=1e-5, atol=1e-5)
         print("Backward pass matches!")
+
+        print(f"{t_native.grad.flatten()[:5]=}")
+        print(f"{t_cuda.grad.flatten()[:5]=}")
+
     except AssertionError as e:
         print("Backward pass mismatch!")
         print(e)
