@@ -11,6 +11,7 @@
 
 
 // 65536 elements = 256 KB of data. Optimal for load balancing.
+// https://github.com/pytorch/pytorch/blob/main/aten/src/ATen/native/cuda/MultiTensorApply.cuh
 constexpr int CHUNK_SIZE = 65536; 
 constexpr int BLOCK_SIZE = 512;
 
