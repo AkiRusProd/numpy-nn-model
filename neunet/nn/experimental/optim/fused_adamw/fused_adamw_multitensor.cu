@@ -60,31 +60,24 @@ __global__ void adamw_multi_tensor_kernel(
     for (int i = threadIdx.x; i < items_to_process; i += blockDim.x) {
         int idx = start_offset + i;
 
-        // Load
         float p = p_ptr[idx];
         float g = g_ptr[idx];
         float m = m_ptr[idx];
         float v = v_ptr[idx];
 
-        // AdamW Math ---
-        
         // Weight Decay (decoupled)
         if (weight_decay != 0.0f) {
             p -= lr * weight_decay * p;
         }
 
-        // Update moments
         m = beta1 * m + (1.0f - beta1) * g;
         v = beta2 * v + (1.0f - beta2) * g * g;
 
-        // Bias correction
         float m_hat = m / bias_correction1;
         float v_hat = v / bias_correction2;
 
-        // Update weights
         p -= lr * m_hat / (sqrtf(v_hat) + eps);
 
-        // --- Write back ---
         p_ptr[idx] = p;
         m_ptr[idx] = m;
         v_ptr[idx] = v;
@@ -138,7 +131,7 @@ public:
         if (num_tensors != cached_num_tensors) {
             cleanup();
             
-            // --- PLANNING STAGE (On CPU) ---
+            // PLANNING STAGE (On CPU)
             std::vector<int> map_tensor;
             std::vector<int> map_chunk;
             
