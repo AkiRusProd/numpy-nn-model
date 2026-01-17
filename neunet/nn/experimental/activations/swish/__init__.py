@@ -1,1 +1,1 @@
-from .swish import CUDASwish
+from .swish import CUDASwish as CUDASwish

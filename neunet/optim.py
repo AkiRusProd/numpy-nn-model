@@ -2,11 +2,47 @@
 
 
 class Adam:
-    def __init__(self, params, lr: float=0.01, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8):
+    def __init__(self, params, lr: float=0.01, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: int = 0):
         self.params = params
         self.lr = lr
         self.betas = betas
         self.eps = eps
+        self.weight_decay = weight_decay
+
+        self.m = [param.xp.zeros_like(param.data) for param in self.params]
+        self.v = [param.xp.zeros_like(param.data) for param in self.params]
+
+        self.t = 0
+
+    def step(self):
+        self.t += 1
+        for i, param in enumerate(self.params):
+            grad = param.grad
+            if grad is None:
+                continue
+
+            if self.weight_decay != 0:
+                grad = grad + self.weight_decay * param.data
+
+            self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * grad
+            self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * grad**2
+
+            m_hat = self.m[i] / (1 - self.betas[0] ** self.t)
+            v_hat = self.v[i] / (1 - self.betas[1] ** self.t)
+
+            param.data -= self.lr * m_hat / (param.xp.sqrt(v_hat) + self.eps)
+
+    def zero_grad(self):
+        for param in self.params:
+            param.grad = None
+
+class AdamW:
+    def __init__(self, params, lr: float=0.01, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.01):
+        self.params = params
+        self.lr = lr
+        self.betas = betas
+        self.eps = eps
+        self.weight_decay = weight_decay
 
         self.m = [param.xp.zeros_like(param.data) for param in self.params]
         self.v = [param.xp.zeros_like(param.data) for param in self.params]
@@ -18,7 +54,12 @@ class Adam:
         for i, param in enumerate(self.params):
             if param.grad is None:
                 continue
+            
+            # Decoupled Weight Decay: apply directly to parameters
+            if self.weight_decay != 0:
+                param.data -= self.lr * self.weight_decay * param.data
 
+            # Standard Adam update
             self.m[i] = self.betas[0] * self.m[i] + (1 - self.betas[0]) * param.grad
             self.v[i] = self.betas[1] * self.v[i] + (1 - self.betas[1]) * param.grad**2
 
