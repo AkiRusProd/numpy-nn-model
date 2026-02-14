@@ -2,42 +2,29 @@ import ctypes
 from ctypes import POINTER, c_float, c_int, c_void_p
 import cupy as cp
 
-from neunet.nn.experimental.utils import get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    get_current_stream_ptr,
+    CUDA_FUSED_ADAMW_MULTITENSOR_MODULE,
+)
 
 load_dlls()
 
-CUDA_FUSED_ADAMW_MODULE = {
-    "name": "fused_adamw_multitensor",
-    'posix': 'neunet/nn/experimental/optim/fused_adamw/fused_adamw_multitensor_cuda.so',
-    'nt': 'neunet/nn/experimental/optim/fused_adamw/fused_adamw_multitensor_cuda.dll'
-}
-
-try:
-    CUDA_FUSED_ADAMW_DLL = get_module_path(CUDA_FUSED_ADAMW_MODULE)
-except FileNotFoundError:
-    CUDA_FUSED_ADAMW_DLL = None
-
-def _load_cuda_function(module_path, function_name, arg_types, res_type=None):
-    if module_path is None:
-        return None
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    if res_type:
-        func.restype = res_type
-    return func
+CUDA_FUSED_ADAMW_DLL = get_module_path(CUDA_FUSED_ADAMW_MULTITENSOR_MODULE)
 
 
 if CUDA_FUSED_ADAMW_DLL:
-    CreateFusedOptimizer = _load_cuda_function(
+    CreateFusedOptimizer = load_cuda_function(
         CUDA_FUSED_ADAMW_DLL, "CreateFusedOptimizer", [], c_void_p
     )
     
-    DestroyFusedOptimizer = _load_cuda_function(
+    DestroyFusedOptimizer = load_cuda_function(
         CUDA_FUSED_ADAMW_DLL, "DestroyFusedOptimizer", [c_void_p]
     )
 
-    FusedAdamWStep = _load_cuda_function(
+    FusedAdamWStep = load_cuda_function(
         CUDA_FUSED_ADAMW_DLL, "FusedAdamWStep",
         [
             c_void_p,                   # optimizer instance
@@ -153,7 +140,7 @@ class CUDAFusedMultiTensorAdamW:
             self.eps,
             self.weight_decay,
             self.t,
-            None # stream (optional: cp.cuda.get_current_stream().ptr)
+            get_current_stream_ptr()
         )
 
     def zero_grad(self):

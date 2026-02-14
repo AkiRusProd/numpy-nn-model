@@ -1,37 +1,23 @@
 import ctypes
-from ctypes import POINTER, c_float, c_int
+from ctypes import c_float, c_int
 import cupy as cp
-import numpy as np
 
-from neunet.nn.experimental.utils import get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    call_cuda_function as _call_cuda_function,
+    get_current_stream_ptr,
+    CUDA_FUSED_ADAMW_MODULE,
+)
 
 load_dlls()
 
-CUDA_FUSED_ADAMW_MODULE = {
-    "name": "fused_adamw",
-    'posix': 'neunet/nn/experimental/optim/fused_adamw/fused_adamw_cuda.so',
-    'nt': 'neunet/nn/experimental/optim/fused_adamw/fused_adamw_cuda.dll'
-}
+CUDA_FUSED_ADAMW_DLL = get_module_path(CUDA_FUSED_ADAMW_MODULE)
 
-# Try to load the DLL. If it doesn't exist, we can't load the functions.
-# This pattern assumes compilation happens before import or handle it gracefully?
-# The other modules call get_module_path at top level.
-try:
-    CUDA_FUSED_ADAMW_DLL = get_module_path(CUDA_FUSED_ADAMW_MODULE)
-except FileNotFoundError:
-    CUDA_FUSED_ADAMW_DLL = None
-
-# Helper to load CUDA functions
-def _load_cuda_function(module_path, function_name, arg_types):
-    if module_path is None:
-        return None
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    return func
 
 if CUDA_FUSED_ADAMW_DLL:
-    CUDA_ADAMW_STEP = _load_cuda_function(
+    CUDA_ADAMW_STEP = load_cuda_function(
         CUDA_FUSED_ADAMW_DLL, "FusedAdamWStep", 
         [
             ctypes.POINTER(ctypes.c_float), # params
@@ -54,20 +40,7 @@ else:
 def call_cuda_function(func, *args):
     if func is None:
         raise RuntimeError("CUDA FusedAdamW module not compiled. Run 'build.py' in the module directory.")
-
-    def _to_pointer(obj):
-        if obj is None:
-            return None
-        elif isinstance(obj, cp.ndarray):
-            if obj.dtype == cp.float32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_float))
-            elif obj.dtype == cp.int32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_int))
-            else:
-                raise ValueError(f"Unsupported dtype: {obj.dtype}. Expected float32 or int32.")
-        return obj
-
-    return func(*[_to_pointer(arg) for arg in args])
+    return _call_cuda_function(func, *args)
 
 class CUDAFusedAdamW:
     def __init__(self, params, lr: float=0.01, betas: tuple[float, float]=(0.9, 0.999), eps: float=1e-8, weight_decay: float=0.01):
@@ -132,7 +105,7 @@ class CUDAFusedAdamW:
                 self.weight_decay,
                 self.t,
                 n,
-                None # stream
+                get_current_stream_ptr()
             )
 
     def zero_grad(self):

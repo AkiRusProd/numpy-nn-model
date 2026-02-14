@@ -4,20 +4,19 @@ import cupy as cp
 
 import neunet.nn as nn
 from neunet.autograd import Tensor
-from neunet.nn.experimental.utils import CUDA_CROSS_ENTROPY_MODULE, get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    CUDA_CROSS_ENTROPY_MODULE,
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    call_cuda_function,
+)
 
 load_dlls()
 
 CUDA_CROSS_ENTROPY_DLL = get_module_path(CUDA_CROSS_ENTROPY_MODULE)
 
-# Helper to load CUDA functions
-def _load_cuda_function(module_path, function_name, arg_types):
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    return func
-
-CUDA_CROSS_ENTROPY_FORWARD_BACKWARD = _load_cuda_function(
+CUDA_CROSS_ENTROPY_FORWARD_BACKWARD = load_cuda_function(
     CUDA_CROSS_ENTROPY_DLL, "cudaCrossEntropyForwardBackward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -32,24 +31,6 @@ CUDA_CROSS_ENTROPY_FORWARD_BACKWARD = _load_cuda_function(
         c_int,
     ]
 )
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(obj: cp.ndarray):
-        if obj is None:
-            return None
-        elif isinstance(obj, cp.ndarray):
-            if isinstance(obj, bytes):
-                return ctypes.c_char(obj)
-            elif obj.dtype == cp.float32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_float))
-            elif obj.dtype == cp.int32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_int))
-
-        return obj
-
-    return func(*[_to_pointer(arg) for arg in args])
-
 
 def cross_entropy_forward_backward(
     logits: cp.ndarray, 

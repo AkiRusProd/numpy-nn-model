@@ -5,5 +5,4 @@ from neunet.nn.experimental.losses.cross_entropy_loss.cross_entropy import CUDAC
 from neunet.nn.experimental.activations.swish.swish import CUDASwish as CUDASwish
 from neunet.nn.experimental.optim.fused_adamw.fused_adamw import CUDAFusedAdamW as CUDAFusedAdamW
 from neunet.nn.experimental.optim.fused_adamw.fused_adamw_multitensor import CUDAFusedMultiTensorAdamW as CUDAFusedMultiTensorAdamW
-from neunet.nn.experimental.linear.linear_cutlass import CUDACUTLASSLinear
 from neunet.nn.experimental.linear_swish.linear_swish_cutlass import CUDALinearSwish

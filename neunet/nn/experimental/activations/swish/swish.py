@@ -1,22 +1,22 @@
 import ctypes
-from ctypes import POINTER, c_float, c_size_t, c_int
+from ctypes import POINTER, c_float, c_int
 import cupy as cp
 import neunet.nn as nn
 from neunet.autograd import Tensor
-from neunet.nn.experimental.utils import CUDA_SWISH_MODULE, get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    CUDA_SWISH_MODULE,
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    call_cuda_function,
+    get_current_stream_ptr,
+)
 
 load_dlls()
 
 CUDA_SWISH_DLL = get_module_path(CUDA_SWISH_MODULE)
 
-# Helper to load CUDA functions
-def _load_cuda_function(module_path, function_name, arg_types):
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    return func
-
-CUDA_SWISH_FORWARD = _load_cuda_function(
+CUDA_SWISH_FORWARD = load_cuda_function(
     CUDA_SWISH_DLL, "cudaSwishForward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -27,7 +27,7 @@ CUDA_SWISH_FORWARD = _load_cuda_function(
     ]
 )
 
-CUDA_SWISH_BACKWARD = _load_cuda_function(
+CUDA_SWISH_BACKWARD = load_cuda_function(
     CUDA_SWISH_DLL, "cudaSwishBackward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -38,18 +38,6 @@ CUDA_SWISH_BACKWARD = _load_cuda_function(
         ctypes.c_void_p
     ]
 )
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(array: cp.ndarray):
-        if array is None:
-            return None
-        elif isinstance(array, cp.ndarray):
-            return ctypes.cast(array.data.ptr, POINTER(c_float))
-
-        return array
-
-    return func(*[_to_pointer(arg) for arg in args])
 
 def cuda_swish_forward(x: cp.ndarray, out: cp.ndarray, beta: float):
     if not all([isinstance(arg, cp.ndarray) for arg in [x, out]]):
@@ -63,7 +51,7 @@ def cuda_swish_forward(x: cp.ndarray, out: cp.ndarray, beta: float):
         out = cp.ascontiguousarray(out)
     
     size = x.size
-    stream = cp.cuda.get_current_stream()
+    stream_ptr = get_current_stream_ptr()
     
     call_cuda_function(
         CUDA_SWISH_FORWARD, 
@@ -71,7 +59,7 @@ def cuda_swish_forward(x: cp.ndarray, out: cp.ndarray, beta: float):
         x, 
         beta,
         size,
-        stream.ptr
+        stream_ptr
     )
     return out
 
@@ -87,7 +75,7 @@ def cuda_swish_backward(grad_input: cp.ndarray, grad_output: cp.ndarray, x: cp.n
         x = cp.ascontiguousarray(x)
         
     size = x.size
-    stream = cp.cuda.get_current_stream()
+    stream_ptr = get_current_stream_ptr()
     
     call_cuda_function(
         CUDA_SWISH_BACKWARD,
@@ -96,7 +84,7 @@ def cuda_swish_backward(grad_input: cp.ndarray, grad_output: cp.ndarray, x: cp.n
         x,
         beta,
         size,
-        stream.ptr
+        stream_ptr
     )
     return grad_input
 

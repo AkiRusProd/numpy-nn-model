@@ -8,20 +8,20 @@ import numpy as np
 import neunet
 import neunet.nn as nn
 from neunet.autograd import Tensor
-from neunet.nn.experimental.utils import CUDA_RMSNORM_MODULE, get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    CUDA_RMSNORM_MODULE,
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    call_cuda_function,
+    get_current_stream_ptr,
+)
 
 load_dlls()
 
 CUDA_RMSNORM_DLL = get_module_path(CUDA_RMSNORM_MODULE)
 
-# Helper to load CUDA functions
-def _load_cuda_function(module_path, function_name, arg_types):
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    return func
-
-CUDA_RMSNORM_FORWARD = _load_cuda_function(
+CUDA_RMSNORM_FORWARD = load_cuda_function(
     CUDA_RMSNORM_DLL, "RMSNormForward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -37,7 +37,7 @@ CUDA_RMSNORM_FORWARD = _load_cuda_function(
     ]
 )
 
-CUDA_RMSNORM_BACKWARD = _load_cuda_function(
+CUDA_RMSNORM_BACKWARD = load_cuda_function(
     CUDA_RMSNORM_DLL, "RMSNormBackward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -53,23 +53,6 @@ CUDA_RMSNORM_BACKWARD = _load_cuda_function(
         ctypes.c_void_p
     ]
 )  
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(obj: cp.ndarray):
-        if obj is None:
-            return None
-        elif isinstance(obj, cp.ndarray):
-            if obj.dtype == cp.float32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_float))
-            elif obj.dtype == cp.int32:
-                return ctypes.cast(obj.data.ptr, POINTER(c_int))
-
-        return obj
-
-    return func(*[_to_pointer(arg) for arg in args])
-
-
 
 def rmsnorm_forward(
     X: cp.ndarray,
@@ -104,11 +87,12 @@ def rmsnorm_forward(
     n_cols = X.shape[-1]
 
 
+    stream_ptr = get_current_stream_ptr()
     call_cuda_function(
         CUDA_RMSNORM_FORWARD,
         X, weight, bias, 
         O, X_std, X_norm,
-        n_rows, n_cols, eps, None
+        n_rows, n_cols, eps, stream_ptr
     )
 
     return O, X_norm, X_std
@@ -161,12 +145,13 @@ def rmsnorm_backward(
     n_rows = np.prod(X.shape[:-1])
     n_cols = X.shape[-1]
 
+    stream_ptr = get_current_stream_ptr()
     call_cuda_function(
         CUDA_RMSNORM_BACKWARD,
         grad_O, X, weight,
         X_std, X_norm, 
         grad_X, grad_weight, grad_bias,
-        n_rows, n_cols, None
+        n_rows, n_cols, stream_ptr
     )
 
     return grad_X, grad_weight, grad_bias

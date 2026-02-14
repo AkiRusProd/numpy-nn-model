@@ -9,21 +9,23 @@ import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
-from neunet.nn.experimental.utils import load_dlls, get_module_path, CUDA_LINEAR_SWISH_CUTLASS_MODULE
+from neunet.nn.experimental.utils import (
+    load_dlls,
+    get_module_path,
+    CUDA_LINEAR_SWISH_CUTLASS_MODULE,
+    load_cuda_function,
+    call_cuda_function,
+    get_current_stream_ptr,
+    to_pointer,
+)
 
 load_dlls()
 
+ArrayLike = Union[np.ndarray, cp.ndarray]
+
 CUDA_LINEAR_SWISH_CUTLASS_DLL = get_module_path(CUDA_LINEAR_SWISH_CUTLASS_MODULE)
 
-# Helper to load CUDA functions
-def _load_cuda_function(dll_path, function_name, argtypes):
-    dll = ctypes.CDLL(dll_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = argtypes
-    return func
-
-
-CUDA_LINEAR_SWISH_FORWARD = _load_cuda_function(
+CUDA_LINEAR_SWISH_FORWARD = load_cuda_function(
     CUDA_LINEAR_SWISH_CUTLASS_DLL,
     "cudaLinearSwishForward",
     [
@@ -41,7 +43,7 @@ CUDA_LINEAR_SWISH_FORWARD = _load_cuda_function(
     ],
 )
 
-CUDA_LINEAR_SWISH_BACKWARD = _load_cuda_function(
+CUDA_LINEAR_SWISH_BACKWARD = load_cuda_function(
     CUDA_LINEAR_SWISH_CUTLASS_DLL,
     "cudaLinearSwishBackward",
     [
@@ -63,35 +65,12 @@ CUDA_LINEAR_SWISH_BACKWARD = _load_cuda_function(
 )
 
 
-class ndarray:
-    def __init__(self, array: Union[np.ndarray, cp.ndarray]):
-        self.array = array
-
-    def __array__(self):
-        return self.array
-
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(array: Union[ndarray, None]):
-        if array is None:
-            return None
-        elif isinstance(array, np.ndarray):
-            return array.ctypes.data_as(POINTER(c_float))
-        elif isinstance(array, cp.ndarray):
-            return ctypes.cast(array.data.ptr, POINTER(c_float))
-
-        return array
-
-    return func(*[_to_pointer(arg) for arg in args])
-
-
 def cuda_linear_swish_forward(
-    X: ndarray,
-    weights: ndarray,
-    bias: ndarray,
-    O: ndarray,
-    preactivation: ndarray,
+    X: ArrayLike,
+    weights: ArrayLike,
+    bias: Union[ArrayLike, None],
+    O: ArrayLike,
+    preactivation: Union[ArrayLike, None],
     input_rows: int,
     input_cols: int,
     output_cols: int,
@@ -99,7 +78,10 @@ def cuda_linear_swish_forward(
     save_preactivation: bool = False,
     stream=None,
 ):
-    stream_ptr = c_void_p(0) if stream is None else c_void_p(stream)
+    if stream is None:
+        stream_ptr = c_void_p(get_current_stream_ptr())
+    else:
+        stream_ptr = c_void_p(stream)
     return call_cuda_function(
         CUDA_LINEAR_SWISH_FORWARD,
         X,
@@ -117,14 +99,14 @@ def cuda_linear_swish_forward(
 
 
 def cuda_linear_swish_backward(
-    X: ndarray,
-    weights: ndarray,
-    bias: ndarray,
-    grad_O: ndarray,
-    d_linear_tmp: ndarray,
-    grad_X: ndarray,
-    grad_weight: ndarray,
-    grad_bias: ndarray,
+    X: ArrayLike,
+    weights: ArrayLike,
+    bias: Union[ArrayLike, None],
+    grad_O: ArrayLike,
+    d_linear_tmp: ArrayLike,
+    grad_X: ArrayLike,
+    grad_weight: ArrayLike,
+    grad_bias: Union[ArrayLike, None],
     input_rows: int,
     input_cols: int,
     output_cols: int,
@@ -132,28 +114,21 @@ def cuda_linear_swish_backward(
     recompute_preactivation: bool = True,
     stream=None,
 ):
-    # Helper for casting data to pointers
-    def _to_pointer(array: Union[ndarray, None]):
-        if array is None:
-            return None
-        elif isinstance(array, np.ndarray):
-            return array.ctypes.data_as(POINTER(c_float))
-        elif isinstance(array, cp.ndarray):
-            return ctypes.cast(array.data.ptr, POINTER(c_float))
-        return array
-
-    # Convert stream to c_void_p (None becomes NULL pointer)
-    stream_ptr = c_void_p(0) if stream is None else c_void_p(stream)
+    # Convert stream to c_void_p (None becomes current stream)
+    if stream is None:
+        stream_ptr = c_void_p(get_current_stream_ptr())
+    else:
+        stream_ptr = c_void_p(stream)
     
     return CUDA_LINEAR_SWISH_BACKWARD(
-        _to_pointer(X),
-        _to_pointer(weights),
-        _to_pointer(bias),
-        _to_pointer(grad_O),
-        _to_pointer(d_linear_tmp),
-        _to_pointer(grad_X),
-        _to_pointer(grad_weight),
-        _to_pointer(grad_bias),
+        to_pointer(X),
+        to_pointer(weights),
+        to_pointer(bias),
+        to_pointer(grad_O),
+        to_pointer(d_linear_tmp),
+        to_pointer(grad_X),
+        to_pointer(grad_weight),
+        to_pointer(grad_bias),
         input_rows,
         input_cols,
         output_cols,

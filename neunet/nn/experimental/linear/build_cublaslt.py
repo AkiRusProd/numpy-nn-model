@@ -5,10 +5,6 @@ import subprocess
 def compile():
     print("Compiling CUDA linear module...")
     cuda_source_name = "linear_cublaslt_no_manual_mem.cu"
-    if cuda_source_name == "linear_cublaslt_no_manual_mem.cu":
-        print("WARNING: The CUDALinear module, compiled from `linear_cublaslt_no_manual_mem.cu`, “works” with numpy arrays only in the “undefined behavior” mode.")
-        print("REASON: The code does not explicitly copy the numpy array from CPU to GPU, but it works. Possibly implicit allocation.")
-
 
     if os.name == 'posix':
         command = [

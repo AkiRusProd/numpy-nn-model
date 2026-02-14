@@ -9,84 +9,79 @@ import neunet
 from neunet.autograd import Tensor
 from neunet.nn.modules import Module
 from neunet.nn.parameter import Parameter
-from neunet.nn.experimental.utils import load_dlls, get_module_path, CUDA_LINEAR_MODULE
+from neunet.nn.experimental.utils import (
+    load_dlls,
+    get_module_path,
+    CUDA_LINEAR_MODULE,
+    CUDA_CUTLASS_LINEAR_MODULE,
+    load_cuda_function,
+    call_cuda_function
+)
 
 load_dlls()
 
-CUDA_LINEAR_DLL = get_module_path(CUDA_LINEAR_MODULE)
+ArrayLike = Union[np.ndarray, cp.ndarray]
 
-# Helper to load CUDA functions
-def _load_cuda_function(dll_path, function_name, argtypes):
-    dll = ctypes.CDLL(dll_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = argtypes
-    return func
+_BACKEND_MODULES = {
+    "cublaslt": CUDA_LINEAR_MODULE,
+    "cutlass": CUDA_CUTLASS_LINEAR_MODULE,
+}
 
+_BACKEND_CACHE: dict[str, tuple[ctypes._CFuncPtr, ctypes._CFuncPtr]] = {}
 
-CUDA_LINEAR_FORWARD = _load_cuda_function(
-    CUDA_LINEAR_DLL,
-    "cudaLinearModuleForward",
-    [
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        c_size_t,
-        c_size_t,
-        c_size_t,
-    ],
-)
-CUDA_LINEAR_BACKWARD = _load_cuda_function(
-    CUDA_LINEAR_DLL,
-    "cudaLinearModuleBackward",
-    [
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        POINTER(c_float),
-        c_size_t,
-        c_size_t,
-        c_size_t,
-    ],
-)
+def _get_backend_functions(backend: str):
+    if backend not in _BACKEND_CACHE:
+        module = _BACKEND_MODULES.get(backend)
+        if module is None:
+            raise ValueError(f"Unknown backend: {backend}")
+        dll_path = get_module_path(module)
+        forward = load_cuda_function(
+            dll_path,
+            "cudaLinearModuleForward",
+            [
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                c_size_t,
+                c_size_t,
+                c_size_t,
+            ],
+        )
+        backward = load_cuda_function(
+            dll_path,
+            "cudaLinearModuleBackward",
+            [
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                POINTER(c_float),
+                c_size_t,
+                c_size_t,
+                c_size_t,
+            ],
+        )
+        _BACKEND_CACHE[backend] = (forward, backward)
+    return _BACKEND_CACHE[backend]
 
-
-class ndarray:
-    def __init__(self, array: Union[np.ndarray, cp.ndarray]):
-        self.array = array
-
-    def __array__(self):
-        return self.array
-
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(array: Union[ndarray, None]):
-        if array is None:
-            return None
-        elif isinstance(array, np.ndarray):
-            return array.ctypes.data_as(POINTER(c_float))
-        elif isinstance(array, cp.ndarray):
-            return ctypes.cast(array.data.ptr, POINTER(c_float))
-
-        return array
-
-    return func(*[_to_pointer(arg) for arg in args])
 
 
 def cuda_linear_module_forward(
-    X: ndarray,
-    weights: ndarray,
-    bias: ndarray,
-    O: ndarray,
+    X: ArrayLike,
+    weights: ArrayLike,
+    bias: ArrayLike,
+    O: ArrayLike,
     input_rows: int,
     input_cols: int,
     output_cols: int,
+    forward_fn=None,
 ):
+    if forward_fn is None:
+        forward_fn, _ = _get_backend_functions("cublaslt")
     return call_cuda_function(
-        CUDA_LINEAR_FORWARD, 
+        forward_fn, 
         X, 
         weights, 
         bias, 
@@ -98,18 +93,21 @@ def cuda_linear_module_forward(
 
 
 def cuda_linear_module_backward(
-    X: ndarray,
-    weights: ndarray,
-    grad_O: ndarray,
-    grad_X: ndarray,
-    grad_weight: ndarray,
-    grad_bias: ndarray,
+    X: ArrayLike,
+    weights: ArrayLike,
+    grad_O: ArrayLike,
+    grad_X: ArrayLike,
+    grad_weight: ArrayLike,
+    grad_bias: ArrayLike,
     input_rows: int,
     input_cols: int,
     output_cols: int,
+    backward_fn=None,
 ):
+    if backward_fn is None:
+        _, backward_fn = _get_backend_functions("cublaslt")
     return call_cuda_function(
-        CUDA_LINEAR_BACKWARD,
+        backward_fn,
         X,
         weights,
         grad_O,
@@ -125,7 +123,16 @@ class _CUDALinearTensor(Tensor):
     def __init__(self, data, args, op, device):
         super().__init__(data, args, op, device=device)
 
-        def grad_fn(X: Tensor, weight: Tensor, bias: Tensor, in_rows_num, in_features, out_features, grad):
+        def grad_fn(
+            X: Tensor,
+            weight: Tensor,
+            bias: Tensor,
+            in_rows_num,
+            in_features,
+            out_features,
+            backward_fn,
+            grad,
+        ):
             grad_X = X.xp.empty_like(X.data, dtype=X.xp.float32)
             grad_weight = X.xp.empty_like(weight.data, dtype=X.xp.float32)
             grad_bias = X.xp.empty_like(bias.data, dtype=X.xp.float32) if bias is not None else None
@@ -133,7 +140,8 @@ class _CUDALinearTensor(Tensor):
             cuda_linear_module_backward(
                 X.data, weight.data, grad, grad_X,
                 grad_weight, grad_bias,
-                in_rows_num, in_features, out_features
+                in_rows_num, in_features, out_features,
+                backward_fn=backward_fn,
             )
 
             X.apply_grad(grad_X)
@@ -144,10 +152,19 @@ class _CUDALinearTensor(Tensor):
         self.grad_fn = grad_fn
 
 class CUDALinear(Module):
-    def __init__(self, in_features, out_features,  bias: bool=True, device: Literal["cuda"] = "cuda"):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias: bool = True,
+        device: Literal["cuda"] = "cuda",
+        backend: Literal["cublaslt", "cutlass"] = "cublaslt",
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.backend = backend
+        self._forward_fn, self._backward_fn = _get_backend_functions(backend)
 
         # Initialize weights and bias
         stdv = 1.0 / np.sqrt(in_features)
@@ -176,11 +193,21 @@ class CUDALinear(Module):
         input_rows = int(np.prod(X.shape[:-1]))
         cuda_linear_module_forward(
             X.data, self.weight.data, self.bias.data if self.bias is not None else None, output,
-            input_rows, self.in_features, self.out_features
+            input_rows, self.in_features, self.out_features,
+            forward_fn=self._forward_fn,
         )
 
         return _CUDALinearTensor(
-            output, (X, self.weight, self.bias, input_rows, self.in_features, self.out_features),
+            output,
+            (
+                X,
+                self.weight,
+                self.bias,
+                input_rows,
+                self.in_features,
+                self.out_features,
+                self._backward_fn,
+            ),
             "linear", device=self.device
         )
 
