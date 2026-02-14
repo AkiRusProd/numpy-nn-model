@@ -174,7 +174,7 @@ extern "C" {
         );
 
         // Compute d_bias = sum(d_output, axis=0)
-        if (d_bias != nullptr && d_bias != nullptr) {
+        if (d_bias != nullptr) {
             int threads = 256;
             int blocks = (outputColsNum + threads - 1) / threads;
             sumBiasKernel<<<blocks, threads>>>(

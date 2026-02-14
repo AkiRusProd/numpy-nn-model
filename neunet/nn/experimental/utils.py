@@ -6,6 +6,12 @@ CUDA_LINEAR_MODULE = {
     'nt': 'neunet/nn/experimental/linear/linearcuda.dll'
 }
 
+CUDA_CUTLASS_LINEAR_MODULE = {
+    "name": "cutlass_linear",
+    'posix': 'neunet/nn/experimental/linear/linearcutlass.so',
+    'nt': 'neunet/nn/experimental/linear/linearcutlass.dll'
+}
+
 CUDA_SOFTMAX_MODULE = {
     "name": "softmax",
     'posix': 'neunet/nn/experimental/activations/softmax/softmaxcuda.so',
@@ -28,6 +34,12 @@ CUDA_SWISH_MODULE = {
     "name": "swish",
     'posix': 'neunet/nn/experimental/activations/swish/swish_cuda.so',
     'nt': 'neunet/nn/experimental/activations/swish/swish_cuda.dll'
+}
+
+CUDA_LINEAR_SWISH_CUTLASS_MODULE = {
+    "name": "linear_swish_cutlass",
+    'posix': 'neunet/nn/experimental/linear_swish/linear_swish_cutlass.so',
+    'nt': 'neunet/nn/experimental/linear_swish/linear_swish_cutlass.dll'
 }
 
 def load_dlls():

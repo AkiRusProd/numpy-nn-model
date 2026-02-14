@@ -1,6 +1,6 @@
+import locale
 import os
 import subprocess
-import locale
 
 def compile():
     print("Compiling CUDA linear module...")
@@ -25,12 +25,10 @@ def compile():
     elif os.name == 'nt':
         command = [
             "nvcc",
+            # "-allow-unsupported-compiler",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
             f"neunet/nn/experimental/linear/{cuda_source_name}",
-            "-I/usr/local/cuda/include",
-            "-L/usr/local/cuda/lib64",
-            "-lcublas", "-lcurand",
             "-lcublas", "-lcublasLt", "-lcurand"
         ]
     else:

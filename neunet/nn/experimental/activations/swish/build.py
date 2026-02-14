@@ -15,15 +15,16 @@ def compile():
             "neunet/nn/experimental/activations/swish/swish.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
+            "-use_fast_math"
         ]
     elif os.name == 'nt':
         command = [
             "nvcc",
+            # "-allow-unsupported-compiler",
             "-o", "neunet/nn/experimental/activations/swish/swish_cuda.dll",
             "-shared",
-            "neunet/nn/experimental/activations/swish/swish.cu",
-            "-I/usr/local/cuda/include",
-            "-L/usr/local/cuda/lib64",
+             "neunet/nn/experimental/activations/swish/swish.cu",
+            "-use_fast_math"
         ]
     else:
         raise OSError("Unsupported operating system")

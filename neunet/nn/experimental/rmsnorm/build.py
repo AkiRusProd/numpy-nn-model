@@ -21,6 +21,7 @@ def compile():
             "nvcc",
             "-o", "neunet/nn/experimental/rmsnorm/rmsnorm_cuda.dll",
             "-shared",
+            # "-allow-unsupported-compiler",
             "neunet/nn/experimental/rmsnorm/rmsnorm.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",

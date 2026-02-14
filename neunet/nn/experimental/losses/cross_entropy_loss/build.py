@@ -21,6 +21,7 @@ def compile():
             "nvcc",
             "-o", "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy_cuda.dll",
             "-shared",
+            # "-allow-unsupported-compiler",
             "neunet/nn/experimental/losses/cross_entropy_loss/cross_entropy.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",
