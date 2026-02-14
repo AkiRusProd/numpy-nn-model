@@ -109,6 +109,8 @@ class _CUDACrossEntropyTensor(Tensor):
         super().__init__(data, args, op, device=device)
 
         def grad_fn(y_pred: Tensor, grad_y_pred, grad):
+            if grad.ndim == 1:
+                grad = grad[:, None]
             y_pred.apply_grad(grad_y_pred * grad)
            
         self.grad_fn = grad_fn
