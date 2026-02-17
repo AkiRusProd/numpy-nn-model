@@ -61,7 +61,7 @@ optimizer = Adam(model.parameters(), lr=0.001)
 
 # Create sample data (batch_size=32, features=784)
 x = nnet.randn(32, 784, requires_grad=True)
-target = nnet.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 0] * 3 + [1, 2], requires_grad=False)
+target = nnet.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 0] * 3 + [1, 2], requires_grad=False, dtype = nnet.int32)
 
 # Training step
 optimizer.zero_grad()
