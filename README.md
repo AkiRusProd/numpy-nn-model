@@ -829,3 +829,13 @@ Native implementation Example | Neural network Example
 <img src="generated images/native_conway.gif"> |  <img src="generated images/neunet_conway.gif">
 
 </details>
+
+## Tests
+
+Run the test suite:
+
+```bash
+pytest -q tests -s
+```
+
+The test suite includes CPU and CUDA tests. CUDA tests require a compatible GPU and CuPy installation.
