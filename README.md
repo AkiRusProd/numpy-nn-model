@@ -128,7 +128,7 @@ The framework provides a comprehensive set of components for building neural net
 ### Experimental CUDA Modules
 
 High-performance fused CUDA implementations for accelerated training:
-- `CUDALinear` - Fused linear layer with bias (CUDA + cuBLASLt/cutlass backend)
+- `CUDALinear` - Fused linear layer with bias (CUDA + cuBLASLt/CUTLASS backend)
 - `CUDALinearSwish` - Fused linear layer followed by Swish activation in a single CUDA kernel (CUTLASS backend)
 - `CUDASoftmax` - Fused softmax operation
 - `CUDASwish` - CUDA-accelerated Swish activation function
