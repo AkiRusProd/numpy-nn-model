@@ -1,4 +1,5 @@
 #include <cuda_runtime.h>
+#include <stdio.h>
 #include <cutlass/cutlass.h>
 #include <cutlass/gemm/device/gemm.h>
 #include <cutlass/layout/matrix.h>
@@ -529,6 +530,16 @@ using GemmSwishBackward = cutlass::gemm::device::GemmUniversalAdapter<EVTBwdKern
 
 
 // =============================================================================
+// Static workspace for EVT operations
+// =============================================================================
+
+static void* evt_forward_workspace = nullptr;
+static size_t evt_forward_workspace_size = 0;
+
+static void* evt_backward_workspace = nullptr;
+static size_t evt_backward_workspace_size = 0;
+
+// =============================================================================
 // Extern "C" API
 // =============================================================================
 
@@ -605,15 +616,26 @@ extern "C" {
 
             GemmSwishForwardEVT gemm_op;
             size_t workspace_size = GemmSwishForwardEVT::get_workspace_size(args);
-            void* workspace_ptr = nullptr;
-            if (workspace_size > 0) {
-                cudaMalloc(&workspace_ptr, workspace_size);
+            
+            // Allocate or reallocate workspace if needed
+            if (workspace_size > evt_forward_workspace_size) {
+                if (evt_forward_workspace != nullptr) {
+                    cudaFreeAsync(evt_forward_workspace, stream);
+                    evt_forward_workspace = nullptr;
+                    evt_forward_workspace_size = 0;
+                }
+                if (workspace_size > 0) {
+                    cudaError_t err = cudaMallocAsync(&evt_forward_workspace, workspace_size, stream);
+                    if (err != cudaSuccess) {
+                        fprintf(stderr, "CUDA Malloc Async failed in forward: %s\n", cudaGetErrorString(err));
+                        return;
+                    }
+                    evt_forward_workspace_size = workspace_size;
+                }
             }
-            gemm_op.initialize(args, workspace_ptr, stream);
+            
+            gemm_op.initialize(args, evt_forward_workspace, stream);
             gemm_op.run(stream);
-            if (workspace_ptr) {
-                cudaFree(workspace_ptr);
-            }
         } else {
             // =================================================================
             // Standard Forward (SIMT, FP32)
@@ -732,15 +754,26 @@ extern "C" {
 
             GemmSwishBackward gemm_bwd;
             size_t workspace_size = GemmSwishBackward::get_workspace_size(args_bwd);
-            void* workspace_ptr = nullptr;
-            if (workspace_size > 0) {
-                cudaMalloc(&workspace_ptr, workspace_size);
+            
+            // Allocate or reallocate workspace if needed
+            if (workspace_size > evt_backward_workspace_size) {
+                if (evt_backward_workspace != nullptr) {
+                    cudaFreeAsync(evt_backward_workspace, stream);
+                    evt_backward_workspace = nullptr;
+                    evt_backward_workspace_size = 0;
+                }
+                if (workspace_size > 0) {
+                    cudaError_t err = cudaMallocAsync(&evt_backward_workspace, workspace_size, stream);
+                    if (err != cudaSuccess) {
+                        fprintf(stderr, "CUDA Malloc Async failed in backward: %s\n", cudaGetErrorString(err));
+                        return;
+                    }
+                    evt_backward_workspace_size = workspace_size;
+                }
             }
-            gemm_bwd.initialize(args_bwd, workspace_ptr, stream);
+            
+            gemm_bwd.initialize(args_bwd, evt_backward_workspace, stream);
             gemm_bwd.run(stream);
-            if (workspace_ptr) {
-                cudaFree(workspace_ptr);
-            }
             // at this stage tmp_buffer is d_preactivation
         }
 
@@ -784,5 +817,16 @@ extern "C" {
         }
     }
 
-    DLLEXPORT void cleanupCudaMemory() {}
+    DLLEXPORT void cleanupCudaMemory() {
+        if (evt_forward_workspace != nullptr) {
+            cudaFree(evt_forward_workspace);
+            evt_forward_workspace = nullptr;
+            evt_forward_workspace_size = 0;
+        }
+        if (evt_backward_workspace != nullptr) {
+            cudaFree(evt_backward_workspace);
+            evt_backward_workspace = nullptr;
+            evt_backward_workspace_size = 0;
+        }
+    }
 }

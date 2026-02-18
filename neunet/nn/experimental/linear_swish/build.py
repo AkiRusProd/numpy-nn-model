@@ -70,6 +70,17 @@ def compile_cutlass():
     else:
         raise OSError("Unsupported operating system")
 
+    # Try to remove old DLL if it exists (may fail if loaded in Python)
+    if os.path.exists(out_file):
+        try:
+            os.remove(out_file)
+            print(f"Removed old {out_file}")
+        except OSError as e:
+            print(f"Warning: Could not remove {out_file}: {e}")
+            print("  This usually means the DLL is loaded in a Python process.")
+            print("  Please close all Python processes that use this module and try again.")
+            raise
+
     print(f"Executing command: {' '.join(command)}")
 
     system_encoding = locale.getpreferredencoding(False)
