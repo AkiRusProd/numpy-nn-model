@@ -1,14 +1,10 @@
+import locale
 import os
 import subprocess
-import locale
 
 def compile():
     print("Compiling CUDA linear module...")
     cuda_source_name = "linear_cublaslt_no_manual_mem.cu"
-    if cuda_source_name == "linear_cublaslt_no_manual_mem.cu":
-        print("WARNING: The CUDALinear module, compiled from `linear_cublaslt_no_manual_mem.cu`, “works” with numpy arrays only in the “undefined behavior” mode.")
-        print("REASON: The code does not explicitly copy the numpy array from CPU to GPU, but it works. Possibly implicit allocation.")
-
 
     if os.name == 'posix':
         command = [
@@ -25,12 +21,10 @@ def compile():
     elif os.name == 'nt':
         command = [
             "nvcc",
+            # "-allow-unsupported-compiler",
             "-o", "neunet/nn/experimental/linear/linearcuda.dll",
             "-shared",
             f"neunet/nn/experimental/linear/{cuda_source_name}",
-            "-I/usr/local/cuda/include",
-            "-L/usr/local/cuda/lib64",
-            "-lcublas", "-lcurand",
             "-lcublas", "-lcublasLt", "-lcurand"
         ]
     else:

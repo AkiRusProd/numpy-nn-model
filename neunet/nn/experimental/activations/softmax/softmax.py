@@ -3,20 +3,20 @@ from ctypes import POINTER, c_float, c_size_t
 import cupy as cp
 import neunet.nn as nn
 from neunet.autograd import Tensor
-from neunet.nn.experimental.utils import CUDA_SOFTMAX_MODULE, get_module_path, load_dlls
+from neunet.nn.experimental.utils import (
+    CUDA_SOFTMAX_MODULE,
+    get_module_path,
+    load_dlls,
+    load_cuda_function,
+    call_cuda_function,
+    get_current_stream_ptr,
+)
 
 load_dlls()
 
 CUDA_SOFTMAX_DLL = get_module_path(CUDA_SOFTMAX_MODULE)
 
-# Helper to load CUDA functions
-def _load_cuda_function(module_path, function_name, arg_types):
-    dll = ctypes.CDLL(module_path, mode=ctypes.RTLD_GLOBAL)
-    func = getattr(dll, function_name)
-    func.argtypes = arg_types
-    return func
-
-CUDA_SOFTMAX_FORWARD = _load_cuda_function(
+CUDA_SOFTMAX_FORWARD = load_cuda_function(
     CUDA_SOFTMAX_DLL, "cudaSoftmaxForward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -28,7 +28,7 @@ CUDA_SOFTMAX_FORWARD = _load_cuda_function(
     ]
 )
 
-CUDA_SOFTMAX_BACKWARD = _load_cuda_function(
+CUDA_SOFTMAX_BACKWARD = load_cuda_function(
     CUDA_SOFTMAX_DLL, "cudaSoftmaxBackward", 
     [
         ctypes.POINTER(ctypes.c_float), 
@@ -49,21 +49,6 @@ CUDA_SOFTMAX_BACKWARD = _load_cuda_function(
 
 #     def __array__(self):
 #         return self.array
-
-def call_cuda_function(func, *args):
-    # Helper for casting data to pointers
-    def _to_pointer(array: cp.ndarray):
-        if array is None:
-            return None
-        # elif isinstance(array, np.ndarray):
-        #     return array.ctypes.data_as(POINTER(c_float))
-        elif isinstance(array, cp.ndarray):
-            return ctypes.cast(array.data.ptr, POINTER(c_float))
-
-        return array
-
-    return func(*[_to_pointer(arg) for arg in args])
-
 
 def cuda_softmax_forward(x: cp.ndarray, o: cp.ndarray, dim: int):
     if not all([isinstance(arg, cp.ndarray) for arg in [x, o]]):
@@ -97,7 +82,7 @@ def cuda_softmax_forward(x: cp.ndarray, o: cp.ndarray, dim: int):
 
     stride = x.strides[dim] // x.itemsize
 
-    stream = cp.cuda.get_current_stream()
+    stream_ptr = get_current_stream_ptr()
     
     call_cuda_function(
         CUDA_SOFTMAX_FORWARD, 
@@ -106,7 +91,7 @@ def cuda_softmax_forward(x: cp.ndarray, o: cp.ndarray, dim: int):
         num_slices,
         slice_size,
         stride,
-        stream.ptr
+        stream_ptr
     )
     return o
 
@@ -135,7 +120,7 @@ def cuda_softmax_backward(grad_x: cp.ndarray, grad: cp.ndarray, f_x: cp.ndarray,
 
     stride = f_x.strides[dim] // f_x.itemsize
     
-    stream = cp.cuda.get_current_stream()
+    stream_ptr = get_current_stream_ptr()
     
     call_cuda_function(
         CUDA_SOFTMAX_BACKWARD,
@@ -145,7 +130,7 @@ def cuda_softmax_backward(grad_x: cp.ndarray, grad: cp.ndarray, f_x: cp.ndarray,
         num_slices,
         slice_size,
         stride,
-        stream.ptr
+        stream_ptr
     )
     return grad_x
 

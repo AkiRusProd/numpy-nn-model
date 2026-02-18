@@ -21,6 +21,7 @@ def compile():
             "nvcc",
             "-o", "neunet/nn/experimental/activations/softmax/softmaxcuda.dll",
             "-shared",
+            # "-allow-unsupported-compiler",
             "neunet/nn/experimental/activations/softmax/softmax.cu",
             "-I/usr/local/cuda/include",
             "-L/usr/local/cuda/lib64",

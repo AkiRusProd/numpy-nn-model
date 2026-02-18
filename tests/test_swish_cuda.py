@@ -1,5 +1,6 @@
 import numpy as np
 import cupy as cp
+import pytest
 import sys
 import os
 
@@ -10,12 +11,15 @@ from neunet.autograd import Tensor
 from neunet.nn.activations import Swish
 from neunet.nn.experimental import CUDASwish
 
-def test_swish_comparison():
+
+@pytest.mark.parametrize(
+    "batch_size,features,beta",
+    [
+        (32, 128, 1.5),
+    ],
+)
+def test_swish_comparison(batch_size, features, beta):
     print("Testing CUDA Swish vs Native Swish...")
-    
-    batch_size = 32
-    features = 128
-    beta = 1.5
     
     # Generate random data
     np.random.seed(42)
@@ -38,12 +42,8 @@ def test_swish_comparison():
     forward_diff = cp.abs(out_native.data - out_cuda.data).max()
     print(f"Max absolute difference (Forward): {forward_diff}")
     
-    try:
-        cp.testing.assert_allclose(out_native.data, out_cuda.data, rtol=1e-5, atol=1e-5)
-        print("Forward pass matches!")
-    except AssertionError as e:
-        print("Forward pass mismatch!")
-        print(e)
+    cp.testing.assert_allclose(out_native.data, out_cuda.data, rtol=1e-5, atol=1e-5)
+    print("Forward pass matches!")
 
     # Backward Pass
     # Create a random gradient
@@ -58,19 +58,8 @@ def test_swish_comparison():
     grad_diff = cp.abs(t_native.grad - t_cuda.grad).max()
     print(f"Max absolute difference (Gradients): {grad_diff}")
     
-    try:
-        cp.testing.assert_allclose(t_native.grad, t_cuda.grad, rtol=1e-5, atol=1e-5)
-        print("Backward pass matches!")
+    cp.testing.assert_allclose(t_native.grad, t_cuda.grad, rtol=1e-5, atol=1e-5)
+    print("Backward pass matches!")
 
-        print(f"{t_native.grad.flatten()[:5]=}")
-        print(f"{t_cuda.grad.flatten()[:5]=}")
-
-    except AssertionError as e:
-        print("Backward pass mismatch!")
-        print(e)
-
-if __name__ == "__main__":
-    try:
-        test_swish_comparison()
-    except Exception as e:
-        print(f"\nAn error occurred: {e}")
+    print(f"{t_native.grad.flatten()[:5]=}")
+    print(f"{t_cuda.grad.flatten()[:5]=}")

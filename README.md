@@ -1,116 +1,146 @@
 # numpy-nn-model
-Сustom CPU/GPU torch style machine learning framework with tape-based automatic differentiation for creating neural networks, implemented on numpy with cupy.
 
-## Some information and features:
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/AkiRusProd/numpy-nn-model)
 
-<details>
-<summary>Activation Functions</summary>
+A custom CPU/GPU, torch-style machine learning framework with tape-based automatic differentiation. Built on NumPy for CPU and CuPy for GPU support.
 
-1) Sigmoid
-2) Tanh
-3) Softmax
-4) LogSoftmax
-5) Softplus
-6) Softsign
-7) Swish
-8) Mish
-9) TanhExp
-10) ReLU
-11) LeakyReLU
-12) ELU
-13) SELU
-14) GELU
+## Highlights
+- Tape-based autograd with a torch-like API
+- CPU and GPU tensors (NumPy / CuPy)
+- Broad set of layers, activations, losses, and optimizers
+- Experimental fused CUDA modules
+- Many end-to-end notebook examples
 
-*[See Activation Functions...](neunet/nn/activations.py)*
-
-</details>
-
-
-<details>
-<summary>Optimizers</summary>
-
-1) SGD
-2) Momentum
-3) RMSProp
-4) Adam
-5) NAdam
-6) AdaMax
-7) AdaGrad
-8) AdaDelta
-
-*[See Optimizers...](neunet/optim.py)*
-
-</details>
-
-
-<details>
-<summary>Loss Functions</summary>
-
-1) MSELoss
-2) BCELoss
-3) CrossEntropyLoss
-4) NLLLoss
-5) L1Loss
-6) KLDivLoss
-
-*[See Loss Functions...](neunet/nn/losses.py)*
-
-</details>
-
-
-<details>
-<summary>Modules</summary>
-
-1) Linear
-2) Dropout
-3) BatchNorm1d
-4) BatchNorm2d
-5) LayerNorm
-6) RMSNorm
-7) Conv2d
-8) ConvTranspose2d
-9) MaxPool2d
-10) AvgPool2d
-11) ZeroPad2d
-12) Flatten
-13) Embedding
-14) Bidirectional
-15) RNN
-16) LSTM
-17) GRU
-
-*[See Modules...](neunet/nn/layers)*
-
-</details>
-
-
-<details>
-<summary>Experimental CUDA Modules</summary>
-
-1) CUDALinear (Module with fused bias in forward, written in CUDA + cublaslt)
-2) CUDASoftmax (Fused module, written in CUDA)
-3) CUDACrossEntropyLoss (Module with fused forward and backward in one kernel)
-4) CUDARMSNorm (Same as RMSNorm, but in CUDA)
-
-*[See Experimental Modules...](neunet/nn/experimental)*
-
-</details>
+## Installation
 
 
 
-<details>
-<summary>Tensor Operations</summary>
 
-1) add, sub, mul, div, matmul, abs
-2) sum, mean, var, max, min, maximum, minimum, argmax, argmin   
-3) transpose, swapaxes, reshape, concatenate, flip, slicing
-4) power, exp, log, sqrt, sin, cos, tanh
-5) ones, zeros, ones_like, zeros_like, arange, rand, randn
+```bash
+# Clone the repository
+git clone https://github.com/AkiRusProd/numpy-nn-model.git
+cd numpy-nn-model
 
-</details>
+# Install dependencies
+pip install -r requirements.txt
+
+# Or using Poetry
+poetry install
+```
 
 
-### Tensor Operations with autograd Example:
+
+
+## Quick Start
+
+Here's a simple example to get you started:
+
+```python
+import neunet as nnet
+import neunet.nn as nn
+from neunet.optim import Adam
+
+# Create a simple neural network
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear1 = nn.Linear(784, 128)
+        self.relu = nn.ReLU()
+        self.linear2 = nn.Linear(128, 10)
+    
+    def forward(self, x):
+        x = self.linear1(x)
+        x = self.relu(x)
+        x = self.linear2(x)
+        return x
+
+# Initialize model, loss, and optimizer
+model = SimpleNet()
+loss_fn = nn.CrossEntropyLoss()
+optimizer = Adam(model.parameters(), lr=0.001)
+
+# Create sample data (batch_size=32, features=784)
+x = nnet.randn(32, 784, requires_grad=True)
+target = nnet.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 0] * 3 + [1, 2], requires_grad=False, dtype = nnet.int32)
+
+# Training step
+optimizer.zero_grad()
+output = model(x)
+loss = loss_fn(output, target)
+loss.backward()
+optimizer.step()
+
+print(f"Loss: {loss.data:.4f}")
+```
+
+For more examples, check out the [examples](examples/) folder with complete implementations of various models.
+
+## GPU Setup
+
+To use GPU acceleration with CuPy:
+
+1. **Install CuPy** compatible with your CUDA version:
+   ```bash
+   # For CUDA 11.7
+   pip install cupy-cuda117
+   
+   # For CUDA 12.x
+   pip install cupy-cuda12x
+   ```
+
+2. **Create tensors on GPU**:
+   ```python
+   import neunet as nnet
+   import cupy as cp
+   
+   # Create a tensor on GPU
+   x = nnet.tensor(cp.random.randn(32, 784), device="cuda", requires_grad=True)
+   
+   # Or convert existing tensor to GPU
+   x_cpu = nnet.randn(32, 784)
+   x_gpu = x_cpu.to("cuda")
+   ```
+
+3. **Move models to GPU**:
+   ```python
+   model = SimpleNet()
+   model.to("cuda")  # Move all parameters to GPU
+   ```
+
+**Note**: All tensors in a computation must be on the same device (CPU or GPU).
+
+## Features
+
+The framework provides a comprehensive set of components for building neural networks:
+
+### Core Components
+
+- **Layers** - Neural network layers including convolutional, linear, recurrent (RNN/LSTM/GRU), normalization, pooling, embedding, and more. [`See → neunet/nn/layers`](neunet/nn/layers)
+
+- **Activation Functions** - ReLU family, sigmoid, tanh, softmax, and modern activations (Swish, Mish, GELU, etc.). [`See → neunet/nn/activations.py`](neunet/nn/activations.py)
+
+- **Loss Functions** - Cross-entropy, MSE, BCE, L1, and other common loss functions. [`See → neunet/nn/losses.py`](neunet/nn/losses.py)
+
+- **Optimizers** - SGD, Adam, RMSProp, and other popular optimization algorithms. [`See → neunet/optim.py`](neunet/optim.py)
+
+- **Tensor Operations** - Full NumPy-like API with automatic differentiation support (mathematical operations, reductions, transformations, etc.). [`See → neunet/autograd.py`](neunet/autograd.py)
+
+### Experimental CUDA Modules
+
+High-performance fused CUDA implementations for accelerated training:
+- `CUDALinear` - Fused linear layer with bias (CUDA + cuBLASLt/CUTLASS backend)
+- `CUDALinearSwish` - Fused linear layer followed by Swish activation in a single CUDA kernel (CUTLASS backend)
+- `CUDASoftmax` - Fused softmax operation
+- `CUDASwish` - CUDA-accelerated Swish activation function
+- `CUDACrossEntropyLoss` - Fused cross-entropy with combined forward/backward kernel
+- `CUDARMSNorm` - CUDA-accelerated RMS normalization
+- `CUDAFusedAdamW` - Fused AdamW optimizer with all update operations in a single CUDA kernel
+- `CUDAFusedMultiTensorAdamW` - Multi-tensor optimized version of CUDAFusedAdamW for efficient batch parameter updates
+
+*[See Experimental modules →](neunet/nn/experimental)*
+
+
+### Autograd Example
 ```python
 import neunet as nnet
 import numpy as np
@@ -141,27 +171,27 @@ print(z.grad, '\n')
 
 
 
-### Model Examples:
-Models implementations provided in Jupyter notebooks are available in [examples](examples/) folder.    
+### Examples
+Notebook implementations are available in the [examples](examples/) folder.
 
-#### All of them:
-1. *[Autoencoder](examples/ae.ipynb)*        
-2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.ipynb)*    
-3. *[Conway`s Game of Life](examples/conway.ipynb)*  
+#### All notebooks:
+1. *[Autoencoder](examples/ae.ipynb)*
+2. *[Convolutional Digits Classifier](examples/convolutional_digits_classifier.ipynb)*
+3. *[Conway's Game of Life](examples/conway.ipynb)*
 4. *[Denoising Diffusion Probabilistic Model](examples/ddpm.ipynb)*
-5. *[Generative Adversarial Network](examples/gan.ipynb)*     
+5. *[Generative Adversarial Network](examples/gan.ipynb)*
 6. *[Generative Pre-trained Transformer](examples/gpt.ipynb)*
-7. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.ipynb)*    
-8. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.ipynb)*    
+7. *[Recurrent Digits Classifier](examples/recurrent_digits_classifier.ipynb)*
+8. *[Recurrent Sequences Classifier](examples/recurrent_sequences_classifier.ipynb)*
 9. *[Optimizers visualization](examples/optimizers_visualization.ipynb)*
 10. *[Seq2Seq Transformer](examples/seq2seq.ipynb)*
-11. *[Variational Autoencoder](examples/vae.ipynb)*    
-12. *[Vector Quantized Variational Autoencoder](examples/vqvae.ipynb)* 
+11. *[Variational Autoencoder](examples/vae.ipynb)*
+12. *[Vector Quantized Variational Autoencoder](examples/vqvae.ipynb)*
 13. *[Word2Vec](examples/word2vec.ipynb)*
 
 
 
-#### More details about some of them:
+#### Selected examples
 
 <details>
 <summary>Denoising Diffusion Probabilistic Model (DDPM)</summary>
@@ -171,7 +201,7 @@ Models implementations provided in Jupyter notebooks are available in [examples]
 <img src="generated images/ddpm_utkface.gif" width=20% height=20%>
 </p>
 
-Code:   
+Code:
 *[Model Example](examples/ddpm.ipynb)*
 </details>
 
@@ -260,41 +290,41 @@ for epoch in range(epochs):
 
         tqdm_range.set_description(f'epoch: {epoch + 1}/{epochs}, loss: {loss.data:.7f}')
 ```
-###### (prediction on test MNIST data with this model is 97 %)
+###### (test MNIST accuracy is ~97%)
 
-Code:   
+Code:
 *[Model Example](examples/convolutional_digits_classifier.ipynb)*
 </details>
 
 <details>
 <summary>Seq2Seq Transformer</summary>
 
-#### Examples of translated sentences (EN -> DE) of validation set:  
+#### Examples from the validation set (EN -> DE):
 
->Example №1  
-*Input sentence: These four people are standing outdoors, with 3 dogs.  
-Decoded sentence: Vier Personen stehen im Freien mit drei Hunden.  
-Target sentence: Diese vier Personen stehen mit 3 Hunden im Freien.*  
+>Example �1
+*Input sentence: These four people are standing outdoors, with 3 dogs.
+Decoded sentence: Vier Personen stehen im Freien mit drei Hunden.
+Target sentence: Diese vier Personen stehen mit 3 Hunden im Freien.*
 
->Example №2  
-*Input sentence: A man in a martial arts uniform in midair.  
-Decoded sentence: Ein Mann in Uniform befindet sich in der Luft.  
-Target sentence: Ein Mann in einem Karateanzug in der Luft.*  
+>Example �2
+*Input sentence: A man in a martial arts uniform in midair.
+Decoded sentence: Ein Mann in Uniform befindet sich in der Luft.
+Target sentence: Ein Mann in einem Karateanzug in der Luft.*
 
->Example №3  
-*Input sentence: A long-haired, male musician is playing on a piano.  
-Decoded sentence: Ein langhaariger Mann spielt Klavier auf einem Klavier.   
-Target sentence: Ein Musiker mit langen Haaren spielt Keyboard.*  
+>Example �3
+*Input sentence: A long-haired, male musician is playing on a piano.
+Decoded sentence: Ein langhaariger Mann spielt Klavier auf einem Klavier.
+Target sentence: Ein Musiker mit langen Haaren spielt Keyboard.*
 
->Example №4  
-*Input sentence: A child is laying on a beige rug laughing.  
-Decoded sentence: Ein Kind liegt auf einem beigen Teppich.  
-Target sentence: Ein Kind liegt auf einem beigefarbenen Teppich und lacht.*  
+>Example �4
+*Input sentence: A child is laying on a beige rug laughing.
+Decoded sentence: Ein Kind liegt auf einem beigen Teppich.
+Target sentence: Ein Kind liegt auf einem beigefarbenen Teppich und lacht.*
 
->Example №5  
-*Input sentence: A dark-haired bearded man in glasses and a Hawaiian shirt is sitting on the grass.     
-Decoded sentence: Ein bärtiger Mann mit Brille und einem dunkelhaarigen Mann sitzt im Gras.  
-Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt auf dem Gras.*  
+>Example �5
+*Input sentence: A dark-haired bearded man in glasses and a Hawaiian shirt is sitting on the grass.
+Decoded sentence: Ein bartiger Mann mit Brille und einem dunkelhaarigen Mann sitzt im Gras.
+Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt auf dem Gras.*
 
 #### Attention plots of the first sentence:
 
@@ -302,7 +332,7 @@ Target sentence: Ein dunkelhaariger Mann mit Bart, Brille und Hawaiihemd sitzt a
 <img src="generated images/attention plots.jpg" width=100% height=100%>
 </p>
 
-Code:   
+Code:
 *[Model Example](examples/seq2seq.ipynb)*
 </details>
 
@@ -453,8 +483,8 @@ for epoch in range(epochs):
         image = Image.fromarray(image)
         image.save(f'generated images/{i}.png')
 ```
-Code:   
-*[Model example](examples/vae.ipynb)*   
+Code:
+*[Model example](examples/vae.ipynb)*
 
 ##### VAE Results:
 Noisy Data Example | Noise Removed Data Example
@@ -462,10 +492,10 @@ Noisy Data Example | Noise Removed Data Example
 <img src="generated images/vae_input_samples.jpg"> |  <img src="generated images/vae_output_samples.jpg">
 
 ##### VAE 2D latent dim Plots:
-Digits location in 2D latent space:   
+Digits location in 2D latent space:
 <img src="generated images/vae_2d_latent_space.jpg" width=75% height=75%>
 
-Digits labels in 2D latent space:   
+Digits labels in 2D latent space:
 <img src="generated images/vae_2d_latent_space_labels.jpg" width=75% height=75%>
 </details>
 
@@ -539,7 +569,7 @@ for epoch in range(epochs):
         real_data = batch
         real_data = real_data.reshape(real_data.shape[0], -1)
 
-        real_data_prediction = discriminator(real_data) 
+        real_data_prediction = discriminator(real_data)
         real_data_loss = loss_fn(real_data_prediction, nnet.tensor(np.ones((real_data_prediction.shape[0], 1)), requires_grad = False))
         real_data_loss.backward()
         d_optimizer.step()
@@ -581,8 +611,8 @@ for epoch in range(epochs):
 ```
 
 
-Code:   
-*[Model example](examples/gan.ipynb)*   
+Code:
+*[Model example](examples/gan.ipynb)*
 
 
 ##### GAN Results:
@@ -594,21 +624,21 @@ Training process Example | Interpolation between images Example
 <details>
 <summary>Generative Pre-trained Transformer</summary>
 
-#### Examples of a model trained to generate prompts for Stable Diffusion:  
+#### Examples of a model trained to generate prompts for Stable Diffusion:
 
->Example №1  
-*a detailed image of a dark haired cyborg - car 3 d model, a glowing aura, symmetrical, intricate, elegant, highly detailed, digital painting, artstation, concept art, smooth, sharp focus, illustration, art by krenz cushart and artem demura* 
+>Example №1
+*a detailed image of a dark haired cyborg - car 3 d model, a glowing aura, symmetrical, intricate, elegant, highly detailed, digital painting, artstation, concept art, smooth, sharp focus, illustration, art by krenz cushart and artem demura*
 
->Example №2  
-*an female warrior, full length, red hair, dark eyes, symmetrical face, highly detailed, digital art, sharp focus, trending on art station, anime art style*  
+>Example №2
+*an female warrior, full length, red hair, dark eyes, symmetrical face, highly detailed, digital art, sharp focus, trending on art station, anime art style*
 
->Example №3  
+>Example №3
 *portrait of a young ruggedly handsome but joyful pirate, male, masculine, upper body, red hair, long hair, d & d, fantasy, sharp features, piercing gaze, sharp features, digital painting, artstation, concept art, matte, sharp*
 
->Example №4  
+>Example №4
 *an anthropomorphic fox wizard, fine art, award winning, intricate, elegant, sharp focus, cinematic lighting, highly detailed, digital painting, 8 k concept art, art by guweiz and z. w. gu, masterpiece, trending on artstation*
 
->Example №5  
+>Example №5
 *a beautiful portrait painting of a cyberpunk city by simon stalenhag and pascal blanche and alphonse mucha, in style of colorful comic. symmetry, hyper detailed. octanev render. trending on artstation*
 
 Code:
@@ -617,7 +647,7 @@ Code:
 </details>
 
 <details>
-<summary>Conway`s Game of Life Neural Network Simulation</summary>
+<summary>Conway's Game of Life Neural Network Simulation</summary>
 
 ```python
 import itertools
@@ -640,8 +670,8 @@ N = 128
 # Randomly create a grid
 # grid = np.random.binomial(1, p = 0.2, size = (N, N))
 
-# or define for example the Glider Gun configuration as shown in 
-# https://conwaylife.com/wiki/Gosper_glider_gun 
+# or define for example the Glider Gun configuration as shown in
+# https://conwaylife.com/wiki/Gosper_glider_gun
 # Other examples can be found in
 # https://conwaylife.com/patterns/
 
@@ -715,7 +745,7 @@ game = GameOfLife()
 class Dataset:
     def get_data(self):
         '''
-        Generate data from all probable situations (2^9), 
+        Generate data from all probable situations (2^9),
         where (1 point - current point, 8 points - surrounding neighbors points)
         '''
         X = list(itertools.product([0, 1], repeat = 9))
@@ -789,20 +819,23 @@ ani = animation.FuncAnimation(fig, animate, frames=30, interval=5)
 plt.show()
 ```
 
-Code:   
-*[Model example](examples/conway.ipynb)*   
+Code:
+*[Model example](examples/conway.ipynb)*
 
 
-##### Conway`s Game of Life Simulation Results:
+##### Conway's Game of Life Simulation Results:
 Native implementation Example | Neural network Example
 :-------------------------:|:-------------------------:
 <img src="generated images/native_conway.gif"> |  <img src="generated images/neunet_conway.gif">
 
 </details>
 
+## Tests
 
+Run the test suite:
 
-### TODO:
-- [x] Add Seq2Seq Transformer example
-- [x] Add GPT example
-- [ ] Add lr schedulers
+```bash
+pytest -q tests -s
+```
+
+The test suite includes CPU and CUDA tests. CUDA tests require a compatible GPU and CuPy installation.
