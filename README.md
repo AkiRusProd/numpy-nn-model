@@ -188,6 +188,7 @@ Notebook implementations are available in the [examples](examples/) folder.
 11. *[Variational Autoencoder](examples/vae.ipynb)*
 12. *[Vector Quantized Variational Autoencoder](examples/vqvae.ipynb)*
 13. *[Word2Vec](examples/word2vec.ipynb)*
+14. *[GPT2 Inference](examples/gpt2/)*
 
 
 

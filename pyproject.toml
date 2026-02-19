@@ -6,7 +6,7 @@ authors = ["AkiRusProd <akirusprod@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.15"
 numpy = "1.24.0"
 matplotlib = "3.5.1"
 pillow = "9.3.0"
@@ -21,13 +21,19 @@ nvtx = "^0.2.14"
 pytest = "^9.0.2"
 
 
+[[tool.poetry.source]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu130"
+priority = "supplemental"
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.7"
 pre-commit = "^3.7.1"
 mypy = "^1.10.0"
 types-requests = "^2.32.0.20240602"
 ipykernel = "^6.29.5"
-torch = "^2.3.1"
+torch = { version = "^2.3.1", source = "pytorch-cuda" }
+transformers = "^4.41.2"
 
 [tool.ruff]
 line-length = 100

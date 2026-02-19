@@ -57,6 +57,10 @@ class Module:
             self.xp = cp
 
         self.device = device
+        # TODO: Preserve shared Tensor/Parameter references during device move.
+        # Current behavior calls `.to(device)` per attribute and can break aliasing
+        # (e.g. tied weights like `lm_head.weight = wte.weight` become different objects).
+        # Fix idea: use memoization by `id(item)` and reuse already-moved tensors.
         for name, item in self.__dict__.items():
             if hasattr(item, "to"):
                 self.__dict__[name] = item.to(device)

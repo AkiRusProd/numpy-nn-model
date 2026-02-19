@@ -2,6 +2,7 @@ import pickle
 from pathlib import Path
 
 import numpy as np
+import cupy as cp
 
 from neunet import nn as nn
 from neunet.autograd import Tensor
@@ -12,6 +13,14 @@ int64 = np.int64
 float16 = np.float16
 float32 = np.float32
 float64 = np.float64
+
+
+def _xp_for_device(device: str):
+    return np if device == "cpu" else cp
+
+
+def _normalize_shape(shape):
+    return tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
 
 
 def save(obj: object, f, pickle_protocol: int = 2):
@@ -28,70 +37,114 @@ def load(f):
 # references to the original Tensor functions
 
 
-def tensor(data, requires_grad=False, dtype=float32, device="cpu"):
+def tensor(data, requires_grad=False, dtype=float32, device=None):
+    device = "cpu" if device is None else device
     return Tensor(data, requires_grad=requires_grad, dtype=dtype, device=device)
 
 
-def ones(*shape, dtype=None, requires_grad=False, device="cpu"):
-    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-
-    return Tensor(np.ones(shape, dtype=dtype), requires_grad=requires_grad, device=device)
-
-
-def zeros(*shape, dtype=None, requires_grad=False, device="cpu"):
-    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-
-    return Tensor(np.zeros(shape, dtype=dtype), requires_grad=requires_grad, device=device)
-
-
-def rand(*shape, dtype=None, requires_grad=False, device="cpu"):
-    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-
-    return Tensor(np.random.rand(*shape).astype(dtype), requires_grad=requires_grad, device=device)
-
-
-def randn(*shape, dtype=None, requires_grad=False, device="cpu"):
-    shape = tuple(*shape) if all(isinstance(arg, (list, tuple)) for arg in shape) else shape
-
+def ones(*shape, dtype=None, requires_grad=False, device=None):
+    device = "cpu" if device is None else device
+    shape = _normalize_shape(shape)
+    xp = _xp_for_device(device)
+    out_dtype = float32 if dtype is None else dtype
     return Tensor(
-        np.random.randn(*shape).astype(dtype),
+        xp.ones(shape, dtype=out_dtype),
         requires_grad=requires_grad,
         device=device,
+        dtype=out_dtype,
     )
 
 
-def arange(start=0, end=None, step=1, dtype=None, requires_grad=False, device="cpu"):
+def zeros(*shape, dtype=None, requires_grad=False, device=None):
+    device = "cpu" if device is None else device
+    shape = _normalize_shape(shape)
+    xp = _xp_for_device(device)
+    out_dtype = float32 if dtype is None else dtype
+    return Tensor(
+        xp.zeros(shape, dtype=out_dtype),
+        requires_grad=requires_grad,
+        device=device,
+        dtype=out_dtype,
+    )
+
+
+def rand(*shape, dtype=None, requires_grad=False, device=None):
+    device = "cpu" if device is None else device
+    shape = _normalize_shape(shape)
+    xp = _xp_for_device(device)
+    out_dtype = float32 if dtype is None else dtype
+    data = xp.random.rand(*shape).astype(out_dtype)
+    return Tensor(data, requires_grad=requires_grad, device=device, dtype=out_dtype)
+
+
+def randn(*shape, dtype=None, requires_grad=False, device=None):
+    device = "cpu" if device is None else device
+    shape = _normalize_shape(shape)
+    xp = _xp_for_device(device)
+    out_dtype = float32 if dtype is None else dtype
+    data = xp.random.randn(*shape).astype(out_dtype)
+    return Tensor(
+        data,
+        requires_grad=requires_grad,
+        device=device,
+        dtype=out_dtype,
+    )
+
+
+def arange(start=0, end=None, step=1, dtype=None, requires_grad=False, device=None):
+    device = "cpu" if device is None else device
     if end is None:
         start, end = 0, start
+    xp = _xp_for_device(device)
+    out_dtype = float32 if dtype is None else dtype
     return Tensor(
-        np.arange(start, end, step, dtype=dtype),
+        xp.arange(start, end, step, dtype=out_dtype),
         requires_grad=requires_grad,
         device=device,
+        dtype=out_dtype,
     )
 
 
-def ones_like(tensor, dtype=None, requires_grad=False, device="cpu"):
-    return Tensor(np.ones_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
-
-
-def zeros_like(tensor, dtype=None, requires_grad=False, device="cpu"):
-    return Tensor(np.zeros_like(tensor.data, dtype), requires_grad=requires_grad, device=device)
-
-
-def argmax(x, axis=None, keepdims=False, device="cpu"):
+def ones_like(tensor, dtype=None, requires_grad=False, device=None):
+    device = tensor.device if device is None else device
+    xp = _xp_for_device(device)
+    out_dtype = tensor.dtype if dtype is None else dtype
     return Tensor(
-        np.argmax(x.data, axis=axis, keepdims=keepdims),
-        requires_grad=False,
+        xp.ones_like(tensor.data, out_dtype),
+        requires_grad=requires_grad,
         device=device,
+        dtype=out_dtype,
+    )
+
+
+def zeros_like(tensor, dtype=None, requires_grad=False, device=None):
+    device = tensor.device if device is None else device
+    xp = _xp_for_device(device)
+    out_dtype = tensor.dtype if dtype is None else dtype
+    return Tensor(
+        xp.zeros_like(tensor.data, out_dtype),
+        requires_grad=requires_grad,
+        device=device,
+        dtype=out_dtype,
+    )
+
+
+def argmax(x, axis=None, keepdims=False):
+    xp = _xp_for_device(x.device)
+    return Tensor(
+        xp.argmax(x.data, axis=axis, keepdims=keepdims),
+        requires_grad=False,
+        device=x.device,
         dtype=int32
     )
 
 
-def argmin(x, axis=None, keepdims=False, device="cpu"):
+def argmin(x, axis=None, keepdims=False):
+    xp = _xp_for_device(x.device)
     return Tensor(
-        np.argmin(x.data, axis=axis, keepdims=keepdims),
+        xp.argmin(x.data, axis=axis, keepdims=keepdims),
         requires_grad=False,
-        device=device,
+        device=x.device,
         dtype = int32
     )
 
@@ -226,3 +279,9 @@ def logical_or(x, y):
 
 def logical_not(x):
     return x.logical_not()
+
+def copy(x: Tensor) -> Tensor:
+    return Tensor(x.data.copy(), requires_grad=x.requires_grad, device=x.device, dtype=x.dtype)
+
+def clone(x: Tensor) -> Tensor:
+    return copy(x)
