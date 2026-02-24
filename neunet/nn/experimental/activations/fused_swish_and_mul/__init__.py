@@ -1,0 +1,1 @@
+from .fused_swish_and_mul import CUDAFusedSwishAndMul as CUDAFusedSwishAndMul

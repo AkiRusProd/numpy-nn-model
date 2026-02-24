@@ -37,6 +37,12 @@ CUDA_SWISH_MODULE = {
     'nt': 'neunet/nn/experimental/activations/swish/swish_cuda.dll'
 }
 
+CUDA_FUSED_SWISH_AND_MUL_MODULE = {
+    "name": "fused_swish_and_mul",
+    'posix': 'neunet/nn/experimental/activations/fused_swish_and_mul/fused_swish_and_mul_cuda.so',
+    'nt': 'neunet/nn/experimental/activations/fused_swish_and_mul/fused_swish_and_mul_cuda.dll'
+}
+
 CUDA_LINEAR_SWISH_CUTLASS_MODULE = {
     "name": "linear_swish_cutlass",
     'posix': 'neunet/nn/experimental/linear_swish/linear_swish_cutlass.so',
